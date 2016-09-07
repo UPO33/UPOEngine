@@ -1,0 +1,196 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Core\UArray.h" />
+    <ClInclude Include="Core\UBasic.h" />
+    <ClInclude Include="Core\UCore.h" />
+    <ClInclude Include="Core\UFileSys.h" />
+    <ClInclude Include="Core\UHash.h" />
+    <ClInclude Include="Core\ULog.h" />
+    <ClInclude Include="Core\UMemory.h" />
+    <ClInclude Include="Core\UName.h" />
+    <ClInclude Include="Core\UQueue.h" />
+    <ClInclude Include="Core\UString.h" />
+    <ClInclude Include="Core\UThreading.h" />
+    <ClInclude Include="Core\UThreading_Win.h" />
+    <ClInclude Include="Core\UVector.h" />
+    <ClInclude Include="GFXCore\UGFXCore.h" />
+    <ClInclude Include="GFXCore\UGFXDevice.h" />
+    <ClInclude Include="GFXCore\UGFXDeviceDX.h" />
+    <ClInclude Include="GFXCore\UGFXDeviceGL.h" />
+    <ClInclude Include="GFXCore\UScreenRender.h" />
+    <ClInclude Include="RasterTech\cameraclass.h" />
+    <ClInclude Include="RasterTech\d3dclass.h" />
+    <ClInclude Include="RasterTech\DInput.h" />
+    <ClInclude Include="RasterTech\DirectSound.h" />
+    <ClInclude Include="RasterTech\graphicsclass.h" />
+    <ClInclude Include="RasterTech\inputclass.h" />
+    <ClInclude Include="RasterTech\lightclass.h" />
+    <ClInclude Include="RasterTech\lightshaderclass.h" />
+    <ClInclude Include="RasterTech\modelclass.h" />
+    <ClInclude Include="RasterTech\systemclass.h" />
+    <ClInclude Include="RasterTech\textureclass.h" />
+    <ClInclude Include="Test.h" />
+    <ClInclude Include="UPOEngine.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Core\UBaisc.cpp" />
+    <ClCompile Include="Core\UBasic.cpp" />
+    <ClCompile Include="Core\UFileSys.cpp" />
+    <ClCompile Include="Core\UHash.cpp" />
+    <ClCompile Include="Core\ULog.cpp" />
+    <ClCompile Include="Core\UName.cpp" />
+    <ClCompile Include="Core\UString.cpp" />
+    <ClCompile Include="Core\UThreading.cpp" />
+    <ClCompile Include="Core\UThreading_Win.cpp" />
+    <ClCompile Include="GFXCore\UGFXDevice.cpp" />
+    <ClCompile Include="GFXCore\UGFXDeviceDX.cpp" />
+    <ClCompile Include="GFXCore\UGFXDeviceGL.cpp" />
+    <ClCompile Include="GFXCore\UScreenRender.cpp" />
+    <ClCompile Include="RasterTech\cameraclass.cpp" />
+    <ClCompile Include="RasterTech\d3dclass.cpp" />
+    <ClCompile Include="RasterTech\DInput.cpp" />
+    <ClCompile Include="RasterTech\DirectSound.cpp" />
+    <ClCompile Include="RasterTech\graphicsclass.cpp" />
+    <ClCompile Include="RasterTech\inputclass.cpp" />
+    <ClCompile Include="RasterTech\lightclass.cpp" />
+    <ClCompile Include="RasterTech\lightshaderclass.cpp" />
+    <ClCompile Include="RasterTech\modelclass.cpp" />
+    <ClCompile Include="RasterTech\systemclass.cpp" />
+    <ClCompile Include="RasterTech\textureclass.cpp" />
+    <ClCompile Include="Test.cpp" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{2B904F4E-FD87-4938-AEE5-8C722714F5BD}</ProjectGuid>
+    <RootNamespace>UPOEngine</RootNamespace>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>$(SolutionDir)..\Bin\</OutDir>
+    <IncludePath>$(SolutionDir)..\Libs\DirectXTex\DirectXTex;$(DXSDK_DIR)\Include\;$(SolutionDir)..\Libs\assimp\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)..\Libs\DirectXTex\DirectXTex\Bin\Desktop_2015\Win32\Debug;$(DXSDK_DIR)\Lib\x86;$(SolutionDir)..\Libs\assimp\lib\Debug;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(SolutionDir)..\Bin\</OutDir>
+    <IncludePath>$(SolutionDir)..\Libs\DirectXTex\DirectXTex;$(DXSDK_DIR)\Include\;$(SolutionDir)..\Libs\assimp\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)..\Libs\DirectXTex\DirectXTex\Bin\Desktop_2015\Win32\Debug;$(DXSDK_DIR)\Lib\x86;$(SolutionDir)..\Libs\assimp\lib\Debug;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>UEXPORT_ENGINE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>assimp-vc140-mt.lib;d3dx11d.lib;d3d11.lib;d3dcompiler.lib;dxgi.lib;d3dx10d.lib;DirectXTex.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>UEXPORT_ENGINE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>assimp-vc140-mt.lib;d3dx11d.lib;d3d11.lib;d3dcompiler.lib;dxgi.lib;d3dx10d.lib;DirectXTex.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
