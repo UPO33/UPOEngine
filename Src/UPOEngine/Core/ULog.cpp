@@ -3,7 +3,7 @@
 #include "UFileSys.h"
 #include "UString.h"
 #include "UQueue.h"
-
+#include <stdio.h>
 
 //helper to show the colorized messages in console
 namespace Console
@@ -87,15 +87,18 @@ namespace UPO
 		static const unsigned MAX_LISTENERS = 32;
 
 		CriticalSection							mLock;
-		File									mOutFile;
+// 		File									mOutFile;
 		FP<void, const LogEntry&>				mListeners[MAX_LISTENERS];
 		unsigned								mNumListeners;
 		bool mWriteToSTDConsole = true;
-		
+		FILE* mOutFile = nullptr;
+
 		LogImpl()
 		{
-			mOutFile.Open("log.html", EFileOpenMode::Write);
-			mOutFile.WriteBytes(gLogHTMLBegin, StrLen(gLogHTMLBegin));
+// 			mOutFile.Open("log.html", EFileOpenMode::Write);
+// 			mOutFile.WriteBytes(gLogHTMLBegin, StrLen(gLogHTMLBegin));
+			fopen_s(&mOutFile, "log.html", "wb");
+			fwrite(gLogHTMLBegin, 1, StrLen(gLogHTMLBegin), mOutFile);
 		}
 		~LogImpl()
 		{
@@ -103,10 +106,15 @@ namespace UPO
 		}
 		void CloseLogFile()
 		{
-			if (mOutFile.IsOpen())
+// 			if (mOutFile.IsOpen())
+// 			{
+// 				mOutFile.WriteBytes(gLogHTMLEnd, StrLen(gLogHTMLEnd));
+// 				mOutFile.Close();
+// 			}
+			if (mOutFile)
 			{
-				mOutFile.WriteBytes(gLogHTMLEnd, StrLen(gLogHTMLEnd));
-				mOutFile.Close();
+				fwrite(gLogHTMLEnd, 1, StrLen(gLogHTMLEnd), mOutFile);
+				fclose(mOutFile);
 			}
 		}
 		void WriteLog(const LogEntry& log)
@@ -128,12 +136,11 @@ namespace UPO
 			unsigned lineNumber = log.mLineNumber;
 
 			//write to html file
-			if(mOutFile.IsOpen())
+			if(mOutFile)
 			{
 				char buffer1[1024];
 				sprintf_s(buffer1, sizeof(buffer1), "<p class=%s> [%s] [%s] [%d] [%s] &nbsp&nbsp&nbsp&nbsp&nbsp %s</p>", strLogType, strFilename, strFuncname, lineNumber, strThread, log.mText);
-				mOutFile.WriteBytes(buffer1, StrLen(buffer1));
-				mOutFile.Flush();
+				fwrite(buffer1, 1, StrLen(buffer1), mOutFile);
 			}
 			if(mWriteToSTDConsole)
 			{
@@ -174,10 +181,10 @@ namespace UPO
 			mLock.Lock();
 			WriteLog(newEntry);
 			CallListeners(newEntry);
-			if (type == ELT_Fatal || type == ELT_Fatal)
+			if (type == ELT_Fatal || type == ELT_Assert)
 			{
 				CloseLogFile();
-				
+				AppCrash();
 			}
 			mLock.Unlock();
 		}

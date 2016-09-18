@@ -88,6 +88,7 @@ void CameraClass::Render(class InputClass* input)
 // 	mRotation.y += input->GetMouseVelocityX();
 // 	mRotation.z = 0;
 
+#if 1
 	D3DXMATRIX matTrs, matRot, mrt;
 	D3DXMatrixTranslation(&matTrs, mPosition.x, mPosition.y, mPosition.z);
 	D3DXMatrixRotationYawPitchRoll(&matRot, mRotation.y, mRotation.x, mRotation.z);
@@ -97,6 +98,12 @@ void CameraClass::Render(class InputClass* input)
 	D3DXVECTOR3 up, position, lookAt;
 	float yaw, pitch, roll;
 	D3DXMATRIX rotationMatrix;
+#else
+	Matrix mat = Matrix::CreateFromYawPitchRoll(mRotation.y, mRotation.x, mRotation.z) * Matrix::CreateTranslation(mPosition.x, mPosition.y, mPosition.z);
+	Matrix mat2 = mat.Invert();
+	UPO::MemCopy(&m_viewMatrix, &mat2, sizeof(Matrix));
+#endif
+
 
 
 // 	// Setup the vector that points upwards.

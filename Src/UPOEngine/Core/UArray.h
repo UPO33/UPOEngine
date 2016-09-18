@@ -85,13 +85,18 @@ namespace UPO
 		}
 		TArray(size_t initialCapacity)
 		{
-			UASSERT(initialCapacity);
-
-			mLength = 0;
-			mCapacity = initialCapacity;
-
-			mElements = Alloc(initialCapacity * sizeof(T));
-			UASSERT(mElements);
+			if(initialCapacity)
+			{
+				mLength = 0;
+				mCapacity = initialCapacity;
+				mElements = Alloc(initialCapacity * sizeof(T));
+				UASSERT(mElements);
+			}
+			else
+			{
+				mElements = nullptr;
+				mLength = mCapacity = 0;
+			}
 		}
 		TArray(const T* elements, size_t numElement)
 		{
@@ -263,6 +268,8 @@ namespace UPO
 				(mElements + mLength)->~T(); // destruct las element
 			}
 		}
+		operator TArray<const T>& () { return *((TArray<const T>*)this); }
+
 // 		//doesn't call ctor dtor
 // 		void RemoveSwap(size_t index, size_t count)
 // 		{

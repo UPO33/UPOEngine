@@ -37,7 +37,7 @@ private:
 	D3DXVECTOR3 mPosition = D3DXVECTOR3(0,0,-30);
 	D3DXVECTOR3 mRotation = D3DXVECTOR3(0,0,0);
 	D3DXQUATERNION mRotationQuat = D3DXQUATERNION(0, 0, 0, 1);
-	float mMoveSpeed = 1;
+	float mMoveSpeed = 10;
 	float mRotateSpeed = 0.1f;
 
 	D3DXMATRIX m_viewMatrix;

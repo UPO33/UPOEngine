@@ -3,7 +3,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include "d3dclass.h"
 
-#include "../GFXCore/UScreenRender.h"
+#include "../GFXCore/UScreenDrawer.h"
+
 
 UPO::GFXDeviceDX* gDevice = nullptr;
 
@@ -208,11 +209,8 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 										   D3D11_SDK_VERSION, &swapChainDesc, &m_swapChain, &m_device, NULL, &m_deviceContext);
 	if(FAILED(result))
 		return false;
-
-	gDevice = new UPO::GFXDeviceDX;
-	gDevice->mDevice = m_device;
-	gDevice->mDeviceContext = m_deviceContext;
-	UPO::ScreenRender::Get()->Init(gDevice);
+	
+	ULOG_MESSAGE("Device created");
 
 	// Get the pointer to the back buffer.
 	result = m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&backBufferPtr);
@@ -232,6 +230,10 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 	backBufferPtr->Release();
 	backBufferPtr = 0;
 
+	gDevice = new UPO::GFXDeviceDX;
+	gDevice->mDevice = m_device;
+	gDevice->mDeviceContext = m_deviceContext;
+
 	using namespace UPO;
 	GFXTexture2D_Desc depthDesc;
 	depthDesc.mWidth = screenWidth;
@@ -244,17 +246,12 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 	depthDesc.mUsage = EBU_DEFAULT;
 	mDepthStencil = gDevice->CreateTexture2D(depthDesc);
 
-	GFXDepthStencilState_Desc depthStencil;
-	mDepthEnableState = gDevice->CreateDepthStencilState(depthStencil);
-	gDevice->SetDepthStencilState(mDepthEnableState);
-// 	gDevice->SetRenderTarget(nullptr, mDepthStencil);
+
 
 	// Bind the render target view and depth stencil buffer to the output render pipeline.
 	m_deviceContext->OMSetRenderTargets(1, &m_renderTargetView, mDepthStencil->As<GFXTexture2DDX>()->mDepthStencilView);
 
-	GFXRasterizerState_Desc raster;
-	mRasterSolid = gDevice->CreateRasterizerState(raster);
-	gDevice->SetRasterizer(mRasterSolid);
+
 
 	// Setup the viewport for rendering.
     viewport.Width = (float)screenWidth;
@@ -280,7 +277,7 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 	// Create an orthographic projection matrix for 2D rendering.
 	D3DXMatrixOrthoLH(&m_orthoMatrix, (float)screenWidth, (float)screenHeight, screenNear, screenDepth);
 
-
+	ULOG_MESSAGE("");
     return true;
 }
 
@@ -399,6 +396,8 @@ ID3D11DeviceContext* D3DClass::GetDeviceContext()
 void D3DClass::GetProjectionMatrix(D3DXMATRIX& projectionMatrix)
 {
 	projectionMatrix = m_projectionMatrix;
+// 	Matrix mm = Matrix::CreatePerspectiveFieldOfView(70 * UPO::DEG2RAD, 800.f / 600, 0.1, 1000);
+// 	UPO::MemCopy(projectionMatrix, &mm, sizeof(mm));
 	return;
 }
 

@@ -37,7 +37,8 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	m_D3D = new D3DClass;
 	if(!m_D3D)
 		return false;
-
+	
+	ULOG_MESSAGE("Begin DXINIt");
 	// Initialize the Direct3D object.
 	result = m_D3D->Initialize(screenWidth, screenHeight, VSYNC_ENABLED, hwnd, FULL_SCREEN, SCREEN_DEPTH, SCREEN_NEAR);
 	if(!result)
@@ -181,33 +182,33 @@ bool GraphicsClass::Render(float rotation)
 
 
 	// Clear the buffers to begin the scene.
-	m_D3D->BeginScene(0.0f, 0.0f, 0.0f, 1.0f);
+	m_D3D->BeginScene(0.2f, 0.1f, 0.1f, 1.0f);
 
-// 	// Generate the view matrix based on the camera's position.
-// 	m_Camera->Render(gInput);
-// 
-// 	// Get the world, view, and projection matrices from the camera and d3d objects.
-// 	m_Camera->GetViewMatrix(viewMatrix);
-// 	m_D3D->GetWorldMatrix(worldMatrix);
-// 	m_D3D->GetProjectionMatrix(projectionMatrix);
-// 
-// 	// Rotate the world matrix by the rotation value so that the triangle will spin.
-// 	D3DXMatrixRotationY(&worldMatrix, rotation);
-// 
-// 	// Put the model vertex and index buffers on the graphics pipeline to prepare them for drawing.
-// 	m_Model->Render(m_D3D->GetDeviceContext());
-// 
-// 	// Render the model using the light shader.
-// 	result = m_LightShader->Render(m_D3D->GetDeviceContext(), m_Model->GetIndexCount(), worldMatrix, viewMatrix, projectionMatrix,
-// 		m_Model->GetTexture(), m_Light->GetDirection(), m_Light->GetAmbientColor(), m_Light->GetDiffuseColor(),
-// 		m_Camera->GetPosition(), m_Light->GetSpecularColor(), m_Light->GetSpecularPower());
-// 
-// 	if(!result)
-// 	{
-// 		return false;
-// 	}
+	// Generate the view matrix based on the camera's position.
+	m_Camera->Render(gInput);
 
-	UPO::ScreenRender::Get()->Frame();
+	// Get the world, view, and projection matrices from the camera and d3d objects.
+	m_Camera->GetViewMatrix(viewMatrix);
+	m_D3D->GetWorldMatrix(worldMatrix);
+	m_D3D->GetProjectionMatrix(projectionMatrix);
+
+	// Rotate the world matrix by the rotation value so that the triangle will spin.
+	D3DXMatrixRotationY(&worldMatrix, rotation);
+
+	// Put the model vertex and index buffers on the graphics pipeline to prepare them for drawing.
+	m_Model->Render(m_D3D->GetDeviceContext());
+
+	// Render the model using the light shader.
+	result = m_LightShader->Render(m_D3D->GetDeviceContext(), m_Model->GetIndexCount(), worldMatrix, viewMatrix, projectionMatrix,
+		m_Model->GetTexture(), m_Light->GetDirection(), m_Light->GetAmbientColor(), m_Light->GetDiffuseColor(),
+		m_Camera->GetPosition(), m_Light->GetSpecularColor(), m_Light->GetSpecularPower());
+
+	if(!result)
+	{
+		return false;
+	}
+
+	//UPO::ScreenRender::Get()->Tick();
 	
 	// Present the rendered scene to the screen.
 	m_D3D->EndScene();

@@ -62,15 +62,112 @@
 
 #pragma endregion
 
+//template<class T, size_t N> size_t size(T(&)[N]) { return N; }
 
-typedef unsigned int uint32;
-typedef int int32;
-typedef unsigned long long uint64;
-typedef long long int64;
+#define UARRAYLEN(Array)  (sizeof(Array) / sizeof(Array[0]))
+
+namespace UPO
+{
+	class ClassInfo;
+	class TypeInfo;
+	class Stream;
+	class Buffer;
+};
+
+//rest in ../Meta/UMeta.h
+#define UCLASS(Class, ParentClass)\
+public:\
+	static int ZZZLineNumber() { return __LINE__; }\
+	static const char* ZZZFileName() { return __FILE__; }\
+	typedef ParentClass Parent;\
+	typedef Class Self;\
+	friend struct ZZZ_##Class;\
+	static const UPO::ClassInfo* GetClassInfoStatic();\
+	void ZZZIsMeta() { static_assert(std::is_same<std::remove_pointer<decltype(this)>::type, Class>::value, "wrong Claass"); }\
+
+
+
+
+
+#pragma region deprecated
+
+#define UDECLARE_CLASS_HAS_FUNCTION(DeclarationName, FunctionName, ReturnType, ...)\
+	template <class Type> class Z_##DeclarationName##HasFuncChecker\
+	{\
+		template <typename T, T> struct TypeCheck;\
+		template <typename T> struct FuncCheck { typedef ReturnType (T::*fptr)(__VA_ARGS__); }; \
+		template <typename T> static char HasFunc(TypeCheck< typename FuncCheck<T>::fptr, &T::FunctionName >*);\
+		template <typename T> static long  HasFunc(...);\
+	public:\
+		static bool const value = (sizeof(HasFunc<Type>(0)) == sizeof(char));\
+	};\
+	template<typename T> struct Z_##DeclarationName##HasFunc\
+	{\
+		struct FakeT { static bool const value = 0; };\
+		static bool const value = std::conditional<std::is_class<T>::value, Z_##DeclarationName##HasFuncChecker<T>, FakeT>::type::value;\
+	};\
+
+#define UCLASS_HAS_FUNCTION(DeclarationName, ClassToCheck) Z_##DeclarationName##HasFunc<ClassToCheck>::value
+
+#pragma endregion
+
+
+/*
+in order to check a class has the specified member function or to get pointer to member function whether available or not,
+first u must declare that with UDECLARE_MEMBERFUNCTION_CHECKING(DeclarationName, FunctionName, ReturnType, Args...)
+then u are able to use UCLASS_HAS_MEMBERFUNCTION and UCLASS_GET_MEMBERFUNCTION
+note:
+it doesn't take the parent's class functions into account
+*/
+#define UDECLARE_MEMBERFUNCTION_CHECKING(DeclarationName, FunctionName, ReturnType, ...)\
+	template <class Type> struct Z_##DeclarationName##HasFuncChecker\
+	{\
+		using TFunc = ReturnType (Type::*) (__VA_ARGS__);\
+		struct FakeType { ReturnType FunctionName(__VA_ARGS__) { return exit(0); } };\
+		template <typename T, T> struct TypeCheck; \
+		template <typename T> struct FuncCheck { typedef ReturnType(T::*fptr)(__VA_ARGS__); }; \
+		template <typename T> static char HasFunc(TypeCheck< typename FuncCheck<T>::fptr, &T::FunctionName >*); \
+		template <typename T> static long  HasFunc(...); \
+		static bool const value = (sizeof(HasFunc<Type>(0)) == sizeof(char)); \
+	}; \
+	template<typename T> struct Z_##DeclarationName##HasFunc\
+	{\
+		using TFunc = ReturnType (NullClass::*) (__VA_ARGS__);\
+		struct FakeType { ReturnType FunctionName(__VA_ARGS__) { return exit(0); } };\
+		struct FakeT { static bool const value = 0; };\
+		static bool const value = std::conditional<std::is_class<T>::value, Z_##DeclarationName##HasFuncChecker<T>, FakeT>::type::value;\
+		static TFunc GetFunc() \
+		{\
+			using TargetClass = std::conditional<value, T, FakeType>::type;\
+			if (std::is_same<TargetClass, FakeType>::value) return nullptr;\
+			else return (TFunc)&TargetClass::FunctionName;\
+		}\
+	}; \
+
+//return true if 'Class' has specified function function must be declared with UDECLARE_MEMBERFUNCTION_CHECKING once
+#define UCLASS_HAS_MEMBERFUNCTION(DeclarationName, Class) Z_##DeclarationName##HasFunc<Class>::value
+//return pointer to member function as ReturnType(NullClass::*)(Args), u can cast result to any type
+//or use MFP<ReturnType, Args> for convenience, returns null if not exist
+//function must be declared with UDECLARE_MEMBERFUNCTION_CHECKING once
+#define UCLASS_GET_MEMBERFUNCTION(DeclarationName, Class) Z_##DeclarationName##HasFunc<Class>::GetFunc()
 
 
 namespace UPO
 {
+	typedef unsigned char byte;
+
+	typedef unsigned char uint8;
+	typedef signed char int8;
+	typedef unsigned short uint16;
+	typedef signed short int16;
+	typedef unsigned int uint32;
+	typedef int int32;
+	typedef unsigned long long uint64;
+	typedef long long int64;
+
+	class NullClass {};
+	class Void {};
+
 	//////////////////////////////////////////////////////////////////////////
 	UAPI bool IsGameThread();
 	UAPI bool IsRenderThread();
@@ -79,38 +176,54 @@ namespace UPO
 
 #pragma region function pointer helper
 	//////////////////////////////////////////////////////////////////////////function pointer
-	template<typename TRet, typename... TArgs> struct FP
+	template<typename TRet, typename... TArgs> class FP
 	{
+	public:
 		using Pattern = TRet(*)(TArgs...);
-		Pattern mFunction = nullptr;
-
+	private:
+		Pattern mFunction;
+	public:
 		FP() {}
-		template <typename T> FP(T pFunction) { mFunction = pFunction; }
+		FP(std::nullptr_t) { mFunction = nullptr; }
+		template<typename T> FP(T pFunction) { mFunction = pFunction; }
+
 
 		TRet operator() (TArgs... args) const
 		{
+			UASSERT(mFunction);
 			return mFunction(args...);
 		}
 		operator bool() const { return mFunction != nullptr; }
+		operator void* () const { return (void*)mFunction; }
 		bool operator == (const void* p) const { return mFunction == p; }
 		bool operator != (const void* p) const { return mFunction != p; }
+		bool operator == (const FP& fp) const { return mFunction == fp.mFunction; }
+		bool operator != (const FP& fp) const { return mFunction != fp.mFunction; }
 	};
+
 	//////////////////////////////////////////////////////////////////////////member function pointer
-	template<typename TClass, typename TRet, typename... TArgs> struct MFP
+	template<typename TRet, typename... TArgs> class MFP
 	{
-		using Pattern = TRet(TClass::*)(TArgs...);
-		Pattern mFunction = nullptr;
+		using Pattern = TRet(NullClass::*)(TArgs...);
+		Pattern mFunction;
 
+	public:
 		MFP() {}
-		template <typename T> MFP(T pFunction) { mFunction = pFunction; }
+		MFP(std::nullptr_t) { mFunction = nullptr; }
+		template <typename T> MFP(TRet(T::* pFunction)(TArgs...)) { mFunction = (Pattern)pFunction; }
 
-		TRet operator() (TClass* object, TArgs... args) const
+		TRet operator() (void* object, TArgs... args) const
 		{
-			return object->*mFunction(args...);
+			UASSERT(mFunction);
+			return (((NullClass*)object)->*mFunction)(args...);
 		}
 		operator bool() const { return mFunction != nullptr; }
-		bool operator == (const void* p) const { return mFunction == p; }
-		bool operator != (const void* p) const { return mFunction != p; }
+		operator void* () const { return nullptr; /*(void*)mFunction;*/ }
+// 		bool operator == (const void* p) const { return mFunction == p; }
+// 		bool operator != (const void* p) const { return mFunction != p; }
+// 		bool operator == (const MFP& mfp) const { return mFunction == mfp.mFunction; }
+// 		bool operator != (const MFP& mfp) const { return mFunction != mfp.mFunction; }
+
 	};
 #pragma endregion
 
@@ -212,14 +325,20 @@ namespace UPO
 	{
 		return (1 - t) * v0 + t * v1;
 	}
-
-	//////////////////////////////////////////////////////////////////////////
-	struct Flag
+	inline int Sign(int value)
 	{
+		return value < 0 ? -1 : value > 0 ? 1 : 0;
+	}
+	//////////////////////////////////////////////////////////////////////////
+	struct UAPI Flag
+	{
+		UCLASS(Flag, void)
+
 		unsigned mFlag;
 
 		Flag()
 		{
+
 		}
 		Flag(unsigned init)
 		{
@@ -273,6 +392,70 @@ namespace UPO
 		operator T* () const { return mPtr; }
 	};
 
+	//////////////////////////////////////////////////////////////////////////
+	class Object;
+	class Asset;
 
+	////////////////////////////////////////////////////////////////////TT_IsMetaClass
+	template <class Type> struct ZZ_Has_ZZZIsMeta
+	{
+		template <typename T, T> struct TypeCheck;
+		template <typename T> struct FuncCheck { typedef void (T::*fptr)(); };
+		template <typename T> static char HasFunc(TypeCheck< typename FuncCheck<T>::fptr, &T::ZZZIsMeta >*);
+		template <typename T> static long  HasFunc(...);
+		static bool const value = (sizeof(HasFunc<Type>(0)) == sizeof(char));
+	};
 
+	//checks whether T is meta class or not
+	template<typename T> struct TT_IsMetaClass
+	{
+		struct FakeT { static bool const value = 0; };
+		static bool const value = std::conditional<std::is_class<T>::value, ZZ_Has_ZZZIsMeta<T>, FakeT>::type::value;
+	};
+
+	//////////////////////////////////////////////////////////////////////////TT_IsTArray
+	template <class Type> struct ZZ_Has_ZZZIsTArray
+	{
+		template <typename T, T> struct TypeCheck;
+		template <typename T> struct FuncCheck { typedef void (T::*fptr)(); };
+		template <typename T> static char HasFunc(TypeCheck< typename FuncCheck<T>::fptr, &T::ZZZIsTArray >*);
+		template <typename T> static long  HasFunc(...);
+		static bool const value = (sizeof(HasFunc<Type>(0)) == sizeof(char));
+	};
+	struct ZZ_FakeZZZIsTArray { static bool const value = 0; };
+
+	//checks whether T is TArray or not
+	template<typename T> struct TT_IsTArray
+	{
+		static bool const value = std::conditional<std::is_class<T>::value, ZZ_Has_ZZZIsTArray<T>, ZZ_FakeZZZIsTArray>::type::value;
+	};
+
+	//////////////////////////////////////////////////////////////////////////TT_IsObjectPtr
+	template <class Type> struct ZZ_Has_ZZZIsTObjectPtr
+	{
+		template <typename T, T> struct TypeCheck;
+		template <typename T> struct FuncCheck { typedef void (T::*fptr)(); };
+		template <typename T> static char HasFunc(TypeCheck< typename FuncCheck<T>::fptr, &T::ZZZIsTObjectPtr >*);
+		template <typename T> static long HasFunc(...);
+		static bool const value = (sizeof(HasFunc<Type>(0)) == sizeof(char));
+	};
+	struct ZZ_FakeZZZIsTObjectPtr { static bool const value = false; };
+
+	//checks whether T is TObjectPtr or not
+	template<typename T> struct TT_IsTObjectPtr
+	{
+		static bool const value = std::conditional<std::is_class<T>::value, ZZ_Has_ZZZIsTObjectPtr<T>, ZZ_FakeZZZIsTObjectPtr>::type::value;
+	};
+
+	//////////////////////////////////////////////////////////////////////////TT_IsAsset
+	//checks whether T is object or not
+	template<typename T> struct TT_IsObject
+	{
+		static bool const value = TT_IsMetaClass<T>::value && std::is_base_of<Object, T>::value;
+	};
+	//checks whether T is asset or not
+	template<typename T> struct TT_IsAsset
+	{
+		static bool const value = TT_IsMetaClass<T>::value && std::is_base_of<Asset, T>::value;
+	};
 };

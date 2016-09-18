@@ -1,9 +1,13 @@
 #pragma once
 
 #include "UBasic.h"
+#include "UName.h"
+#include "UMemory.h"
+#include "UBuffer.h"
 
 namespace UPO
 {
+	
 	//////////////////////////////////////////////////////////////////////////
 	enum class EFileOpenMode
 	{
@@ -22,27 +26,40 @@ namespace UPO
 	{
 		void* mHandle;
 		EFileOpenMode mOpenMode;
-		
+		Name mfileName;
 	public:
 		File(): mHandle(nullptr), mOpenMode(EFileOpenMode::Read) {}
-		File(void* handle, EFileOpenMode om) : mHandle(handle), mOpenMode(om) {}
-
+		File(const char* filename, EFileOpenMode openMode)
+		{
+			mHandle = nullptr;
+			mOpenMode = openMode;
+			mfileName = filename;
+			Open(filename, openMode);
+		}
+		~File()
+		{
+			Close();
+		}
 		bool Flush();
 
 		//The total number of bytes successfully written is returned.
 		size_t WriteBytes(const void* bytes, size_t size);
 		//The total number of bytes successfully read is returned.
 		size_t ReadBytes(void* outBytes, size_t size);
-		int GetFileSize() const;
+		//return size of the file in bytes, -1 if error
+		int GetSize() const;
 		
 		bool IsOpen() const { return mHandle != nullptr; }
 		EFileOpenMode OpenMode() const { return mOpenMode; }
+		const Name& GetName() const { return mfileName; }
+
 		bool Open(const char* filename, EFileOpenMode mode);
 		bool Close();
 
 		static bool Rename(const char* oldname, const char* newname);
 		static bool Delete(const char* filename);
 		static bool Exist(const char* filename);
+		static bool OpenReadFull(const char* filename, Buffer& out);
 	};
 
 

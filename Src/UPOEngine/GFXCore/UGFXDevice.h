@@ -369,7 +369,13 @@ namespace UPO
 
 		} mRenderTargets[GFX_MAX_RENDER_TARGET];
 	};
-
+	//////////////////////////////////////////////////////////////////////////
+	struct GFXConstantBuffer_Desc
+	{
+		void*				mInitialData = nullptr;
+		size_t				mSize = 0;	//should be multiple of 16
+		EResourceUsage		mUsage = EResourceUsage::EBU_DYNAMIC;
+	};
 
 
 
@@ -397,25 +403,37 @@ namespace UPO
 		const GFXSamplerState_Desc& GetDesc() const { return mDesc; }
 	};
 	//////////////////////////////////////////////////////////////////////////
-	class GFXVertexBuffer : public GFXResource
+	class GFXBuffer : public GFXResource
+	{
+	public:
+		virtual void* Map(EMapFlag) = 0;
+		virtual void Unmap() = 0;
+
+		template<typename T> T* Map(EMapFlag flag) { return (T*)Map(flag); }
+	};
+	//////////////////////////////////////////////////////////////////////////
+	class GFXVertexBuffer : public GFXBuffer
 	{
 	protected:
 		GFXVertexBuffer_Desc	mDesc;
 	public:
 		const GFXVertexBuffer_Desc& GetDesc() const { return mDesc; }
-		virtual void* Map(EMapFlag) = 0;
-		virtual void Unmap() = 0;
 	};
-
 	//////////////////////////////////////////////////////////////////////////
-	class GFXIndexBuffer : public GFXResource
+	class GFXIndexBuffer : public GFXBuffer
 	{
 	protected:
 		GFXIndexBuffer_Desc		mDesc;
 	public:
 		const GFXIndexBuffer_Desc& GetDesc() const { return mDesc; }
-		virtual void* Map(EMapFlag) = 0;
-		virtual void Unmap() = 0;
+	};
+	//////////////////////////////////////////////////////////////////////////
+	class GFXConstantBuffer : public GFXBuffer
+	{
+	protected:
+		GFXConstantBuffer_Desc mDesc;
+	public:
+		const GFXConstantBuffer_Desc& GetDesc() const { return mDesc; }
 	};
 	//////////////////////////////////////////////////////////////////////////
 	class GFXDepthStencilState : public GFXResource
@@ -491,16 +509,24 @@ namespace UPO
 		const GFXBlendState_Desc& GetDesc() const { return mDesc; }
 	};
 	//////////////////////////////////////////////////////////////////////////
-	class GFXDevice : public GFXResource
+	class GFXProgram : public GFXResource
+	{
+	};
+	//////////////////////////////////////////////////////////////////////////
+	class UAPI GFXDevice : public GFXResource
 	{
 	public:
+
 		virtual GFXIndexBuffer* CreateIndexBuffer(const GFXIndexBuffer_Desc&) = 0;
 		virtual GFXVertexBuffer* CreateVertexBuffer(const GFXVertexBuffer_Desc&) = 0;
+		virtual GFXConstantBuffer* CreateConstantBuffer(const GFXConstantBuffer_Desc&) = 0;
+
 		virtual GFXDepthStencilState* CreateDepthStencilState(const GFXDepthStencilState_Desc&) = 0;
 		virtual GFXSamplerState* CreateSamplerState(const GFXSamplerState_Desc&) = 0;
 		virtual GFXRasterizerState* CreateRasterizerState(const GFXRasterizerState_Desc&) = 0;
 		virtual void BinVertexBuffer(const GFXVertexBuffer* buffer, unsigned stride, unsigned offset = 0) = 0;
 		virtual void BinIndexBuffer(const GFXIndexBuffer* buffer, unsigned offset = 0) = 0;
+		virtual void BindConstantBuffer(const GFXConstantBuffer* buffer, unsigned slot, EShaderType whichShader) = 0;
 		virtual void SetPrimitiveTopology(EPrimitiveTopology topology) = 0;
 		//@vertexCount				Number of vertices to draw.
 		//@startVertexLocation		Index of the first vertex, which is usually an offset in a vertex buffer.
@@ -513,12 +539,18 @@ namespace UPO
 		virtual void SetDepthStencilState(const GFXDepthStencilState* state) = 0;
 		virtual void SetRenderTarget(const GFXTexture2D* renderTarget, const GFXTexture2D* depthStencil) = 0;
 		virtual void SetRasterizer(const GFXRasterizerState* state) = 0;
-		virtual GFXShader* LoadShader(const char* filename, const char* functionName, EShaderType type) = 0;
+		virtual GFXShader* GetShader(const char* filename, const char* functionName, EShaderType type) = 0;
 		virtual void BindShaders(GFXShader* vertexShader, GFXShader* pixelShader) = 0;
 		virtual void BindTexture(GFXTexture2D* texture, unsigned slot, EShaderType whichShader) = 0;
 		virtual void BindSamplerState(GFXSamplerState* sampler, unsigned slot, EShaderType whichShader) = 0;
 		virtual GFXInputLayout* CreateInputLayout(const GFXVertexElement_Desc* elements, unsigned numElement, const GFXShader* vertexShader) = 0;
 		virtual void BinInputLayout(const GFXInputLayout* layout) = 0;
 		virtual GFXBlendState* CreateBlendState(const GFXBlendState_Desc& param) = 0;
+		virtual void BindBlendState(const GFXBlendState* state, float blendFactor[4], unsigned sampleMask = 0xFFffFFff) = 0;
+
+		virtual void ClearRenderTarget(const GFXTexture2D* renderTarget, const Color& color) = 0;
+		virtual void ClearDepthStencil(const GFXTexture2D* depthTexture, bool clearDepth, bool clearStencil, float depth, char stencil) = 0;
 	};
+	//////////////////////////////////////////////////////////////////////////
+	extern UAPI GFXDevice* gGFX;
 };

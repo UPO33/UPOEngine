@@ -1,8 +1,9 @@
 #pragma once
 
-#include "../Core/UBasic.h"
+#include "UGFXDeviceDX.h"
 
 namespace UPO
 {
+	UAPI GFXDevice* gGFX = nullptr;
 
 };

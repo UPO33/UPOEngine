@@ -2,8 +2,40 @@
 #include "UHash.h"
 #include "UMemory.h"
 
+#include "../Meta/UMeta.h"
+
 namespace UPO
 {
+	UCLASS_BEGIN_IMPL(Name)
+	UCLASS_END_IMPL(Name)
+
+	//////////////////////////////////////////////////////////////////////////
+	void Name::Serialize(Stream& stream)
+	{
+		if (stream.IsReader())
+		{
+			uint16 length = (uint16)Length();
+			stream.RW(length);
+			if (length) stream.Bytes((void*)CStr(), length);
+		}
+		else
+		{
+			uint16 length = 0;
+			stream.RW(length);
+			char buffer[NAME_MAX_LENGTH + 1];
+			if (length)
+			{
+				stream.Bytes(buffer, length);
+				buffer[length] = 0;
+				*this = buffer;
+			}
+			else
+			{
+				*this = nullptr;
+			}
+		}
+	}
+
 	const Name Name::Empty;
 	NameContext::Instance NameContext::EmptyInstance;
 

@@ -1,0 +1,20 @@
+#pragma  once
+
+#include "UGFXDeviceDX.h"
+
+namespace UPO
+{
+	//////////////////////////////////////////////////////////////////////////fwd decl
+	class Renderer;
+
+	//////////////////////////////////////////////////////////////////////////
+	class UAPI MeshDrawer
+	{
+	public:
+		bool Init(Renderer*);
+		void Release();
+
+		void Frame();
+		
+	};
+};

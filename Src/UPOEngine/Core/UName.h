@@ -44,6 +44,8 @@ namespace UPO
 	//////////////////////////////////////////////////////////////////////////
 	class UAPI Name
 	{
+		UCLASS(Name, void)
+
 	public:
 		static const unsigned NAME_MAX_LENGTH = NameContext::NAME_MAX_LENGTH;
 		static const Name Empty;
@@ -130,6 +132,8 @@ namespace UPO
 		auto Length() const { return mInstance->mLength; }
 		const char* CStr() const { return mInstance->mString; }
 		auto GetHash() const { return mInstance->mHash; }
+
+		void Serialize(Stream&);
 	};
 
 	inline uint32 GetHash32(const Name& name) { return (uint32)name.GetHash(); }

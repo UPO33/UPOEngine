@@ -1,7 +1,11 @@
 #include "UString.h"
+#include "../Meta/UMeta.h"
 
 namespace UPO
 {
+	UCLASS_BEGIN_IMPL(String)
+	UCLASS_END_IMPL(String)
+
 	//////////////////////////////////////////////////////////////////////////
 	bool StrTakeBetweenFirstLast(const char* str, char* out, char first, char last)
 	{
@@ -71,4 +75,35 @@ namespace UPO
 		}
 		return nullptr;
 	}
+
+
+
+	UPO::String String::Empty;
+
+	//////////////////////////////////////////////////////////////////////////
+	void String::Serialize(Stream& stream)
+	{
+		if (stream.IsReader())
+		{
+			uint16 len = (uint16)Length();
+			stream.RW(len);
+			if (len != 0) stream.Bytes(CStr(), len);
+		}
+		else
+		{
+			//by default we suppose that default constructor was called before stream writes
+			uint16 len = 0;
+			stream.RW(len);
+			SetEmpty();
+			if (len)
+			{
+				mStr = AllocChunk(len);
+				stream.Bytes(mStr->mChars, len);
+				mStr->mChars[len] = 0;
+			}
+		}
+	}
+
+	String::Chunk String::Chunk::Empty = { 0, {0,0,0,0,0,0,0,0} };
+
 };

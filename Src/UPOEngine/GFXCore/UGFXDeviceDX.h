@@ -8,13 +8,97 @@
 #include <d3dcommon.h>
 #include <D3DX10math.h>
 #include <dxgi.h>
+#include <DirectXMath.h>
+#include <DirectXCollision.h>
+#include <SimpleMath.h>
+#include <D3Dcompiler.h>
 
+using namespace DirectX::SimpleMath;
+using namespace DirectX;
+
+namespace UPO
+{
+
+};
+
+#ifndef D3D_COMPILE_STANDARD_FILE_INCLUDE
+#define D3D_COMPILE_STANDARD_FILE_INCLUDE ((ID3DInclude*)(UINT_PTR)1)
+#endif
 
 namespace UPO
 {
 	//////////////////////////////////////////////////////////////////////////
 	class GFXDeviceDX;
 
+	inline const char* ShaderTypeToDXProfile(EShaderType type)
+	{
+		switch (type)
+		{
+		case UPO::EST_VERTEX:
+			return "vs_5_0";
+		case UPO::EST_PIXEL:
+			return "ps_5_0";
+		default:
+			UASSERT(false);
+			return nullptr;
+		}
+	}
+	class ShaderIncludeer : public ID3DInclude
+	{
+	public:
+		HRESULT __stdcall Open(D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes);
+		HRESULT __stdcall Close(LPCVOID pData);
+
+	};
+
+	struct UAPI ShaderMgr
+	{
+		static D3D_SHADER_MACRO* GetGlobalDefines()
+		{
+			return nullptr;
+		}
+		static void FixShaderPath(const char* shaderFilename, char outFullFilename[256])
+		{
+			sprintf_s(outFullFilename, 256, "..\\Content\\Shaders\\%s", shaderFilename);
+		}
+		static bool GetByteCode(const char* filename, const char* entryPoint, EShaderType type, Buffer& outByteCodes)
+		{
+			outByteCodes = Buffer();
+
+			if (!filename || !entryPoint) return false;
+
+			char fullFileName[256];
+			FixShaderPath(filename, fullFileName);
+			
+			Buffer fileContent;
+			if (!File::OpenReadFull(fullFileName, fileContent))
+			{
+				ULOG_ERROR("there is no such a shader file %s", filename);
+				return false;
+			}
+
+			static const char* TypeToProfile[] = { "vs_5_0", "ps_5_0" };
+			ShaderIncludeer inc;
+			ID3D10Blob* shaderByteCode = nullptr;
+			ID3D10Blob* shaderError = nullptr;
+			if (SUCCEEDED(D3DCompile(fileContent.Data(), fileContent.Size(), fullFileName, GetGlobalDefines()
+				, /*D3D_COMPILE_STANDARD_FILE_INCLUDE*/ &inc, entryPoint, ShaderTypeToDXProfile(type), D3D10_SHADER_ENABLE_STRICTNESS, 
+				0, &shaderByteCode, &shaderError)))
+			{
+				outByteCodes = Buffer(shaderByteCode->GetBufferSize(), shaderByteCode->GetBufferPointer());
+				return true;
+			}
+			else
+			{
+				if (shaderError)
+					ULOG_ERROR("Compiling shader failed %s %s : %s", filename, entryPoint, ((char*)shaderError->GetBufferPointer()));
+				else
+					ULOG_ERROR("Mising Shader File : %s", filename);
+				return false;
+			}
+		}
+
+	};
 
 	//////////////////////////////////////////////////////////////////////////
 	inline DXGI_FORMAT ToDXType(EIndexBufferType in)
@@ -37,10 +121,12 @@ namespace UPO
 		default: return D3D11_USAGE_DEFAULT;
 		}
 	}
+	//////////////////////////////////////////////////////////////////////////
 	inline D3D11_PRIMITIVE_TOPOLOGY ToDXType(EPrimitiveTopology in)
 	{
 		return (D3D11_PRIMITIVE_TOPOLOGY)in;
 	}
+	//////////////////////////////////////////////////////////////////////////
 	inline DXGI_FORMAT ToDXType(EPixelFormat in)
 	{
 		return (DXGI_FORMAT)in;
@@ -49,6 +135,21 @@ namespace UPO
 	inline D3D11_MAP ToDXType(EMapFlag in)
 	{
 		return (D3D11_MAP)in;
+	}
+	//////////////////////////////////////////////////////////////////////////
+	inline D3D11_BLEND ToDXType(EBlendElement in)
+	{
+		return (D3D11_BLEND)in;
+	}
+	//////////////////////////////////////////////////////////////////////////
+	inline D3D11_BLEND_OP ToDXType(EBlendOP in)
+	{
+		return (D3D11_BLEND_OP)in;
+	}
+	//////////////////////////////////////////////////////////////////////////
+	inline UINT8 ToDXType(EBlendColorWrite in)
+	{
+		return (UINT8)in;
 	}
 	//////////////////////////////////////////////////////////////////////////
 	class GFXResourceDX
@@ -66,18 +167,20 @@ namespace UPO
 		auto GetDeviceContext() const { return mDeviceContext; }
 	};
 	//////////////////////////////////////////////////////////////////////////
-	class GFXVertexBufferDX :  GFXResourceDX, GFXVertexBuffer
+	class GFXBufferDX : public GFXResourceDX
 	{
 		friend GFXDeviceDX;
-	public:
+
 		ID3D11Buffer*			mHandle;
 
-		virtual void Release() override
+	public:
+		ID3D11Buffer* GetHandle() const { return mHandle; }
+		void Release()
 		{
 			if (mHandle) mHandle->Release();
 			mHandle = nullptr;
 		}
-		virtual void* Map(EMapFlag flag) override
+		void* Map(EMapFlag flag)
 		{
 			D3D11_MAPPED_SUBRESOURCE mappedData;
 			if (FAILED(mDeviceContext->Map(mHandle, 0, ToDXType(flag), 0, &mappedData)))
@@ -87,36 +190,63 @@ namespace UPO
 			}
 			return mappedData.pData;
 		}
-		virtual void Unmap() override
+		void Unmap()
 		{
-			mDeviceContext->Unmap(mHandle, 1);
+			mDeviceContext->Unmap(mHandle, 0);
 		}
 	};
 	//////////////////////////////////////////////////////////////////////////
-	class GFXIndexBufferDX : GFXResourceDX, GFXIndexBuffer
+	class GFXVertexBufferDX : public GFXBufferDX, GFXVertexBuffer
 	{
 		friend GFXDeviceDX;
-	public:
-		ID3D11Buffer*			mHandle;
 
 		virtual void Release() override
 		{
-			if (mHandle) mHandle->Release();
-			mHandle = nullptr;
+			GFXBufferDX::Release();
 		}
 		virtual void* Map(EMapFlag flag) override
 		{
-			D3D11_MAPPED_SUBRESOURCE mappedData;
-			if (FAILED(mDeviceContext->Map(mHandle, 0, ToDXType(flag), 0, &mappedData)))
-			{
-				ULOG_ERROR("Failed to map index buffer");
-				return nullptr;
-			}
-			return mappedData.pData;
+			return GFXBufferDX::Map(flag);
 		}
 		virtual void Unmap() override
 		{
-			mDeviceContext->Unmap(mHandle, 1);
+			GFXBufferDX::Unmap();
+		}
+	};
+	//////////////////////////////////////////////////////////////////////////
+	class GFXIndexBufferDX : public GFXBufferDX, GFXIndexBuffer
+	{
+		friend GFXDeviceDX;
+
+		virtual void Release() override
+		{
+			GFXBufferDX::Release();
+		}
+		virtual void* Map(EMapFlag flag) override
+		{
+			return GFXBufferDX::Map(flag);
+		}
+		virtual void Unmap() override
+		{
+			GFXBufferDX::Unmap();
+		}
+	};
+	//////////////////////////////////////////////////////////////////////////
+	class GFXConstantBufferDX : public GFXBufferDX, GFXConstantBuffer
+	{
+		friend GFXDeviceDX;
+
+		virtual void Release() override
+		{
+			GFXBufferDX::Release();
+		}
+		virtual void* Map(EMapFlag flag) override
+		{
+			return GFXBufferDX::Map(flag);
+		}
+		virtual void Unmap() override
+		{
+			GFXBufferDX::Unmap();
 		}
 	};
 	//////////////////////////////////////////////////////////////////////////
@@ -192,8 +322,7 @@ namespace UPO
 		friend GFXDeviceDX;
 
 		void* mHandle = nullptr;
-		void* mByteCode = nullptr;
-		size_t mByteCodeSize = 0;
+		Buffer mByteCodes;
 
 
 		virtual void Release() override
@@ -207,12 +336,10 @@ namespace UPO
 				if (mHandle) ((ID3D11PixelShader*)mHandle)->Release();
 				break;
 			}
-			if (mByteCode) MemFree(mByteCode);
-			mByteCode = nullptr;
-			mByteCodeSize = 0;
+			mByteCodes.Free();
 		}
-		void* GetByteCode() const { return mByteCode; }
-		size_t GetByteCodeSize() const { return mByteCodeSize; }
+		void* GetByteCode() const { return mByteCodes.Data(); }
+		size_t GetByteCodeSize() const { return mByteCodes.Size(); }
 
 	};
 
@@ -244,6 +371,23 @@ namespace UPO
 			mHandle = nullptr;
 		}
 	};
+	struct GFXDevice_Desc
+	{
+
+	};
+	//////////////////////////////////////////////////////////////////////////
+	class GFXRenderTargerView
+	{
+
+	};
+	class GFXDepthStencilView
+	{
+
+	};
+	class GFXTexture2DView
+	{
+
+	};
 	//////////////////////////////////////////////////////////////////////////
 	class GFXDeviceDX : public GFXDevice
 	{
@@ -251,6 +395,33 @@ namespace UPO
 		ID3D11Device* mDevice = nullptr;
 		ID3D11DeviceContext* mDeviceContext = nullptr;
 
+		GFXDeviceDX()
+		{}
+		GFXDeviceDX(ID3D11Device* device, ID3D11DeviceContext* deviceContext) 
+			: mDevice(device), mDeviceContext(deviceContext)
+		{}
+
+		ID3D11Device* GetDXDevice() const { return mDevice; }
+		ID3D11DeviceContext* GetDXDeviceContext() const { return mDeviceContext; }
+		//////////////////////////////////////////////////////////////////////////
+		virtual void ClearRenderTarget(const GFXTexture2D* renderTarget, const Color& color) override
+		{
+			if (renderTarget == nullptr) return;
+			ID3D11RenderTargetView* rtv = renderTarget->As<GFXTexture2DDX>()->mRenderTargetView;
+			if (rtv == nullptr) return;
+			mDeviceContext->ClearRenderTargetView(rtv, color.mRGBA);
+		}
+		//////////////////////////////////////////////////////////////////////////
+		virtual void ClearDepthStencil(const GFXTexture2D* depthTexture, bool clearDepth, bool clearStencil, float depth, char stencil) override
+		{
+			if (depthTexture == nullptr) return;
+			ID3D11DepthStencilView* dsv = depthTexture->As<GFXTexture2DDX>()->mDepthStencilView;
+			if (dsv == nullptr) return;
+			UINT clearFlag = 0;
+			if (clearDepth) clearFlag |= D3D11_CLEAR_DEPTH;
+			if (clearStencil) clearFlag |= D3D11_CLEAR_STENCIL;
+			mDeviceContext->ClearDepthStencilView(dsv, clearFlag, depth, stencil);
+		}
 		//////////////////////////////////////////////////////////////////////////
 		virtual void Release()
 		{
@@ -273,6 +444,9 @@ namespace UPO
 			desc.ByteWidth = param.mSize;
 
 			desc.CPUAccessFlags = 0;
+			if (param.mCPUWriteAccess) desc.CPUAccessFlags |= D3D11_CPU_ACCESS_FLAG::D3D11_CPU_ACCESS_WRITE;
+			if (param.mCPUReadAccess) desc.CPUAccessFlags |= D3D11_CPU_ACCESS_FLAG::D3D11_CPU_ACCESS_READ;
+
 			if (param.mUsage == EResourceUsage::EBU_DYNAMIC)
 				desc.CPUAccessFlags = D3D11_CPU_ACCESS_FLAG::D3D11_CPU_ACCESS_WRITE;
 
@@ -306,21 +480,16 @@ namespace UPO
 				ULOG_ERROR("immutable buffer needs initial data");
 				return nullptr;
 			}
-			if (param.mUsage == EResourceUsage::EBU_DYNAMIC && !param.mCPUWriteAccess)
-			{
-
-			}
 			D3D11_BUFFER_DESC desc;
 			desc.MiscFlags = 0;
 			desc.StructureByteStride = 0;
 			desc.BindFlags = D3D11_BIND_FLAG::D3D11_BIND_VERTEX_BUFFER;
 			desc.ByteWidth = param.mSize;
 
-// 			desc.CPUAccessFlags = 0;
-// 			if (param.mCPUWriteAccess) desc.CPUAccessFlags |= D3D11_CPU_ACCESS_FLAG::D3D11_CPU_ACCESS_WRITE;
-// 			if (param.mCPUReadAccess) desc.CPUAccessFlags |= D3D11_CPU_ACCESS_FLAG::D3D11_CPU_ACCESS_READ;
-
 			desc.CPUAccessFlags = 0;
+			if (param.mCPUWriteAccess) desc.CPUAccessFlags |= D3D11_CPU_ACCESS_FLAG::D3D11_CPU_ACCESS_WRITE;
+			if (param.mCPUReadAccess) desc.CPUAccessFlags |= D3D11_CPU_ACCESS_FLAG::D3D11_CPU_ACCESS_READ;
+
 			if (param.mUsage == EResourceUsage::EBU_DYNAMIC)
 				desc.CPUAccessFlags = D3D11_CPU_ACCESS_FLAG::D3D11_CPU_ACCESS_WRITE;
 
@@ -347,6 +516,42 @@ namespace UPO
 				return ret;
 			}
 			ULOG_ERROR("failed to create vertex buffer");
+			return nullptr;
+		}
+		//////////////////////////////////////////////////////////////////////////
+		virtual GFXConstantBuffer* CreateConstantBuffer(const GFXConstantBuffer_Desc& param) override
+		{
+			UASSERT(param.mSize % 16 == 0);
+
+			D3D11_BUFFER_DESC desc;
+			desc.MiscFlags = 0;
+			desc.StructureByteStride = 0;
+			desc.BindFlags = D3D11_BIND_FLAG::D3D11_BIND_CONSTANT_BUFFER;
+			desc.ByteWidth = param.mSize;
+			desc.CPUAccessFlags =  D3D11_CPU_ACCESS_WRITE;
+			desc.Usage = D3D11_USAGE::D3D11_USAGE_DYNAMIC;
+
+			D3D11_SUBRESOURCE_DATA data;
+			data.pSysMem = param.mInitialData;
+			data.SysMemPitch = 0;
+			data.SysMemSlicePitch = 0;
+
+			D3D11_SUBRESOURCE_DATA* pData = nullptr;
+			if (param.mInitialData) pData = &data;
+
+			ID3D11Buffer* handle = nullptr;
+			if (SUCCEEDED(mDevice->CreateBuffer(&desc, pData, &handle)))
+			{
+				GFXConstantBufferDX* ret = new GFXConstantBufferDX;
+				ret->mDevice = mDevice;
+				ret->mDeviceContext = mDeviceContext;
+				ret->mHandle = handle;
+				ret->mDesc = param;
+				ret->mDesc.mInitialData = nullptr;
+				ULOG_SUCCESS("constant buffer created");
+				return ret;
+			}
+			ULOG_ERROR("failed to create constant buffer");
 			return nullptr;
 		}
 		//////////////////////////////////////////////////////////////////////////
@@ -451,6 +656,15 @@ namespace UPO
 		{
 			GFXIndexBufferDX* ib = buffer->As<GFXIndexBufferDX>();
 			mDeviceContext->IASetIndexBuffer(ib->mHandle, ToDXType(ib->GetDesc().mType), offset);
+		}
+		//////////////////////////////////////////////////////////////////////////
+		virtual void BindConstantBuffer(const GFXConstantBuffer* buffer, unsigned slot, EShaderType whichShader) override
+		{
+			ID3D11Buffer* d3dBuffer = buffer ? buffer->As<GFXConstantBufferDX>()->GetHandle() : nullptr;
+			if (whichShader == EShaderType::EST_VERTEX)
+				mDeviceContext->VSSetConstantBuffers(slot, 1, &d3dBuffer);
+			else if (whichShader == EShaderType::EST_PIXEL)
+				mDeviceContext->PSSetConstantBuffers(slot, 1, &d3dBuffer);
 		}
 		//////////////////////////////////////////////////////////////////////////
 		virtual void SetPrimitiveTopology(EPrimitiveTopology topology) override
@@ -584,7 +798,7 @@ namespace UPO
 		//////////////////////////////////////////////////////////////////////////
 		virtual void SetDepthStencilState(const GFXDepthStencilState* state) override
 		{
-			if (state)
+			if (state == nullptr)
 				mDeviceContext->OMSetDepthStencilState(nullptr, 0);
 			else
 				mDeviceContext->OMSetDepthStencilState(state->As<GFXDepthStencilStateDX>()->mHandle, 1);
@@ -610,17 +824,51 @@ namespace UPO
 			mDeviceContext->RSSetState(state ? state->As<GFXRasterizerStateDX>()->mHandle : nullptr);
 		}
 		//////////////////////////////////////////////////////////////////////////
-		virtual GFXShader* LoadShader(const char* filename, const char* functionName, EShaderType type) override
+		virtual GFXShader* GetShader(const char* filename, const char* entryPoint, EShaderType type) override
 		{
-			if (filename == nullptr || functionName == nullptr) return nullptr;
+			if (filename == nullptr || entryPoint == nullptr) return nullptr;
 
+			Buffer byteCodes;
+			if (!ShaderMgr::GetByteCode(filename, entryPoint, type, byteCodes))
+			{
+				ULOG_ERROR("failed to get shader bytecodes");
+				return nullptr;
+			}
+
+			void* shader = nullptr; /*ID3D11VertexShader*   ID3D11PixelShader*/
+			if (type == EShaderType::EST_VERTEX)
+			{
+				if (FAILED(mDevice->CreateVertexShader(byteCodes.Data(), byteCodes.Size(), nullptr, (ID3D11VertexShader**)&shader)))
+				{
+					ULOG_ERROR("Failed to create vertex shader");
+					return nullptr;
+				}
+			}
+			else if (type == EShaderType::EST_PIXEL)
+			{
+				if (FAILED(mDevice->CreatePixelShader(byteCodes.Data(), byteCodes.Size(), nullptr, (ID3D11PixelShader**)&shader)))
+				{
+					ULOG_ERROR("Failed to create pixel shader");
+					return nullptr;
+				}
+			}
+			GFXShaderDX* ret = new GFXShaderDX;
+			ret->mDevice = mDevice;
+			ret->mDeviceContext = mDeviceContext;
+			ret->mType = type;
+			ret->mHandle = shader;
+			ret->mByteCodes = byteCodes;
+
+			ULOG_SUCCESS("Shader Created");
+			return ret;
+#if 0
 			char fullFileName[256];
 			sprintf_s(fullFileName, "..\\Content\\Shaders\\%s", filename);
-
 			static const char* TypeToProfile[] = { "vs_5_0", "ps_5_0" };
 
 			ID3D10Blob* shaderByteCode = nullptr;
 			ID3D10Blob* shaderError = nullptr;
+
 			if (SUCCEEDED(D3DX11CompileFromFileA(fullFileName, nullptr, nullptr, functionName, TypeToProfile[type]
 				, D3D10_SHADER_ENABLE_STRICTNESS, 0, nullptr, &shaderByteCode, &shaderError, nullptr)))
 			{
@@ -648,27 +896,7 @@ namespace UPO
 						return nullptr;
 					}
 				}
-
-				GFXShaderDX* ret = new GFXShaderDX;
-				ret->mDevice = mDevice;
-				ret->mDeviceContext = mDeviceContext;
-				ret->mType = type;
-				ret->mHandle = shader;
-				ret->mByteCodeSize = shaderByteCode->GetBufferSize();
-				ret->mByteCode = MemAlloc(ret->mByteCodeSize);
-				MemCopy(ret->mByteCode, shaderByteCode->GetBufferPointer(), ret->mByteCodeSize);
-				shaderByteCode->Release();
-				ret->mHash = Hash::FNV64(ret->mByteCode, ret->mByteCodeSize);
-				ULOG_SUCCESS("Shader Created");
-				return ret;
-
-			}
-
-			if (shaderError)
-				ULOG_ERROR("Compiling shader failed %s %s : %s", filename, functionName, ((char*)shaderError->GetBufferPointer()));
-			else
-				ULOG_ERROR("Mising Shader File : %s", filename);
-			return nullptr;
+#endif
 		}
 		//////////////////////////////////////////////////////////////////////////
 		virtual void BindShaders(GFXShader* vertexShader, GFXShader* pixelShader)
@@ -702,7 +930,7 @@ namespace UPO
 			}
 			if(whichShader == EShaderType::EST_VERTEX)
 				mDeviceContext->VSSetShaderResources(slot, 1, &view);
-			else if (whichShader == EShaderType::EST_VERTEX)
+			else if (whichShader == EShaderType::EST_PIXEL)
 				mDeviceContext->PSSetShaderResources(slot, 1, &view);
 		}
 		//////////////////////////////////////////////////////////////////////////
@@ -782,5 +1010,53 @@ namespace UPO
 			ret->mHandle = handle;
 			return ret;
 		}
+		//////////////////////////////////////////////////////////////////////////
+		virtual void BindBlendState(const GFXBlendState* state, float blendFactor[4], unsigned sampleMask = 0xFFffFFff) override
+		{
+			ID3D11BlendState* bs = state ? state->As<GFXBlendStateDX>()->mHandle : nullptr;
+			mDeviceContext->OMSetBlendState(bs, blendFactor, sampleMask);
+		}
+		//////////////////////////////////////////////////////////////////////////
+		virtual GFXTexture2D* LoadTextureFromFile(const char* filename)
+		{
+			if (filename == nullptr) return nullptr;
+
+			char fullFileName[256];
+			sprintf_s(fullFileName, "..//Content//%s", filename);
+			wchar_t fullFileNameW[256];
+			size_t ncc = 0;
+			mbstowcs_s(&ncc, fullFileNameW, 256, fullFileName, 256);
+			const char* ext = StrFindRNChar(filename, '.', 0);
+			if (ext == nullptr) return nullptr;
+			unsigned flag = 0;
+			DirectX::ScratchImage image;
+			HRESULT hr = S_OK;
+			if (_strcmpi(ext, ".dds") == 0)
+				hr = DirectX::LoadFromDDSFile(fullFileNameW, flag, nullptr, image);
+			else if(_strcmpi(ext, ".tga") == 0)
+				hr = DirectX::LoadFromTGAFile(fullFileNameW, nullptr, image);
+			else
+				hr = DirectX::LoadFromWICFile(fullFileNameW, flag, nullptr, image);
+			if (SUCCEEDED(hr))
+			{
+				ID3D11ShaderResourceView* srv = nullptr;
+				ID3D11Resource* handle = nullptr;
+				if (FAILED(DirectX::CreateShaderResourceView(mDevice, image.GetImages(), image.GetImageCount(), image.GetMetadata(), &srv)))
+				{
+					ULOG_ERROR("failed to create texture");
+					return nullptr;
+				}
+				GFXTexture2DDX* ret = new GFXTexture2DDX;
+				ret->mResourceView = srv;
+				srv->GetResource((ID3D11Resource**)&(ret->mTexture));
+				ULOG_SUCCESS("Texture loaded");
+				return ret;
+
+			}
+			ULOG_ERROR("failed to load texture");
+			return nullptr;
+		}
 	};
+	//////////////////////////////////////////////////////////////////////////
+	extern UAPI GFXDeviceDX* gGFXDX;
 };

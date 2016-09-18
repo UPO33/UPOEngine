@@ -1,13 +1,17 @@
 
 float4 UV2NDC(float2 uv)
 {
-#if 0
+#if 1
 	float2 xy = uv * 2 - 1;
 	return float4(xy.x, -xy.y, 0, 1);
 #else 
     float2 xy = uv - 0.5;
     return float4(xy.x, -xy.y, 0, 0.5f);
 #endif
+}
+float2 Clip2UV(float4 v)
+{
+    return v.xy / v.ww * float2(0.5, -0.5) + 0.5;
 }
 
 struct VSIn
@@ -24,11 +28,13 @@ struct VSOut
 };
 cbuffer PerElement : register(b0)
 {
-    float Time;
+    float4 gColor;
+    float gTime;
+    float padding[3];
 };
 
-Texture2D colorMap : register(t0);
-SamplerState linearSampler : register(s0);
+Texture2D gTexture : register(t0);
+SamplerState gLinearSampler : register(s0);
 
 VSOut VSMain(VSIn input)
 {
@@ -42,5 +48,7 @@ VSOut VSMain(VSIn input)
 float4 PSMain(VSOut input) : SV_Target
 {
     //return float4(1,0,1,1);
-	return colorMap.Sample(linearSampler, input.uv);
+    float4 color = gTexture.Sample(gLinearSampler, input.uv);
+    //clip(color.a - 0.1);
+    return color;
 }
