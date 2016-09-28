@@ -89,49 +89,45 @@ namespace UPO
 			return false;
 		}
 		
-		////////////Object
+		///////////////Object
 		outClass->mClassInfo = ClassInfo::GetClassInfoStatic();
 		outClass->mRefData = nullptr;
 
-		////////////ClassInfo
+		//////////////TypeInfo
 		outClass->mOwner = curModule;
 		outClass->mTypeName = crp->mTypeCheck.mClassName;
-		outClass->mCustomSerializer = crp->mTypeCheck.mCustomSerializer;
-		outClass->mDefalutConstructor = crp->mTypeCheck.mDefaulConstructor;
-		outClass->mDestructor = crp->mTypeCheck.mDestructor;
-		outClass->mHasParentClass = crp->mTypeCheck.mHasParent;
-		outClass->mParentClass = nullptr;
-		outClass->mParentClassName = crp->mTypeCheck.mParentClassName;
 		outClass->mAttributes = crp->mAttribPack;
 		outClass->mHeaderFileName = crp->mHeaderFileName;
 		outClass->mSourceFileName = crp->mSourceFileName;
 		outClass->mDefinitionLineNumber = crp->mHeaderFileLine;
 		outClass->mTypeAlign = crp->mTypeCheck.mTypeAlign;
 		outClass->mTypeSize = crp->mTypeCheck.mTypeSize;
-
 		outClass->mIsArithmetic = false;
 		outClass->mIsEnum = false;
 		outClass->mIsClass = true;
 
-		outClass->mProperties.Empty();
+		////////////ClassInfo
+		outClass->mHasParentClass = crp->mTypeCheck.mHasParent;
+		outClass->mParentClass = nullptr;
+		outClass->mParentClassName = crp->mTypeCheck.mParentClassName;
+
+		outClass->mDefalutConstructor = crp->mTypeCheck.mDefaulConstructor;
+		outClass->mDestructor = crp->mTypeCheck.mDestructor;
+
+		outClass->mMetaSerialize = crp->mTypeCheck.mMetaSerialize;
+		outClass->mMetaPropertyChanged = crp->mTypeCheck.mMetaPropertyChanged;
+
+		/////////////^^^^^ Meta class functions here ^^^^^^
+
+		
 
 		///////////////////initializing properties
+		outClass->mProperties.RemoveAll();
+		outClass->mProperties.AddDefault(crp->mNumProperty);
+
 		for (unsigned i = 0; i < crp->mNumProperty; i++)
 		{
-			outClass->mProperties.Add();
-			PropertyInfo& prop = outClass->mProperties.LastElement();
-			ZZ_PropertyRegParam& propParam = crp->mProperties[i];
-
-			prop.mOwner = outClass;
-			prop.mPropertyName = propParam.mName;
-			prop.mOffset = propParam.mOffset;
-			prop.mTypeName = propParam.mTypeCheck.mPropertyTypeName;
-			prop.mAttributes = propParam.mAttribPack;
-			prop.mTypeInfo = nullptr;
-			prop.mPropertyType = propParam.mTypeCheck.mPropertyType;
-			prop.mTemplateArgType = propParam.mTypeCheck.mTArrayElementPropertyType;
-			prop.mTemplateArgTypeName = propParam.mTypeCheck.mTArrayElementTypeName;
-			prop.mTemplateArgTypeInfo = nullptr;
+			RegProperty(crp->mProperties + i, outClass, outClass->mProperties.Elements() + i);
 		}
 		
 		mRegisteredTypes.Add(outClass);
@@ -139,6 +135,26 @@ namespace UPO
 		ULOG_SUCCESS("Class [%s] was Registered successfully", crp->mTypeCheck.mClassName);
 		RebakeTypes();
 		return true;
+	}
+	void MetaSys::RegProperty(ZZ_PropertyRegParam* regParam, ClassInfo* owner, PropertyInfo* prp)
+	{
+		prp->mAttributes = regParam->mAttribPack;
+		prp->mOffset = regParam->mOffset;
+		prp->mOwner = owner;
+		prp->mPropertyName = regParam->mName;
+		prp->mPropertyType = regParam->mTypeCheck.mPropertyType;
+		prp->mTypeName = regParam->mTypeCheck.mPropertyTypeName;
+	
+		if (prp->mPropertyType == EPropertyType::EPT_TArray)
+		{
+			prp->mTemplateArgType = regParam->mTypeCheck.mTArrayElementPropertyType;
+			prp->mTemplateArgTypeName = regParam->mTypeCheck.mTArrayElementTypeName;
+		}
+		else if(prp->mPropertyType == EPropertyType::EPT_TObjectPtr)
+		{ 
+			prp->mTemplateArgType = EPropertyType::EPT_MetaClass;
+			prp->mTemplateArgTypeName = regParam->mTypeCheck.mTObjectPtrObjectTypeName;
+		}
 	}
 	//////////////////////////////////////////////////////////////////////////
 	bool MetaSys::UnRegClass(ClassInfo* registeredClass)
@@ -148,6 +164,10 @@ namespace UPO
 			size_t index = mRegisteredTypes.Find(registeredClass);
 			if (index != ~0)
 			{
+				//if has parent remove from parent subclass array
+				if (registeredClass->mParentClass) 
+					registeredClass->mParentClass->mSubClasses.RemoveSwap(registeredClass);
+
 				mRegisteredTypes.RemoveAtSwap(index);
 				ULOG_SUCCESS("Class [%s] Unregistered", registeredClass->GetName().CStr());
 				RebakeTypes();
@@ -158,15 +178,22 @@ namespace UPO
 	}
 
 
+	
 	//////////////////////////////////////////////////////////////////////////
-	const TypeInfo* MetaSys::FindType(const char* name) const
+	const TypeInfo* MetaSys::FindType(Name name) const
 	{
-		Name nameAsName = name;
 		for (size_t i = 0; i < mRegisteredTypes.Length(); i++)
 		{
-			if (mRegisteredTypes[i] && mRegisteredTypes[i]->GetName() == nameAsName)
+			if (mRegisteredTypes[i] && mRegisteredTypes[i]->GetName() == name)
 				return mRegisteredTypes[i];
 		}
+		return nullptr;
+	}
+	//////////////////////////////////////////////////////////////////////////
+	const ClassInfo* MetaSys::FindClass(Name name) const
+	{
+		auto ti = FindType(name);
+		if (ti && ti->IsClass()) return (const ClassInfo*)ti;
 		return nullptr;
 	}
 

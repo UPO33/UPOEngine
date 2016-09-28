@@ -13,3 +13,4 @@
 #include "UModule.h"
 #include "UTree.h"
 #include "UDelegate.h"
+#include "UMap.h"

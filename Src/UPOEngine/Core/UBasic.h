@@ -55,7 +55,7 @@
 #define ULOG_WARN(format, ...) UPO::Log::Get()->Add(UPO::ELogType::ELT_Warn, __FILE__, __FUNCTION__, __LINE__, format, __VA_ARGS__)
 #define ULOG_FATAL(format, ...) UPO::Log::Get()->Add(UPO::ELogType::ELT_Fatal, __FILE__, __FUNCTION__, __LINE__, format, __VA_ARGS__)
 
-#define UASSERT(expression) { if(!(expression)) UPO::Log::Get()->Add(UPO::ELogType::ELT_Assert, __FILE__, __FUNCTION__, __LINE__, "Assertaion Failed", #expression);}
+#define UASSERT(expression) { if(!(expression)) UPO::Log::Get()->Add(UPO::ELogType::ELT_Assert, __FILE__, __FUNCTION__, __LINE__, "Assertaion Failed %s", #expression);}
 
 #define UASSERT_GTONLY() UASSERT(UPO::IsGameThread())
 #define UASSERT_RTONLY() UASSERT(UPO::IsRenderThread())
@@ -89,27 +89,6 @@ public:\
 
 
 
-#pragma region deprecated
-
-#define UDECLARE_CLASS_HAS_FUNCTION(DeclarationName, FunctionName, ReturnType, ...)\
-	template <class Type> class Z_##DeclarationName##HasFuncChecker\
-	{\
-		template <typename T, T> struct TypeCheck;\
-		template <typename T> struct FuncCheck { typedef ReturnType (T::*fptr)(__VA_ARGS__); }; \
-		template <typename T> static char HasFunc(TypeCheck< typename FuncCheck<T>::fptr, &T::FunctionName >*);\
-		template <typename T> static long  HasFunc(...);\
-	public:\
-		static bool const value = (sizeof(HasFunc<Type>(0)) == sizeof(char));\
-	};\
-	template<typename T> struct Z_##DeclarationName##HasFunc\
-	{\
-		struct FakeT { static bool const value = 0; };\
-		static bool const value = std::conditional<std::is_class<T>::value, Z_##DeclarationName##HasFuncChecker<T>, FakeT>::type::value;\
-	};\
-
-#define UCLASS_HAS_FUNCTION(DeclarationName, ClassToCheck) Z_##DeclarationName##HasFunc<ClassToCheck>::value
-
-#pragma endregion
 
 
 /*
@@ -132,7 +111,7 @@ it doesn't take the parent's class functions into account
 	}; \
 	template<typename T> struct Z_##DeclarationName##HasFunc\
 	{\
-		using TFunc = ReturnType (NullClass::*) (__VA_ARGS__);\
+		using TFunc = ReturnType (UPO::Void::*) (__VA_ARGS__);\
 		struct FakeType { ReturnType FunctionName(__VA_ARGS__) { return exit(0); } };\
 		struct FakeT { static bool const value = 0; };\
 		static bool const value = std::conditional<std::is_class<T>::value, Z_##DeclarationName##HasFuncChecker<T>, FakeT>::type::value;\
@@ -146,7 +125,7 @@ it doesn't take the parent's class functions into account
 
 //return true if 'Class' has specified function function must be declared with UDECLARE_MEMBERFUNCTION_CHECKING once
 #define UCLASS_HAS_MEMBERFUNCTION(DeclarationName, Class) Z_##DeclarationName##HasFunc<Class>::value
-//return pointer to member function as ReturnType(NullClass::*)(Args), u can cast result to any type
+//return pointer to member function as ReturnType(Void::*)(Args), u can cast result to any type
 //or use MFP<ReturnType, Args> for convenience, returns null if not exist
 //function must be declared with UDECLARE_MEMBERFUNCTION_CHECKING once
 #define UCLASS_GET_MEMBERFUNCTION(DeclarationName, Class) Z_##DeclarationName##HasFunc<Class>::GetFunc()
@@ -165,8 +144,12 @@ namespace UPO
 	typedef unsigned long long uint64;
 	typedef long long int64;
 
-	class NullClass {};
+	
 	class Void {};
+
+	using VoidFuncPtr = void(*)();
+	using VoidMemFuncPtr = void(Void::*)();
+
 
 	//////////////////////////////////////////////////////////////////////////
 	UAPI bool IsGameThread();
@@ -175,17 +158,38 @@ namespace UPO
 	UAPI void AppCrash();
 
 #pragma region function pointer helper
+	template <typename TFunction = VoidMemFuncPtr> void* MemFunc2Ptr(TFunction function)
+	{
+		// 		union
+		// 		{
+		// 			TFunction f;
+		// 			void* p;
+		// 		};
+		// 		f = function;
+		// 		return p; 
+		return (void*&)function;
+	}
+	template<typename TFunction = VoidMemFuncPtr> TFunction Ptr2MemFunc(const void* function)
+	{
+		union
+		{
+			TFunction f;
+			const void* p;
+		};
+		p = function;
+		return f;
+	}
 	//////////////////////////////////////////////////////////////////////////function pointer
-	template<typename TRet, typename... TArgs> class FP
+	template<typename TRet, typename... TArgs> class TFP
 	{
 	public:
 		using Pattern = TRet(*)(TArgs...);
 	private:
 		Pattern mFunction;
 	public:
-		FP() {}
-		FP(std::nullptr_t) { mFunction = nullptr; }
-		template<typename T> FP(T pFunction) { mFunction = pFunction; }
+		TFP() {}
+		TFP(std::nullptr_t) { mFunction = nullptr; }
+		template<typename T> TFP(T pFunction) { mFunction = pFunction; }
 
 
 		TRet operator() (TArgs... args) const
@@ -197,34 +201,40 @@ namespace UPO
 		operator void* () const { return (void*)mFunction; }
 		bool operator == (const void* p) const { return mFunction == p; }
 		bool operator != (const void* p) const { return mFunction != p; }
-		bool operator == (const FP& fp) const { return mFunction == fp.mFunction; }
-		bool operator != (const FP& fp) const { return mFunction != fp.mFunction; }
+		bool operator == (const TFP& fp) const { return mFunction == fp.mFunction; }
+		bool operator != (const TFP& fp) const { return mFunction != fp.mFunction; }
 	};
 
 	//////////////////////////////////////////////////////////////////////////member function pointer
-	template<typename TRet, typename... TArgs> class MFP
+	template<typename TRet, typename... TArgs> class TMFP
 	{
-		using Pattern = TRet(NullClass::*)(TArgs...);
+	public:
+		using Pattern = TRet(Void::*)(TArgs...);
 		Pattern mFunction;
 
-	public:
-		MFP() {}
-		MFP(std::nullptr_t) { mFunction = nullptr; }
-		template <typename T> MFP(TRet(T::* pFunction)(TArgs...)) { mFunction = (Pattern)pFunction; }
+
+		TMFP() {}
+		TMFP(std::nullptr_t) { mFunction = nullptr; }
+		template <typename T> TMFP(TRet(T::* pFunction)(TArgs...)) { mFunction = (Pattern)pFunction; }
 
 		TRet operator() (void* object, TArgs... args) const
 		{
 			UASSERT(mFunction);
-			return (((NullClass*)object)->*mFunction)(args...);
+			return (((Void*)object)->*mFunction)(args...);
 		}
 		operator bool() const { return mFunction != nullptr; }
-		operator void* () const { return nullptr; /*(void*)mFunction;*/ }
-// 		bool operator == (const void* p) const { return mFunction == p; }
-// 		bool operator != (const void* p) const { return mFunction != p; }
-// 		bool operator == (const MFP& mfp) const { return mFunction == mfp.mFunction; }
-// 		bool operator != (const MFP& mfp) const { return mFunction != mfp.mFunction; }
+		operator void* () const { return MemFunc2Ptr(mFunction); }
 
+		template<typename TTRet, typename... TTArgs> bool operator == (const TMFP<TTRet, TTArgs...>& other) const
+		{
+			return (VoidMemFuncPtr)mFunction == (VoidMemFuncPtr)other.mFunction;
+		}
+		template<typename TTRet, typename... TTArgs> bool operator != (const TMFP<TTRet, TTArgs...>& other) const
+		{
+			return (VoidMemFuncPtr)mFunction != (VoidMemFuncPtr)other.mFunction;
+		}
 	};
+
 #pragma endregion
 
 #pragma region log
@@ -257,7 +267,7 @@ namespace UPO
 		static Log* Get();
 
 		void Add(ELogType type, const char* file, const char* funcName, unsigned line, const char* format, ...);
-		bool AddListener(FP<void, const LogEntry&> function);
+		bool AddListener(TFP<void, const LogEntry&> function);
 	};
 #pragma endregion
 
@@ -329,6 +339,13 @@ namespace UPO
 	{
 		return value < 0 ? -1 : value > 0 ? 1 : 0;
 	}
+
+	inline bool RandBool() { return rand() % 2 == 0; }
+	inline int RandInt() { return rand(); }
+	inline float RandFloat01() { return ((float)rand()) / RAND_MAX; }
+	inline float RandFloat(float min, float max) { return Lerp(min, max, RandFloat01()); }
+
+	
 	//////////////////////////////////////////////////////////////////////////
 	struct UAPI Flag
 	{

@@ -81,7 +81,7 @@ namespace UPO
 	UPO::String String::Empty;
 
 	//////////////////////////////////////////////////////////////////////////
-	void String::Serialize(Stream& stream)
+	void String::MetaSerialize(Stream& stream)
 	{
 		if (stream.IsReader())
 		{
@@ -98,6 +98,7 @@ namespace UPO
 			if (len)
 			{
 				mStr = AllocChunk(len);
+				UASSERT(mStr);
 				stream.Bytes(mStr->mChars, len);
 				mStr->mChars[len] = 0;
 			}

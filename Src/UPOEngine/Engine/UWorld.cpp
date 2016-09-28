@@ -10,7 +10,6 @@ namespace UPO
 		{
 			Entity* newEntity = (Entity*)NewObject(param.mClass);
 			newEntity->mWorld = this;
-			newEntity->mName = param.mName;
 			newEntity->mEntityFlag = EEF_Alive | EEF_Initilized;
 
 			AddEntityToList(newEntity);

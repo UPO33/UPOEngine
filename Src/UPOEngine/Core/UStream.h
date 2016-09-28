@@ -2,7 +2,7 @@
 
 #include "UBasic.h"
 #include "UArray.h"
-
+#include "UFileSys.h"
 
 namespace UPO
 {
@@ -17,9 +17,10 @@ namespace UPO
 	{
 	protected:
 		bool mIsReader;
+		bool mHasError;
 
 	public:
-
+		//read/write a variable
 		template<typename T> Stream& RW(T& value)
 		{
 			if (std::is_arithmetic<T>::value)
@@ -37,13 +38,18 @@ namespace UPO
 
 		//indicates whether this stream reads data or writes
 		bool IsReader() const { return mIsReader; }
+		//if the stream has error it doesn't read/write
+		bool HasError() const { return mHasError; }
 		//number of bytes read or written
 		virtual unsigned GetSeek() const = 0;
 
 		//ignore numByte if is writer stream, nothing do on reading
 		virtual Stream& Ignore(unsigned numByte) { return *this; }
-
+		//read/write bytes
 		virtual Stream& Bytes(void* bytes, unsigned length) = 0;
+
+// 		virtual unsigned PushSizeToken() {};
+// 		virtual void PopSizeToken() {};
 	};
 
 
@@ -59,6 +65,8 @@ namespace UPO
 
 		virtual unsigned GetSeek() const override;
 		virtual Stream& Bytes(void* bytes, unsigned length) override;
+		void* GetHead() { return mBuffer.Elements(); }
+		
 	};
 
 	/*
@@ -74,5 +82,41 @@ namespace UPO
 		~StreamWriterMemory();
 
 		virtual Stream& Bytes(void* bytes, unsigned length) override;
+		virtual unsigned GetSeek() const override { return mPos;}
+		void* GetHead() const { return mData; }
+	};
+
+	/*
+		a stream which writes the taken data to a file
+	*/
+	class StreamReaderFile : public Stream
+	{
+		File mFile;
+		size_t mPos;
+
+	public:
+		StreamReaderFile(const String& filename);
+		~StreamReaderFile();
+
+		virtual Stream& Bytes(void* bytes, unsigned length) override;
+		virtual unsigned GetSeek() const override { return mPos; }
+	};
+
+
+	/*
+		the stream which writes data from a file
+	*/
+	class UAPI StreamWriterFile : public Stream
+	{
+		File mFile;
+		size_t mPos;
+
+	public:
+		StreamWriterFile(const String& filename);
+		~StreamWriterFile();
+
+		virtual Stream& Bytes(void* bytes, unsigned length) override;
+		virtual unsigned GetSeek() const override { return mPos; }
+
 	};
 };

@@ -44,6 +44,8 @@ namespace UPO
 	//////////////////////////////////////////////////////////////////////////
 	template<typename T> class TArray
 	{
+		friend class HelperArray;
+
 	private:
 		T*			mElements;
 		size_t		mLength;
@@ -63,6 +65,11 @@ namespace UPO
 		{
 			MemFree(memory);
 		}
+		static void CallDCTor(T* elements, size_t numElement)
+		{
+			for (size_t i = 0; i < numElement; i++)
+				new (elements + i) T();
+		}
 		static void CallCCTor(T* elements, const T* copy, size_t numELement)
 		{
 			for (size_t i = 0; i < numELement; i++)
@@ -73,6 +80,7 @@ namespace UPO
 			for (size_t i = 0; i < numElement; i++)
 				(elements + i)->~T();
 		}
+		static const size_t MININC = 1024 / sizeof(T);
 	public:
 		//type trait helper
 		void ZZZIsTArray() {}
@@ -142,15 +150,19 @@ namespace UPO
 		void Append(const T* elements, size_t numElement)
 		{
 			if (elements == nullptr || numElement == 0) return;
-
-			IncCapacity(numElement);
+			if (mCapacity <= (mLength + numElement))
+				IncCapacity(Max(MININC, numElement));
 			CallCCTor(mElements + mLength, elements, numElement);
 			mLength += numElement;
+		}
+		void Append(const std::initializer_list<T>& list)
+		{
+			Append(list.begin(), list.size());
 		}
 		/*
 			Increasing capacity may perform Alloc or Realloc, it uses MemCopy not calling DTor CTor
 		*/
-		void IncCapacity(size_t numItem = 64)
+		void IncCapacity(size_t numItem =  MININC)
 		{
 			if (numItem == 0) return;
 
@@ -227,6 +239,23 @@ namespace UPO
 			mLength += count;
 			return tmp;
 		}
+		/*
+		adds elements to the end of array with default constructor initialization and returns index of the first added element
+		*/
+		size_t AddDefault(size_t count = 1)
+		{
+			if (mCapacity < (mLength + count)) IncCapacity(count);
+			auto tmp = mLength;
+			mLength += count;
+			CallDCTor(mElements + tmp, count);
+			return tmp;
+		}
+		size_t Add(const std::initializer_list<T>& list)
+		{
+			auto tmp = mLength;
+			Append(list);
+			return tmp;
+		}
 		//adds an element at the end of array and calls default constructor
 		size_t Add()
 		{
@@ -256,6 +285,13 @@ namespace UPO
 			mLength--;
 			(mElements + mLength)->~T();
 		}
+		void Pop(T& out)
+		{
+			UASSERT(mLength > 0);
+			mLength--;
+			out = mElements[mLength];
+			(mElements + mLength)->~T();
+		}
 		//remove an element at the specified index and move last element to it
 		void RemoveAtSwap(size_t index)
 		{
@@ -267,6 +303,42 @@ namespace UPO
 				new (mElements + index) T(mElements[mLength]); // move last element to removed index
 				(mElements + mLength)->~T(); // destruct las element
 			}
+		}
+		bool RemoveSwap(const T& element)
+		{
+			size_t index = Find(element);
+			if (index != ~0)
+			{
+				RemoveAtSwap(index);
+				return true;
+			}
+			return false;
+		}
+		void RemoveAll()
+		{
+			CallDTor(mElements, mLength);
+			mLength = 0;
+		}
+		//POD only, doest call ctor dtor
+		void Reverse()
+		{
+			int temp;
+			int start = 0;
+			int end = mLength - 1;
+			while (start < end)
+			{
+				T temp = mElements[start];
+				mElements[start] = mElements[end];
+				mElements[end] = temp;
+				start++;
+				end--;
+			}
+// 			for (int i = 0, int j = mLength - 1; i < (mLength / 2); i++, j--)
+// 			{
+// 				T temp = mElements[i];
+// 				mElements[i] = mElements[j];
+// 				mElements[j] = temp;
+// 			}
 		}
 		operator TArray<const T>& () { return *((TArray<const T>*)this); }
 
@@ -315,8 +387,16 @@ namespace UPO
 			UASSERT(mElements && index < mLength);
 			return mElements[index];
 		}
-
-
+		bool IsIndexValid(size_t index) const
+		{
+			return index < mLength;
+		}
+// 		size_t Find(const T element) const
+// 		{
+// 			for (size_t i = 0; i < mLength; i++)
+// 				if (element == mElements[i]) return i;
+// 			return ~0;
+// 		}
 		size_t Find(const T& element) const
 		{
 			for (size_t i = 0; i < mLength; i++)
@@ -331,7 +411,7 @@ namespace UPO
 					find = i;
 			return find;
 		}
-
+		bool HasElement(const T& element) const { return Find(element) != ~0; }
 
 		template < typename Lambda> void ForEach(Lambda proc)
 		{
@@ -358,5 +438,25 @@ namespace UPO
 			mLength = j;
 		}
 
+	};
+	//////////////////////////////////////////////////////////////////////////
+	class TypeInfo;
+	enum EPropertyType;
+
+	//////////////////////////////////////////////////////////////////////////
+	class SerArray
+	{
+	public:
+		byte*	mElements;
+		size_t	mLength;
+		size_t  mCapacity;
+
+		void CallDTor(size_t begin, size_t count, EPropertyType elementType, const TypeInfo* elementTypeInfo);
+		void CallDCTor(size_t begin, size_t count, EPropertyType elementType, const TypeInfo* elementTypeInfo);
+		void RemoveAll(EPropertyType elementType, const TypeInfo* elementTypeInfo);
+		void Empty(EPropertyType elementType, const TypeInfo* elementTypeInfo);
+		void* GetElement(size_t index, EPropertyType elementType, const TypeInfo* elementTypeInfo);
+		void SetCapacity(size_t newCapacity, EPropertyType elementType, const TypeInfo* elementTypeInfo);
+		size_t AddDefault(size_t count, EPropertyType elementType, const TypeInfo* elementTypeInfo);
 	};
 };

@@ -122,7 +122,7 @@ namespace UPO
 		//get normalized
 		Vec2 operator ~ () const { return GetNormalizedSafe(); }
 
-		void Serialize(Stream&);
+		void MetaSerialize(Stream&);
 	};
 
 	inline float Dot(const Vec2& a, const Vec2& b)
@@ -181,7 +181,7 @@ namespace UPO
 		inline Vec3() {}
 		inline Vec3(float xyz) { mX = mY = mZ = xyz; }
 		inline Vec3(float x, float y, float z) { mX = x; mY = y; mZ = z; }
-		inline Vec3(const Vec3& v3) { mX = v3.mX;		mY = v3.mY;		mY = v3.mZ; }
+		inline Vec3(const Vec3& v3) { mX = v3.mX;		mY = v3.mY;		mZ = v3.mZ; }
 		inline Vec3(const Vec2& v2, float z) { mX = v2.mX;		mY = v2.mY;		mZ = z; }
 		inline Vec3(const Vec4& v);
 
@@ -404,7 +404,7 @@ namespace UPO
 			ret.GetNormalized();
 			return ret;
 		}
-		void Serialize(Stream&);
+		void MetaSerialize(Stream&);
 	};
 
 
@@ -623,7 +623,7 @@ namespace UPO
 			return Sqrt(Length3Sq());
 		}
 
-		void Serialize(Stream&);
+		void MetaSerialize(Stream&);
 	};
 
 	inline Vec4 Lerp(const Vec4& v0, const Vec4& v1, float t)
@@ -648,11 +648,12 @@ namespace UPO
 		UCLASS(Color, void)
 
 		inline Color(){}
-		inline Color(float rgba) { mX = mY = mZ = mW = rgba; }
+		inline Color(float rgba) { mR = mG = mB = mA = rgba; }
+		inline Color(float rgb, float a) { mR = mG = mB = rgb;	mA = a; }
 		inline Color(float r, float g, float b, float a) { mR = r;  mG = g;  mB = b;  mA = a; }
 		inline Color(const Color32& color);
 
-		void Serialize(Stream&);
+		void MetaSerialize(Stream&);
 	};
 
 	//////////////////////////////////////////////////////////////////////////
@@ -667,7 +668,10 @@ namespace UPO
 		};
 
 		Color32() { mColor = 0; }
-
+		Color32(uint8 rgba) 
+		{
+			mRGBA[0] = rgba;	mRGBA[1] = rgba;	mRGBA[2] = rgba;	mRGBA[3] = rgba;
+		}
 		Color32(uint8 r, uint8 g, uint8 b, uint8 a = 255)
 		{
 			mRGBA[0] = r;	mRGBA[1] = g;	mRGBA[2] = b;	mRGBA[3] = a;
@@ -692,7 +696,7 @@ namespace UPO
 		static const Color32 BLUE;
 		static const Color32 YELLOW;
 
-		void Serialize(Stream&);
+		void MetaSerialize(Stream&);
 	};
 
 	//////////////////////////////////////////////////////////////////////////Vec2

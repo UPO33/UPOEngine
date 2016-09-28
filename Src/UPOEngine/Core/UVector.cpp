@@ -32,23 +32,23 @@ namespace UPO
 	const Color32 Color32::BLUE(0, 0, 255, 255);
 	const Color32 Color32::YELLOW(255, 255, 0, 255);
 
-	void Vec2::Serialize(Stream& s)
+	void Vec2::MetaSerialize(Stream& s)
 	{
 		s.RW(mX).RW(mY);
 	}
-	void Vec3::Serialize(Stream& s)
+	void Vec3::MetaSerialize(Stream& s)
 	{
 		s.RW(mX).RW(mY).RW(mZ);
 	}
-	void Vec4::Serialize(Stream& s)
+	void Vec4::MetaSerialize(Stream& s)
 	{
 		s.RW(mX).RW(mY).RW(mZ).RW(mW);
 	}
-void Color::Serialize(Stream& s)
+void Color::MetaSerialize(Stream& s)
 	{
 		s.RW(mR).RW(mG).RW(mB).RW(mA);
 	}
-	void Color32::Serialize(Stream& s)
+	void Color32::MetaSerialize(Stream& s)
 	{
 		s.RW(mRGBA);
 	}

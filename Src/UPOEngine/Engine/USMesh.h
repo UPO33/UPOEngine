@@ -31,6 +31,9 @@ namespace UPO
 		bool				mFlipUV = false;
 		bool				mGenerateSmoothNormal = false;
 
+		/*
+		Material*	mMaterial;
+		*/
 
 	protected:
 		virtual void OnInit() override;

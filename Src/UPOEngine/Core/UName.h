@@ -133,7 +133,7 @@ namespace UPO
 		const char* CStr() const { return mInstance->mString; }
 		auto GetHash() const { return mInstance->mHash; }
 
-		void Serialize(Stream&);
+		void MetaSerialize(Stream&);
 	};
 
 	inline uint32 GetHash32(const Name& name) { return (uint32)name.GetHash(); }

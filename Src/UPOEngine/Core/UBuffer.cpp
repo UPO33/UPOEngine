@@ -63,7 +63,7 @@ namespace UPO
 		mSize = 0;
 	}
 	//////////////////////////////////////////////////////////////////////////
-	void Buffer::Serialize(Stream& stream)
+	void Buffer::MetaSerialize(Stream& stream)
 	{
 		uint32 size = (uint32)mSize;
 		if (stream.IsReader())

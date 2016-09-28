@@ -8,6 +8,7 @@ namespace UPO
 	//////////////////////////////////////////////////////////////////////////
 	Object* ObjectSys::NewObject(const ClassInfo* classInfo)
 	{
+		UASSERT(classInfo);
 		Object* newObj = (Object*)MemAlloc(classInfo->GetSize());
 
 		newObj->mClassInfo = classInfo;
@@ -20,12 +21,11 @@ namespace UPO
 	//////////////////////////////////////////////////////////////////////////
 	void ObjectSys::DeleteObject(Object* object)
 	{
-		if (object)
-		{
-			const ClassInfo* ci = object->GetClassInfo();
-			ci->CallDestructor(object);
-			MemFree(object);
-		}
+		UASSERT(object);
+
+		const ClassInfo* ci = object->GetClassInfo();
+		ci->CallDestructor(object);
+		MemFree(object);
 	}
 
 };

@@ -2,6 +2,7 @@
 
 #include "UObjectPtr.h"
 #include "UObjectSys.h"
+#include "UObjectArchive.h"
 
 namespace UPO
 {
@@ -40,7 +41,8 @@ namespace UPO
 			return nullptr;
 		}
 
-		void Serialize(Stream&);
+		bool IsAsset() const;
+		bool IsEntity() const;
 	};
 
 

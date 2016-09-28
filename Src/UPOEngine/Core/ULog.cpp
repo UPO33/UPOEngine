@@ -88,7 +88,7 @@ namespace UPO
 
 		CriticalSection							mLock;
 // 		File									mOutFile;
-		FP<void, const LogEntry&>				mListeners[MAX_LISTENERS];
+		TFP<void, const LogEntry&>				mListeners[MAX_LISTENERS];
 		unsigned								mNumListeners;
 		bool mWriteToSTDConsole = true;
 		FILE* mOutFile = nullptr;
@@ -153,7 +153,7 @@ namespace UPO
 			for (unsigned i = 0; i < MAX_LISTENERS; i++)
 				if (mListeners[i]) mListeners[i](log);
 		}
-		bool AddListener(FP<void, const LogEntry&> function)
+		bool AddListener(TFP<void, const LogEntry&> function)
 		{
 			if (function)
 			{
@@ -211,7 +211,7 @@ namespace UPO
 		((LogImpl*)this)->Add(type, file, funcName, line, buffer);
 	}
 	//////////////////////////////////////////////////////////////////////////
-	bool Log::AddListener(FP<void, const LogEntry&> function)
+	bool Log::AddListener(TFP<void, const LogEntry&> function)
 	{
 		 return ((LogImpl*)this)->AddListener(function);
 	}

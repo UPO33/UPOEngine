@@ -105,8 +105,8 @@ namespace UPO
 			mRefData->Dec();
 		}
 		operator bool() const { return mRefData->mObject != nullptr; }
-		operator T* () const { return mRefData->mObject; }
-		T* operator -> () const { return mRefData->mObject; }
-		T* Get() const { return mRefData->mObject; }
+		operator T* () const { return (T*)mRefData->mObject; }
+		T* operator -> () const { return (T*)mRefData->mObject; }
+		T* Get() const { return (T*)mRefData->mObject; }
 	};
 };

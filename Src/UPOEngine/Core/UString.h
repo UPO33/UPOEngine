@@ -193,6 +193,6 @@ namespace UPO
 			return mStr == nullptr;
 		}
 
-		void Serialize(Stream&);
+		void MetaSerialize(Stream&);
 	};
 };

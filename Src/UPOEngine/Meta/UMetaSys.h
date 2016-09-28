@@ -278,7 +278,7 @@ namespace UPO
 		struct ZZ_FakeTArray { using ElementType = void*; /*void* to not get sizeof error*/ };
 		struct ZZ_FakeTObjectPtr { using ObjectType = Object; };
 
-		static_assert(!(std::is_enum<T>::value && (sizeof(T) == 4)), "only 32bit enum is supported");
+		static_assert(std::is_enum<T>::value ? sizeof(T) == 4 : true, "only 32bit enum is supported");
 
 		static const bool bIsTArray = TT_IsTArray<T>::value;
 		static const bool bIsTObjectPtr = TT_IsTObjectPtr<T>::value;
@@ -301,7 +301,7 @@ namespace UPO
 	/*
 
 	*/
-	struct ZZ_PropertCheckResult
+	struct ZZ_PropertyCheckResult
 	{
 		EPropertyType	mPropertyType;
 		EPropertyType	mTArrayElementPropertyType;	//valid if  mPropertyType == EPT_TArray
@@ -328,7 +328,16 @@ namespace UPO
 			if (mPropertyType == EPropertyType::EPT_TArray)
 			{
 				mPropertyTypeName = "UPO::TArray";
-				mTArrayElementTypeName = strchr(typeid(T::ArrayElementTypeJC).name(), ' ') + 1; //remove struct or class or enum prefix
+				if (mTArrayElementPropertyType == EPropertyType::EPT_MetaClass
+					|| mTArrayElementPropertyType == EPropertyType::EPT_ObjectPoniter
+					|| mTArrayElementPropertyType == EPropertyType::EPT_enum)
+				{
+					mTArrayElementTypeName = strchr(typeid(T::ArrayElementTypeJC).name(), ' ') + 1; //remove struct or class or enum prefix
+				}
+				else
+				{
+					mTArrayElementTypeName = typeid(T::ArrayElementTypeJC).name();
+				}
 			}
 			else if (mPropertyType == EPropertyType::EPT_TObjectPtr)
 			{
@@ -349,17 +358,18 @@ namespace UPO
 	};
 	struct ZZ_PropertyRegParam
 	{
-		ZZ_PropertCheckResult mTypeCheck;
+		ZZ_PropertyCheckResult mTypeCheck;
 		const char* mName;
 		unsigned	mOffset;
 		AttribPack mAttribPack;
 	};
 
-	//////////////////////////////////////////////////////////////////////////
-	UDECLARE_CLASS_HAS_FUNCTION(HasCustomSerializer, Serialize, void, UPO::Stream&);
-	UDECLARE_CLASS_HAS_FUNCTION(HasMetaPropertyChanged, MetaPropertyChanged, void, const UPO::PropertyInfo*);
 
-	///////////new event function declaration here ^^^^^^^^^^^^^
+	UDECLARE_MEMBERFUNCTION_CHECKING(MetaSerializeCheck, MetaSerialize, void, UPO::Stream&);
+	UDECLARE_MEMBERFUNCTION_CHECKING(MetaPropertyChangedCheck, MetaPropertyChanged, void, const UPO::PropertyInfo*);
+
+
+	///////////new meta class function declaration here ^^^^^^^^^^^^^
 
 
 
@@ -373,10 +383,11 @@ namespace UPO
 		// 	size_t mParentTypeSize = 0;
 		// 	size_t mParentTypeAlign = 0;
 
-		UPO::FP<void, void*>								mDefaulConstructor = nullptr;
-		UPO::FP<void, void*>								mDestructor = nullptr;
-		UPO::FP<void, void*, UPO::Stream&>					mCustomSerializer = nullptr;
-		UPO::FP<void, void*, const PropertyInfo*>			mMetaPropertyChanged = nullptr;
+		UPO::TFP<void, void*>								mDefaulConstructor = nullptr;
+		UPO::TFP<void, void*>								mDestructor = nullptr;
+
+		UPO::TMFP<void, Stream&>				mMetaSerialize = nullptr;
+		UPO::TMFP<void, const PropertyInfo*>	mMetaPropertyChanged = nullptr;
 
 		template<typename TClass, typename TParent> void Make()
 		{
@@ -393,26 +404,10 @@ namespace UPO
 			mDefaulConstructor = [](void* object) { new (object) TClass; };
 			mDestructor = [](void* object) { ((TClass*)object)->~TClass(); };
 
-			///////serialize function
-			struct FakeClassSerializer { void Serialize(Stream&) {} };
-			static const bool hasCustomSerializer = UCLASS_HAS_FUNCTION(HasCustomSerializer, TClass);
-			typedef std::conditional<hasCustomSerializer, TClass, FakeClassSerializer>::type TSerializeTargetClass;
-			if (std::is_same<TSerializeTargetClass, FakeClassSerializer>::value)
-				mCustomSerializer = nullptr;
-			else
-				mCustomSerializer = [](void* object, Stream& ser) { ((TSerializeTargetClass*)object)->Serialize(ser); };
-
-			///////MetaPropertyChanged function
-// 			{
-// 				
-// 				struct ZZ_Fake { void MetaPropertyChanged(const PropertyInfo*) {} };
-// 				static const bool has = UCLASS_HAS_FUNCTION(HasMetaPropertyChanged, TClass);
-// 				using ZZ_TargetClass = std::conditional<has, TClass, ZZ_Fake>::type;
-// 				if (std::is_same<ZZ_TargetClass, ZZ_Fake>::value)
-// 					mMetaPropertyChanged = nullptr;
-// 				else
-// 					mMetaPropertyChanged = &ZZ_TargetClass::MetaPropertyChanged;
-// 			}
+			{
+				mMetaSerialize = UCLASS_GET_MEMBERFUNCTION(MetaSerializeCheck, TClass);
+				mMetaPropertyChanged = UCLASS_GET_MEMBERFUNCTION(MetaPropertyChangedCheck, TClass);
+			}
 
 		}
 	};
@@ -507,10 +502,12 @@ namespace UPO
 		bool UnRegClass(ClassInfo* registeredClass);
 
 		//finds a specified type by name eg : int, UPO::Vec3, UPO::Object, ...
-		const TypeInfo* FindType(const char* name) const;
-
+		const TypeInfo* FindType(Name name) const;
+		const ClassInfo* FindClass(Name name) const;
 		const TArray<TypeInfo*>&	GetAllTypes() const { return mRegisteredTypes; }
 
+	private:
+		void RegProperty(ZZ_PropertyRegParam* regParam, ClassInfo* owner, PropertyInfo* prp);
 		bool RebakeTypes();
 	};
 };

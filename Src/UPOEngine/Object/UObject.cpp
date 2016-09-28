@@ -1,6 +1,9 @@
 #include "UObject.h"
 #include "UObjectPtr.h"
 
+#include "../Engine/UAsset.h"
+#include "../Engine/UEntity.h"
+
 #include "../Meta/UMeta.h"
 
 namespace UPO
@@ -31,9 +34,15 @@ namespace UPO
 	}
 
 
-	void Object::Serialize(Stream&)
-	{
 
+	bool Object::IsAsset() const
+	{
+		return Cast<Asset>();
+	}
+
+	bool Object::IsEntity() const
+	{
+		return Cast<Entity>();
 	}
 
 };

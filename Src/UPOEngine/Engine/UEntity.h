@@ -15,9 +15,11 @@ namespace UPO
 		EEF_Initilized,
 		EEF_Tickable,
 		EEF_BeginPlayWasCalled,
-
+		EEF_IsArchiving,
+		EEF_Registered,
 		EEF_Default = EEF_Alive | EEF_Initilized
 	};
+	
 	//////////////////////////////////////////////////////////////////////////
 	class UAPI Entity : public Object
 	{
@@ -25,17 +27,15 @@ namespace UPO
 
 
 		World*			mWorld;
-		Name			mName;
 		Flag			mEntityFlag;
 
 	public:
 		World* GetWorld() const { return mWorld; }
-		const Name& GetName() const { return mName; }
 		
 		void Destroy();
 
 		bool IsAlive() const { return mEntityFlag.Test(EEF_Alive); }
-
+		bool IsRegistered() const { return mWorld != nullptr; }
 
 		void FlagSet(unsigned flag)
 		{

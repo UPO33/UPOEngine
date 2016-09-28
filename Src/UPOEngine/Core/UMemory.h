@@ -8,7 +8,8 @@ namespace UPO
 	inline void MemCopy(void* dst, const void* src, size_t size) { ::memcpy(dst, src, size); }
 	inline void MemMove(void* dst, const void* src, size_t size) { ::memmove(dst, src, size); }
 	inline void MemZero(void* dst, size_t size) { ::memset(dst, 0, size); }
-
+	inline int  MemCmp(const void* a, const void* b, size_t size) { return ::memcmp(a, b, size); }
+	inline bool MemEqual(const void* a, const void* b, size_t size) { return ::memcmp(a, b, size) == 0; }
 
 	inline void* MemAlloc(size_t size) { return ::malloc(size); }
 	inline void* MemRealloc(void* memory, size_t newSize) { return ::realloc(memory, newSize); }

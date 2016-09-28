@@ -7,6 +7,7 @@ namespace UPO
 		: mBuffer(initialCapacity)
 	{
 		mIsReader = true;
+		mHasError = false;
 	}
 	//////////////////////////////////////////////////////////////////////////
 	StreamReaderMemory::~StreamReaderMemory()
@@ -20,7 +21,11 @@ namespace UPO
 	//////////////////////////////////////////////////////////////////////////
 	Stream& StreamReaderMemory::Bytes(void* bytes, unsigned length)
 	{
-		mBuffer.Append((const char*)bytes, length);
+		if (length && !mHasError)
+		{
+			UASSERT(bytes);
+			mBuffer.Append((const char*)bytes, length);
+		}
 		return *this;
 	}
 
@@ -31,6 +36,7 @@ namespace UPO
 	StreamWriterMemory::StreamWriterMemory(void* data, size_t size)
 	{
 		mIsReader = false;
+		mHasError = false;
 		mData = (char*)data;
 		mSize = size;
 		mPos = 0;
@@ -45,8 +51,71 @@ namespace UPO
 	//////////////////////////////////////////////////////////////////////////
 	Stream& StreamWriterMemory::Bytes(void* bytes, unsigned length)
 	{
-		MemCopy(bytes, mData + mPos, length);
-		mPos += length;
+		if (length && !mHasError)
+		{
+			UASSERT(bytes);
+			size_t nFree = mSize - mPos;
+			if (length <= nFree)
+			{
+				MemCopy(bytes, mData + mPos, length);
+				mPos += length;
+			}
+			else
+			{
+				mHasError = true;
+			}
+		}
+		
+		return *this;
+	}
+
+
+	//////////////////////////////////////////////////////////////////////////
+	StreamWriterFile::StreamWriterFile(const String& filename)
+	{
+		mIsReader = false;
+		mPos = 0;
+		mFile.Open(filename, EFileOpenMode::Read);
+		mHasError = !mFile.IsOpen();
+	}
+	//////////////////////////////////////////////////////////////////////////
+	StreamWriterFile::~StreamWriterFile()
+	{
+	}
+	//////////////////////////////////////////////////////////////////////////
+	Stream& StreamWriterFile::Bytes(void* bytes, unsigned length)
+	{
+		if (!mHasError && length)
+		{
+			UASSERT(bytes);
+			size_t nRead = mFile.ReadBytes(bytes, length);
+			mPos += nRead;
+			mHasError = nRead != length;
+		}
+		
+		return *this;
+	}
+	//////////////////////////////////////////////////////////////////////////
+	StreamReaderFile::StreamReaderFile(const String& filename)
+	{
+		mIsReader = true;
+		mPos = 0;
+		mHasError = !mFile.Open(filename, EFileOpenMode::Write);
+	}
+	//////////////////////////////////////////////////////////////////////////
+	StreamReaderFile::~StreamReaderFile()
+	{
+	}
+	//////////////////////////////////////////////////////////////////////////
+	Stream& StreamReaderFile::Bytes(void* bytes, unsigned length)
+	{
+		if (!mHasError && length)
+		{
+			UASSERT(bytes);
+			size_t nWrite = mFile.WriteBytes(bytes, length);
+			mPos += nWrite;
+			mHasError = nWrite != length;
+		}
 		return *this;
 	}
 

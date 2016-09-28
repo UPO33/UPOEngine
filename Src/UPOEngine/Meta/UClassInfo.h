@@ -22,13 +22,17 @@ namespace UPO
 		EPT_MetaClass
 	};
 
+	UAPI size_t PropertyType_GetTypeSize(EPropertyType propertyType);
+	UAPI bool PropertyType_IsArithmetic(EPropertyType propertyType);
+	UAPI const TypeInfo* PropertyType_GetTypeInfo(EPropertyType propertyType);
+
 	//////////////////////////////////////////////////////////////////////////
 	class UAPI PropertyInfo
 	{
 		friend class MetaSys;
 	public:
 		/*
-		unregistered type , template , not baked property == null
+		note: unregistered type , template , not baked property == null
 		*/
 		const TypeInfo*			mTypeInfo = nullptr;
 		/*
@@ -57,11 +61,13 @@ namespace UPO
 		const AttribPack& GetAttributes() const { return mAttributes; }
 		const ClassInfo* GetOwner() const { return mOwner; }
 
-		size_t GetTypeSize() const
-		{
-			if (mTypeInfo) return mTypeInfo->GetSize();
-			return 0;/////////////////////////////////////////TODO
-		}
+		size_t GetTypeSize() const;
+
+		const TypeInfo* TemplateArgTypeInfo() const { return mTemplateArgTypeInfo; }
+		const Name& TemplateArgTypeName() const { return mTemplateArgTypeName; }
+		EPropertyType TemplateArgType() const { return mTemplateArgType; }
+		size_t TemplateArgTypeSize() const;
+
 		bool IsEnum() const { return mPropertyType == EPropertyType::EPT_enum; }
 		bool IsTemplate() const 
 		{ 
@@ -94,20 +100,20 @@ namespace UPO
 		friend class MetaSys;
 
 	private:
-		ClassInfo*					mParentClass = nullptr;	//null if not backed
-		Name						mParentClassName;
-		bool						mHasParentClass = false;
-		bool						mErrorUnregisteredParent = false;
-		FP<void,void*>				mDefalutConstructor = nullptr;
-		FP<void,void*>				mDestructor = nullptr;
-		FP<void, void*, Stream&>	mCustomSerializer = nullptr; // valid if implemented
+		ClassInfo*							mParentClass = nullptr;	//null if not backed
+		Name								mParentClassName;
+		bool								mHasParentClass = false;
+		bool								mErrorUnregisteredParent = false;
 
-		MFP<void, const PropertyInfo*>	mMetaPropertyChanged = nullptr;
-		MFP<void, Stream&>				mMetaSerialize = nullptr;
+		TFP<void,void*>						mDefalutConstructor = nullptr;
+		TFP<void,void*>						mDestructor = nullptr;
 		
-		TArray<PropertyInfo>		mProperties;
-		TArray<const ClassInfo*>	mSubClasses;
-		bool						mRegistered = false;
+		TMFP<void, const PropertyInfo*>		mMetaPropertyChanged = nullptr;
+		TMFP<void, Stream&>					mMetaSerialize = nullptr;
+		
+		TArray<PropertyInfo>				mProperties;
+		TArray<const ClassInfo*>			mSubClasses;
+		bool								mRegistered = false;
 		
 		
 		void Bake();
@@ -119,29 +125,34 @@ namespace UPO
 		bool IsBaseOf(const ClassInfo* base) const;
 
 		//calls default constructor on object
-		bool CallDefaultConstructor(void* object) const;
+		void CallDefaultConstructor(void* object) const;
 		//calls destructor on object
-		bool CallDestructor(void* object) const;
+		void CallDestructor(void* object) const;
 
-		auto GetCustomSerializeFunction() const { return mCustomSerializer; }
-		bool HasCustomSerializer() const { return mCustomSerializer != nullptr; }
+		bool HasMetaPropertyChanged() const { return mMetaPropertyChanged != nullptr; }
+		void CallMetaPropertyChanged(void* object, const PropertyInfo* prp) const;
 
-// 		bool HasMetaPropertyChanged() const { return mMetaPropertyChanged != nullptr; }
-		bool CallMetaPropertyChanged(void* object, const PropertyInfo* prp) const;
+		bool HasMetaSerialize() const { return mMetaSerialize; }
+		void CallMetaSerialize(void* object, Stream& stream) const;
 
 		size_t NumProperty() const { return mProperties.Length(); }
 		const TArray<PropertyInfo>& GetProperties() const { return mProperties; }
-		const PropertyInfo& GetProperty(size_t index) const { return mProperties[index]; }
+		const PropertyInfo* GetProperty(size_t index) const { return mProperties.Elements() + index; }
 		bool HasParent() const { return !mParentClassName.IsEmpty(); }
 		ClassInfo* GetParent() const { return mParentClass; }
 		Name GetParentName() const { return mParentClassName; }
+		const ClassInfo* GetRoot() const;
+		//Get all inherited classes from root
+		//e.g Object -> Entity -> Component -> 
+		void GetInheritedClasses(TArray<const ClassInfo*>& outClasses) const;
 
-		void GetAlUsedClassesInProperties(TArray<ClassInfo*>& outClasses);
+		void GetInvolvedClasses(TArray<const ClassInfo*>& outClasses, bool subProperties, bool inheritedProperties, bool removeArrayFirst = true) const;
 
 		//get all classes that inherit from this class
 		const TArray<const ClassInfo*>& GetSubClasses() const { return mSubClasses; }
 		void PrintLog();
 
+		const PropertyInfo* FindPropertyByName(Name name, bool includingInheritedProperties) const;
 
 	};
 	

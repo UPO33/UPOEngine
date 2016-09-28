@@ -2,8 +2,6 @@
 
 #include "UBasic.h"
 
-#include <time.h>
-
 #ifdef UPLATFORM_WIN
 #include <windows.h>
 #endif
@@ -11,6 +9,9 @@
 namespace UPO
 {
 #ifdef UPLATFORM_WIN
+	//get elapsed time since program start in milliseconds
+	inline unsigned AppTickCount() { return ::GetTickCount(); }
+
 	//////////////////////////////////////////////////////////////////////////
 	struct TimeCounter
 	{
@@ -18,12 +19,12 @@ namespace UPO
 
 		void Start()
 		{
-			mStart = ::GetTickCount();
+			mStart = AppTickCount();
 		}
 		//get elapsed time in milliseconds
-		unsigned Since() 
+		unsigned Since() const
 		{
-			return ::GetTickCount() - mStart;
+			return AppTickCount() - mStart;
 		}
 	};
 	//////////////////////////////////////////////////////////////////////////
@@ -72,4 +73,7 @@ namespace UPO
 
 		void Frame();
 	};
+
+	UAPI unsigned GetSecondsSince2000();
+
 };

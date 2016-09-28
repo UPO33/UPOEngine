@@ -537,7 +537,7 @@ namespace UPOEd
 					{
 						for (size_t i = 0; i < classInfo->NumProperty(); i++)
 						{
-							AddTreeItem(prp.Map(object), newItem, classInfo->GetProperty(i));
+							AddTreeItem(prp.Map(object), newItem, *classInfo->GetProperty(i));
 						}
 					}
 				}
@@ -553,7 +553,7 @@ namespace UPOEd
 
 			for (size_t i = 0; i < mClass->NumProperty(); i++)
 			{
-				AddTreeItem(mObject, nullptr, mClass->GetProperty(i));
+				AddTreeItem(mObject, nullptr, *mClass->GetProperty(i));
 			}
 
 		}

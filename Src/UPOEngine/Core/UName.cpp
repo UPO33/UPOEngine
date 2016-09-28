@@ -10,7 +10,7 @@ namespace UPO
 	UCLASS_END_IMPL(Name)
 
 	//////////////////////////////////////////////////////////////////////////
-	void Name::Serialize(Stream& stream)
+	void Name::MetaSerialize(Stream& stream)
 	{
 		if (stream.IsReader())
 		{

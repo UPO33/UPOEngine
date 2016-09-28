@@ -23,6 +23,6 @@ namespace UPO
 		size_t Size() const { return mSize; }
 
 		
-		void Serialize(Stream&);
+		void MetaSerialize(Stream&);
 	};
 };

@@ -4,15 +4,17 @@
 #include "UName.h"
 #include "UMemory.h"
 #include "UBuffer.h"
+#include "UString.h"
+#include "UArray.h"
 
 namespace UPO
 {
-	
+
 	//////////////////////////////////////////////////////////////////////////
 	enum class EFileOpenMode
 	{
 		//Open file for input operations. The file must exist.
-		Read,	
+		Read,
 		//Create an empty file for output operations. If a file with the same name already exists, 
 		//its contents are discarded and the file is treated as a new empty file. 
 		Write,
@@ -28,7 +30,7 @@ namespace UPO
 		EFileOpenMode mOpenMode;
 		Name mfileName;
 	public:
-		File(): mHandle(nullptr), mOpenMode(EFileOpenMode::Read) {}
+		File() : mHandle(nullptr), mOpenMode(EFileOpenMode::Read) {}
 		File(const char* filename, EFileOpenMode openMode)
 		{
 			mHandle = nullptr;
@@ -48,7 +50,7 @@ namespace UPO
 		size_t ReadBytes(void* outBytes, size_t size);
 		//return size of the file in bytes, -1 if error
 		int GetSize() const;
-		
+
 		bool IsOpen() const { return mHandle != nullptr; }
 		EFileOpenMode OpenMode() const { return mOpenMode; }
 		const Name& GetName() const { return mfileName; }
@@ -63,4 +65,6 @@ namespace UPO
 	};
 
 
-};
+	UAPI void PathGetFiles(const String& path, TArray<String>& outFileNames, bool includingSubFiles = false);
+	UAPI void PathGetFolders(const String& path, TArray<String>& outFolderNames, bool includingSubFolders = false);
+}

@@ -1,0 +1,13 @@
+#pragma once
+
+#include "UEntity.h"
+
+namespace UPO
+{
+	//////////////////////////////////////////////////////////////////////////
+	class UAPI Behavior : public Entity
+	{
+
+	};
+
+};

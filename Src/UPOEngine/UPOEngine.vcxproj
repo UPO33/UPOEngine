@@ -27,6 +27,7 @@
     <ClInclude Include="Core\UFileSys.h" />
     <ClInclude Include="Core\UHash.h" />
     <ClInclude Include="Core\ULog.h" />
+    <ClInclude Include="Core\UMap.h" />
     <ClInclude Include="Core\UMemory.h" />
     <ClInclude Include="Core\UModule.h" />
     <ClInclude Include="Core\UName.h" />
@@ -40,11 +41,15 @@
     <ClInclude Include="Core\UVector.h" />
     <ClInclude Include="Engine\UAsset.h" />
     <ClInclude Include="Engine\UAssetSys.h" />
+    <ClInclude Include="Engine\UComponent.h" />
+    <ClInclude Include="Engine\UEngine.h" />
     <ClInclude Include="Engine\UEntity.h" />
+    <ClInclude Include="Engine\UMaterial.h" />
     <ClInclude Include="Engine\USMesh.h" />
     <ClInclude Include="Engine\UInput.h" />
     <ClInclude Include="Engine\UTexture2D.h" />
     <ClInclude Include="Engine\UWorld.h" />
+    <ClInclude Include="Engine\UBehavior.h" />
     <ClInclude Include="GFXCore\UMeshDrawer.h" />
     <ClInclude Include="GFXCore\UPrimitiveDrawer.h" />
     <ClInclude Include="GFXCore\UGFXLauncherWin.h" />
@@ -61,6 +66,7 @@
     <ClInclude Include="Meta\UMetaSys.h" />
     <ClInclude Include="Meta\UTypeInfo.h" />
     <ClInclude Include="Object\UObject.h" />
+    <ClInclude Include="Object\UObjectArchive.h" />
     <ClInclude Include="Object\UObjectPtr.h" />
     <ClInclude Include="Object\UObjectSys.h" />
     <ClInclude Include="RasterTech\cameraclass.h" />
@@ -78,11 +84,14 @@
     <ClInclude Include="UPOEngine.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Core\UArray.cpp" />
     <ClCompile Include="Core\UBasic.cpp" />
     <ClCompile Include="Core\UBuffer.cpp" />
     <ClCompile Include="Core\UFileSys.cpp" />
+    <ClCompile Include="Core\UFileSys_Win.cpp" />
     <ClCompile Include="Core\UHash.cpp" />
     <ClCompile Include="Core\ULog.cpp" />
+    <ClCompile Include="Core\UMap.cpp" />
     <ClCompile Include="Core\UModule.cpp" />
     <ClCompile Include="Core\UName.cpp" />
     <ClCompile Include="Core\UStream.cpp" />
@@ -93,11 +102,14 @@
     <ClCompile Include="Core\UVector.cpp" />
     <ClCompile Include="Engine\UAsset.cpp" />
     <ClCompile Include="Engine\UAssetSys.cpp" />
+    <ClCompile Include="Engine\UComponent.cpp" />
     <ClCompile Include="Engine\UEntity.cpp" />
+    <ClCompile Include="Engine\UMaterial.cpp" />
     <ClCompile Include="Engine\USMesh.cpp" />
     <ClCompile Include="Engine\UInput.cpp" />
     <ClCompile Include="Engine\UTexture2D.cpp" />
     <ClCompile Include="Engine\UWorld.cpp" />
+    <ClCompile Include="Engine\UBehavior.cpp" />
     <ClCompile Include="GFXCore\UMeshDrawer.cpp" />
     <ClCompile Include="GFXCore\UPrimitiveDrawer.cpp" />
     <ClCompile Include="GFXCore\UGFXLauncherWin.cpp" />
@@ -112,6 +124,7 @@
     <ClCompile Include="Meta\UMetaSys.cpp" />
     <ClCompile Include="Meta\UTypeInfo.cpp" />
     <ClCompile Include="Object\UObject.cpp" />
+    <ClCompile Include="Object\UObjectArchive.cpp" />
     <ClCompile Include="Object\UObjectPtr.cpp" />
     <ClCompile Include="Object\UObjectSys.cpp" />
     <ClCompile Include="RasterTech\cameraclass.cpp" />

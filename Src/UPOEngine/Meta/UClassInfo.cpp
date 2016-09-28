@@ -15,6 +15,18 @@ namespace UPO
 		return 1;
 	}
 
+	size_t PropertyInfo::GetTypeSize() const
+	{
+		if (mTypeInfo) return mTypeInfo->GetSize();
+		else PropertyType_GetTypeSize(mPropertyType);
+	}
+
+	size_t PropertyInfo::TemplateArgTypeSize() const
+	{
+		if (mTemplateArgTypeInfo) return mTemplateArgTypeInfo->GetSize();
+		else return PropertyType_GetTypeSize(mTemplateArgType);
+	}
+
 	void PropertyInfo::PrintLog()
 	{
 		ULOG_MESSAGE("Name %s  TypeName %s TypeInfo %p", GetName().CStr(), GetTypeName().CStr(), GetTypeInfo());
@@ -97,53 +109,85 @@ namespace UPO
 
 
 	//////////////////////////////////////////////////////////////////////////
-	bool ClassInfo::CallDefaultConstructor(void* object) const
+	void ClassInfo::CallDefaultConstructor(void* object) const
 	{
 		UASSERT(object);
-		if (mDefalutConstructor)
-		{
-			mDefalutConstructor(nullptr);
-			return true;
-		}
-		return false;
+		UASSERT(mDefalutConstructor);
+		mDefalutConstructor(object);
 	}
 	//////////////////////////////////////////////////////////////////////////
-	bool ClassInfo::CallDestructor(void* object) const
+	void ClassInfo::CallDestructor(void* object) const
 	{
 		UASSERT(object);
-		if (mDestructor)
-		{
-			mDestructor(object);
-			return true;
-		}
-		return false;
+		UASSERT(mDestructor);
+		mDestructor(object);
 	}
 	//////////////////////////////////////////////////////////////////////////
-	bool ClassInfo::CallMetaPropertyChanged(void* object, const PropertyInfo* prp) const
+	void ClassInfo::CallMetaPropertyChanged(void* object, const PropertyInfo* prp) const
 	{
 		UASSERT(object);
-		if (mMetaPropertyChanged)
+		UASSERT(mMetaPropertyChanged);
+		mMetaPropertyChanged(object, prp);
+	}
+	//////////////////////////////////////////////////////////////////////////
+	void ClassInfo::CallMetaSerialize(void* object, Stream& stream) const
+	{
+		UASSERT(object);
+		UASSERT(mMetaSerialize);
+		mMetaSerialize(object, stream);
+	}
+
+	const ClassInfo* ClassInfo::GetRoot() const
+	{
+		ClassInfo* p = GetParent();
+		while (p->GetParent())
 		{
-			mMetaPropertyChanged(object, prp);
-			return true;
+			p = p->GetParent();
 		}
-		return false;
+		return p;
+	}
+	//////////////////////////////////////////////////////////////////////////
+	void ClassInfo::GetInheritedClasses(TArray<const ClassInfo*>& outClasses) const
+	{
+		outClasses.RemoveAll();
+		const ClassInfo* parent = GetParent();
+		while (parent)
+		{
+			outClasses.Add(parent);
+			parent = parent->GetParent();
+		}
+		outClasses.Reverse();
 	}
 
 	//////////////////////////////////////////////////////////////////////////
-	void ClassInfo::GetAlUsedClassesInProperties(TArray<ClassInfo*>& outClasses)
+	void ClassInfo::GetInvolvedClasses(TArray<const ClassInfo*>& outClasses, bool subProperties, bool inheritedProperties, bool removeArrayFirst) const
 	{
-		outClasses.Empty();
-		for (size_t i = 0; i < mProperties.Length(); i++)
+		if(removeArrayFirst) outClasses.RemoveAll();
+
+		TArray<const ClassInfo*> classes;
+
+		if (inheritedProperties) GetInheritedClasses(classes);
+
+		classes.Add(this);
+
+		for (size_t iClass = 0; iClass < classes.Length(); iClass++)
 		{
-			PropertyInfo& prop = mProperties[i];
-			if (prop.GetTypeInfo() && prop.GetTypeInfo()->IsClass())
+			const ClassInfo* cls = classes[iClass];
+			outClasses.AddUnique(cls);
+
+			for (size_t iPrp = 0; iPrp < cls->NumProperty(); iPrp++)
 			{
-				ClassInfo* classInfo = (ClassInfo*)prop.GetType();
-				outClasses.AddUnique(classInfo);
-				classInfo->GetAlUsedClassesInProperties(outClasses);
+				const TypeInfo* prpTypeInfo = cls->GetProperty(iPrp)->GetTypeInfo();
+				if (prpTypeInfo && prpTypeInfo->IsClass())
+				{
+					ClassInfo* prpClassInfo = (ClassInfo*)prpTypeInfo;
+					outClasses.AddUnique(prpClassInfo);
+					if (subProperties)
+						prpClassInfo->GetInvolvedClasses(outClasses, true, inheritedProperties, false);
+				}
 			}
 		}
+		
 	}
 
 	void ClassInfo::PrintLog()
@@ -161,5 +205,77 @@ namespace UPO
 	}
 	
 
+	//////////////////////////////////////////////////////////////////////////
+	const PropertyInfo* ClassInfo::FindPropertyByName(Name name, bool includingInheritedProperties) const
+	{
+		for (size_t i = 0; i < mProperties.Length(); i++)
+		{
+			if (mProperties[i].GetName() == name) 
+				return mProperties.Elements() + i;
+		}
+		
+		if (includingInheritedProperties && GetParent())
+			return GetParent()->FindPropertyByName(name, true);
+
+		return nullptr;
+	}
+
+	size_t PropertyType_GetTypeSize(EPropertyType propertyType)
+	{
+		switch (propertyType)
+		{
+		case EPT_Unknown: return 0;
+		case EPT_bool: return 1;
+		case EPT_int8: return 1;
+		case EPT_uint8: return 1;
+		case EPT_int16: return 2;
+		case EPT_uint16: return 2;
+		case EPT_int32: return 4;
+		case EPT_uint32: return 4;
+		case EPT_int64: return 8;
+		case EPT_uint64: return 8;
+		case EPT_float: return 4;
+		case EPT_double: return 8;
+		case EPT_enum: return 4;	//enum size should be alway 4 bytes
+		case EPT_TArray: return sizeof(TArray<Void>);
+		case EPT_TObjectPtr: return sizeof(TObjectPtr<Object>);
+		case EPT_ObjectPoniter: return sizeof(Object*);
+		case EPT_MetaClass: return 0; //meta class should use TypeInfo
+		}
+		return 0;
+	}
+
+	bool PropertyType_IsArithmetic(EPropertyType propertyType)
+	{
+		bool lut[] =
+		{
+			0,
+			1,
+			1,1,  1,1,  1,1,  1,1, 
+			1,1,
+			0,
+			0,0,0,0,0,0,0
+		};
+		return lut[(unsigned)propertyType];
+	}
+
+	const TypeInfo* PropertyType_GetTypeInfo(EPropertyType propertyType)
+	{
+		static Name lut[] =
+		{
+			nullptr,
+			typeid(bool).name(),
+			typeid(int8).name(), typeid(uint8).name(), typeid(int16).name(), typeid(uint16).name(), 
+			typeid(int32).name(), typeid(uint32).name(), typeid(int64).name(), typeid(uint64).name(),
+			typeid(float).name(), typeid(double).name(), 
+			nullptr,
+			nullptr,
+			nullptr,
+			nullptr,
+			nullptr,
+			nullptr,
+		};
+		return MetaSys::Get()->FindType(lut[(unsigned)propertyType]);
+	}
 
 };
