@@ -11,6 +11,13 @@ namespace UPO
 	{
 		ETE_Element0, ETE_Element1, ETE_Element2
 	};
+	enum ETestFlag
+	{
+		ETF_Flag1 = 1,
+		ETF_Flag2 = 2,
+		ETF_Flag3 = 4,
+		ETF_All = ETF_Flag1 | ETF_Flag2 | ETF_Flag3,
+	};
 
 	struct UAPI TestMyStruct
 	{
@@ -29,6 +36,7 @@ namespace UPO
 			static const unsigned ES = sizeof(ETestEnum);
 		Color mColor;
 		ETestEnum mEnum;
+		ETestFlag mFlag;
 
 		void MetaPropertyChanged(const PropertyInfo* prp);
 	};
@@ -43,7 +51,7 @@ namespace UPO
 		short mShort;
 		unsigned short mUShort;
 		int mInt;
-		int mUInt;
+		unsigned int mUInt;
 		int64 mInt64;
 		uint64 mUInt64;
 		Vec2 mVec2;
@@ -63,6 +71,10 @@ namespace UPO
 		void SetValues();
 		void Print();
 
+		TestMetaClass()
+		{
+			SetValues();
+		}
 		void MetaPropertyChanged(const PropertyInfo* prp);
 	};
 };

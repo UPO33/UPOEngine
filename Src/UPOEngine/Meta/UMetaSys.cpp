@@ -81,11 +81,9 @@ namespace UPO
 	{
 		UASSERT(crp && outClass);
 		
-		Module* curModule = ModuleSys::Get()->GetCurrentLoadingModule();
-
-		if (outClass->mRegistered)
+		if (FindType(crp->mTypeCheck.mClassName))
 		{
-			ULOG_ERROR("class [%s] previously registered at module [%s]", crp->mTypeCheck.mClassName, curModule ? curModule->GetName().CStr() : "null");
+			ULOG_ERROR("failed to register class [%s], currently there is a type with the same name", crp->mTypeCheck.mClassName);
 			return false;
 		}
 		
@@ -94,7 +92,7 @@ namespace UPO
 		outClass->mRefData = nullptr;
 
 		//////////////TypeInfo
-		outClass->mOwner = curModule;
+		outClass->mOwner = ModuleSys::Get()->GetCurrentLoadingModule();
 		outClass->mTypeName = crp->mTypeCheck.mClassName;
 		outClass->mAttributes = crp->mAttribPack;
 		outClass->mHeaderFileName = crp->mHeaderFileName;
@@ -132,7 +130,7 @@ namespace UPO
 		
 		mRegisteredTypes.Add(outClass);
 		outClass->mRegistered = true;
-		ULOG_SUCCESS("Class [%s] was Registered successfully", crp->mTypeCheck.mClassName);
+		ULOG_SUCCESS("Class [%s] was Registered", crp->mTypeCheck.mClassName);
 		RebakeTypes();
 		return true;
 	}
@@ -157,9 +155,9 @@ namespace UPO
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////
-	bool MetaSys::UnRegClass(ClassInfo* registeredClass)
+	bool MetaSys::UnregClass(ClassInfo* registeredClass)
 	{
-		if (registeredClass && registeredClass->mRegistered)
+		if (registeredClass)
 		{
 			size_t index = mRegisteredTypes.Find(registeredClass);
 			if (index != ~0)
@@ -178,9 +176,70 @@ namespace UPO
 	}
 
 
-	
 	//////////////////////////////////////////////////////////////////////////
-	const TypeInfo* MetaSys::FindType(Name name) const
+	bool MetaSys::RegEnum(ZZ_EnumRegParam* erp, EnumInfo* outEnum)
+	{
+		UASSERT(erp && outEnum);
+
+		if (FindType(erp->mEnumName))
+		{
+			ULOG_ERROR("failed to register enum [%s], currently there is a type with the same name", erp->mEnumName);
+			return false;
+		}
+
+		//////////////////////Object
+		outEnum->mClassInfo = EnumInfo::GetClassInfoStatic();
+		outEnum->mRefData = nullptr;
+
+		///////////////TypeInfo
+		outEnum->mOwner = ModuleSys::Get()->GetCurrentLoadingModule();
+		outEnum->mTypeName = erp->mEnumName;
+		outEnum->mHeaderFileName = nullptr;
+		outEnum->mSourceFileName = erp->mSourceFileName;
+		outEnum->mDefinitionLineNumber = erp->mLineNumber;
+		outEnum->mTypeAlign = 4;
+		outEnum->mTypeSize = 4;
+		outEnum->mIsArithmetic = false;
+		outEnum->mIsEnum = true;
+		outEnum->mIsClass = false;
+
+		/////////////EnumInfo
+		outEnum->mComment = erp->mComment;
+		outEnum->mIsBitFlag = erp->mIsBitFlag;
+		outEnum->mElements.AddDefault(erp->mNumElement);
+		TArray<String> elementsName;
+		String(erp->mElementsName).Split(',', elementsName);
+		//removing spaces
+		elementsName.ForEach([](String& str) { str.Trim(); });
+
+		/////////elements
+		for (size_t i = 0; i < erp->mNumElement; i++)
+		{
+			outEnum->mElements[i] = EnumElement(elementsName[i], erp->mElementsValue[i]);
+		}
+
+		mRegisteredTypes.Add(outEnum);
+		ULOG_SUCCESS("enum [%s] was Registered ", erp->mEnumName);
+		return true;
+	}
+	//////////////////////////////////////////////////////////////////////////
+	bool MetaSys::UnregEnum(EnumInfo* registeredEnum)
+	{
+		if (registeredEnum)
+		{
+			size_t index = mRegisteredTypes.Find(registeredEnum);
+			if (index != ~0)
+			{
+				mRegisteredTypes.RemoveAtSwap(index);
+				ULOG_SUCCESS("enum [%s] Unregistered", registeredEnum->GetName().CStr());
+				return true;
+			}
+		}
+		return false;
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	TypeInfo* MetaSys::FindType(Name name) const
 	{
 		for (size_t i = 0; i < mRegisteredTypes.Length(); i++)
 		{
@@ -190,10 +249,17 @@ namespace UPO
 		return nullptr;
 	}
 	//////////////////////////////////////////////////////////////////////////
-	const ClassInfo* MetaSys::FindClass(Name name) const
+	ClassInfo* MetaSys::FindClass(Name name) const
 	{
 		auto ti = FindType(name);
-		if (ti && ti->IsClass()) return (const ClassInfo*)ti;
+		if (ti && ti->IsClass()) return (ClassInfo*)ti;
+		return nullptr;
+	}
+	//////////////////////////////////////////////////////////////////////////
+	EnumInfo* MetaSys::FinEnum(Name name) const
+	{
+		auto ti = FindType(name);
+		if (ti && ti->IsEnum()) return (EnumInfo*)ti;
 		return nullptr;
 	}
 

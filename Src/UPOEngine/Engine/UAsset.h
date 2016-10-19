@@ -38,7 +38,7 @@ namespace UPO
 		EAF_Defaul,
 	};
 	//////////////////////////////////////////////////////////////////////////
-	class Asset : public Object
+	class UAPI Asset : public Object
 	{
 		UCLASS(Asset, Object)
 
@@ -49,7 +49,7 @@ namespace UPO
 		Flag				mAssetFlag = EAssetFlag::EAF_Defaul;
 		AssetEntry*			mEntry = nullptr;
 		TArray<World*>		mWorldOwners;	//the worlds that r using this asset
-		TArray<Name>		mTags;
+		Name				mTag;
 		
 
 		void PostLoad();
@@ -63,17 +63,17 @@ namespace UPO
 		Name GetName() const;
 		AssetID GetID() const;
 
-		bool HasTag(Name tag) const { return mTags.HasElement(tag); }
-		void AddTag(Name tag) { mTags.AddUnique(tag); }
-		void RemoveTag(Name tag) { mTags.RemoveSwap(tag); }
+
 
 		void Save();
 		bool IsDirty() const { return FlagTest(EAssetFlag::EAF_Dirty); }
 		
-		void IsOwnedBy(World*);
-		void AddOwner(World*);
-		void RemoveOwner(World*);
+		void IsOwnedBy(World*) {}
+		void AddOwner(World*) {}
+		void RemoveOwner(World*) {}
 		
+		virtual void OnConstruct() {};
+
 		virtual void OnInit() {};
 		virtual void OnInitRS() {};
 		virtual void OnRelease() {};

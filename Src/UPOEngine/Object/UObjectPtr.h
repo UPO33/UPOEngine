@@ -79,7 +79,7 @@ namespace UPO
 		}
 		TObjectPtr& operator = (const TObjectPtr& other)
 		{
-			other->Inc();
+			other.mRefData->Inc();
 			mRefData->Dec();
 			mRefData = other->mRefData;
 			return *this;

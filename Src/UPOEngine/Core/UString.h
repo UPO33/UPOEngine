@@ -2,6 +2,7 @@
 
 #include "UBasic.h"
 #include "UMemory.h"
+#include "UArray.h"
 
 namespace UPO
 {
@@ -13,6 +14,7 @@ namespace UPO
 
 	//////////////////////////////////////////////////////////////////////////
 	class Stream;
+	class Name;
 
 	//////////////////////////////////////////////////////////////////////////
 	inline size_t StrLen(const char* str) { return strlen(str); }
@@ -57,12 +59,25 @@ namespace UPO
 			if (str && str[0])
 			{
 				size_t len = StrLen(str);
-				mStr = AllocChunk(len);
-				MemCopy(mStr->mChars, str, len * sizeof(char) + sizeof(char));
+				new (this) String(str, len);
 			}
 			else
 			{
-				mStr = nullptr;
+				new (this) String();
+			}
+		}
+		String(const char* str, size_t length)
+		{
+			if (length)
+			{
+				UASSERT(str);
+				mStr = AllocChunk(length);
+				MemCopy(mStr->mChars, str, length);
+				mStr->mChars[length] = 0;
+			}
+			else
+			{
+				new (this) String();
 			}
 		}
 		String(const String& other)
@@ -74,9 +89,11 @@ namespace UPO
 			}
 			else
 			{
-				mStr = nullptr;
+				new (this) String();
 			}
 		}
+		String(const Name& name);
+
 		String& operator = (const UPO::String& other)
 		{
 			if (other.mStr)
@@ -117,18 +134,7 @@ namespace UPO
 // 			}
 			return true;
 		}
-		bool Equal(const String& other) const
-		{
-// 			if (mStr->mLen == other.mStr->mLen)
-// 			{
-// 				for (unsigned i = 0; i < mStr->mLen; i++)
-// 				{
-// 					if (mStr->mChars[i] != other.mStr->mChars[i]) return false;
-// 				}
-// 				return true;
-// 			}
-			return false;
-		}
+		bool Equal(const String& other) const;
 		bool operator == (const String& other) const
 		{
 			return Equal(other);
@@ -141,38 +147,7 @@ namespace UPO
 		{
 			UASSERT(mStr && index < Length());
 			return mStr->mChars[index];
-		}
-		char operator [] (unsigned index) const
-		{
-			UASSERT(mStr && index < Length());
-			return mStr->mChars[index];
-		}
-		unsigned FindNChar(char chr, unsigned n = 0) const
-		{
-// 			unsigned numFound = 0;
-// 			for (unsigned i = 0; i < mStr->mLen; i++)
-// 			{
-// 				if (mStr->mChars[i] == chr)
-// 				{
-// 					if (numFound == n) return i;
-// 					numFound++;
-// 				}
-// 			}
-			return ~0;
-		}
-		unsigned FindNCharReverse(char chr, unsigned n = 0) const
-		{
-// 			unsigned numFound = 0;
-// 			for (unsigned i = mStr->mLen - 1; i >= 0; i--)
-// 			{
-// 				if (mStr->mChars[i] == chr)
-// 				{
-// 					if (numFound == n) return i;
-// 					numFound++;
-// 				}
-// 			}
-			return ~0;
-		}
+		}		
 		char* CStr() const
 		{
 			if(mStr) return mStr->mChars;
@@ -193,6 +168,15 @@ namespace UPO
 			return mStr == nullptr;
 		}
 
+		unsigned FindNChar(char chr, unsigned n = 0) const;
+		unsigned FindNCharReverse(char chr, unsigned n = 0) const;
+		void Split(char seprator, TArray<String>& out) const;
+		void Trim();
+		
+		String SubStr(unsigned index, unsigned count = ~0) const;
+
+		bool ToFloat(float& out) const;
+		void SetFormatted(const char* format, ...);
 		void MetaSerialize(Stream&);
 	};
 };

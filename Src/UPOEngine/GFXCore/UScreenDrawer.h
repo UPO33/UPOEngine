@@ -6,7 +6,7 @@
 namespace UPO
 {
 	//////////////////////////////////////////////////////////////////////////fwd decl
-	class Renderer;
+	class GFXRenderer;
 
 	//////////////////////////////////////////////////////////////////////////
 	class UAPI ScreenDrawer
@@ -23,18 +23,16 @@ namespace UPO
 		struct CBPerObject
 		{
 			Color mColor;
-			float mTime;
-			float padding[3];
 		};
 
-		bool Init(Renderer*);
+		bool Init(GFXRenderer*);
 		void Release();
 
 		void DrawTexture(GFXTexture2D* texture, Vec2 pos, Vec2 size, Color color, Vec2 uvTopLeft = Vec2(0), Vec2 uvRightBottom = Vec2(1));
 
 		void Frame();
 
-		Renderer*						mRenderer = nullptr;
+		GFXRenderer*					mRenderer = nullptr;
 		GFXShader*						mVertexShader = nullptr;
 		GFXShader*						mPixelShader = nullptr;
 		GFXVertexBuffer*				mQuadBuffer = nullptr;

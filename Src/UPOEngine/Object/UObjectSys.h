@@ -25,5 +25,10 @@ namespace UPO
 		static_assert(TT_IsObject<T>::value, "T must be a meta class derived from Object");
 		return (T*)NewObject(T::GetClassInfoStatic());
 	}
-	
+	template<typename T> T* NewObject(const ClassInfo* classInfo)
+	{
+		static_assert(TT_IsObject<T>::value, "T must be a meta class derived from Object");
+		return (T*)NewObject(classInfo);
+	}
+
 };

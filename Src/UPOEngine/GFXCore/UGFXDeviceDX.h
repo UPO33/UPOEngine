@@ -645,7 +645,12 @@ namespace UPO
 		//////////////////////////////////////////////////////////////////////////
 		virtual void BinVertexBuffer(const GFXVertexBuffer* buffer, unsigned stride, unsigned offset) override
 		{
-			if (buffer == nullptr) return;
+			if (buffer == nullptr)
+			{
+				mDeviceContext->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
+				return;
+			}
+
 			ID3D11Buffer* buffers[1] = { buffer->As<GFXVertexBufferDX>()->mHandle };
 			UINT strides[1] = { stride };
 			UINT offsets[1] = { offset };
@@ -654,6 +659,12 @@ namespace UPO
 		//////////////////////////////////////////////////////////////////////////
 		virtual void BinIndexBuffer(const GFXIndexBuffer* buffer, unsigned offset) override
 		{
+			if (buffer == nullptr)
+			{
+				mDeviceContext->IASetIndexBuffer(nullptr, DXGI_FORMAT::DXGI_FORMAT_UNKNOWN, 0);
+				return;
+			}
+
 			GFXIndexBufferDX* ib = buffer->As<GFXIndexBufferDX>();
 			mDeviceContext->IASetIndexBuffer(ib->mHandle, ToDXType(ib->GetDesc().mType), offset);
 		}

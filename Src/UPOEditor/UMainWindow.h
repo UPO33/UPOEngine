@@ -6,6 +6,33 @@
 
 namespace UPOEd
 {
+	struct StructStr
+	{
+		UCLASS(StructStr, void)
+
+		StructStr();
+		~StructStr();
+		TestMyStruct mStr;
+		void MetaPropertyChanged(const PropertyInfo* prp);
+	};
+	class TestObject : public Object
+	{
+		UCLASS(TestObject, Object)
+	public:
+		TestMetaClass mMetaClass;
+		EPropertyType mPropertyType = EPropertyType::EPT_double;
+		int mIntNoEdit = 99;
+		float mFloat01 = 0.5;
+		TArray<StructStr> mTArrayMS;
+
+		TestObject();
+		~TestObject();
+		void MetaPropertyChanged(const PropertyInfo* prp);
+
+		void Tick();
+	};
+
+	//////////////////////////////////////////////////////////////////////////
 	class MainWindow : public QMainWindow
 	{
 
@@ -18,6 +45,9 @@ namespace UPOEd
 		QMenuBar*	mMenuBar = nullptr;
 
 		ClassViewerWindow*	mClassViewer;
+
+		PropertyBrowserDW* mPropertyBrowser = nullptr;
+		TestObject* mTestObject = nullptr;
 
 	public:
 		MainWindow(QWidget *parent = nullptr, Qt::WindowFlags flags = Qt::WindowFlags())
@@ -37,10 +67,11 @@ namespace UPOEd
 			btn->setText("click");
 			mVLayout->addWidget(btn);
 
-			QDockWidget* dock = new QDockWidget(this);
-			dock->setWidget(new PropertyBrowserWidget(TestMetaClass::GetClassInfoStatic(), new TestMetaClass));
-			this->addDockWidget(Qt::DockWidgetArea::LeftDockWidgetArea, dock);
-			
+			mTestObject = NewObject<TestObject>();
+			mPropertyBrowser = new PropertyBrowserDW(this);
+			this->addDockWidget(Qt::DockWidgetArea::LeftDockWidgetArea, mPropertyBrowser);
+			mPropertyBrowser->AttachObject(mTestObject);
+
 			menuBar()->addMenu("File");
 			QMenu* menuView = menuBar()->addMenu("View");
 
@@ -56,7 +87,17 @@ namespace UPOEd
 			
 			
 		};
-		 
+		float mTickCounter = 0;
+		void Tick()
+		{
+			mPropertyBrowser->Tick();
+			mTickCounter++;
+			if (mTickCounter == 100)
+			{
+				mTestObject->Tick();
+				mTickCounter = 0;
+			}
+		}
 		//////////////////////////////////////////////////////////////////////////
 		void ClassViewerTriggered(bool checked)
 		{

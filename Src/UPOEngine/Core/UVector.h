@@ -625,11 +625,32 @@ namespace UPO
 
 		void MetaSerialize(Stream&);
 	};
-
+	inline Vec4 Abs(const Vec4& v)
+	{
+		return Vec4(Abs(v.mX), Abs(v.mY), Abs(v.mZ), Abs(v.mW));
+	}
+	inline Vec4 Min(const Vec4& v0, const Vec4& v1)
+	{
+		return Vec4(Min(v0.mX, v1.mX), Min(v0.mY, v1.mY), Min(v0.mZ, v1.mZ), Min(v0.mW, v1.mW));
+	}
+	inline Vec4 Max(const Vec4& v0, const Vec4& v1)
+	{
+		return Vec4(Max(v0.mX, v1.mX), Max(v0.mY, v1.mY), Max(v0.mZ, v1.mZ), Max(v0.mW, v1.mW));
+	}
 	inline Vec4 Lerp(const Vec4& v0, const Vec4& v1, float t)
 	{
 		return v0 * (1 - t) + v1 * t;
 	}
+	inline Vec4 Clamp(const Vec4& value, float min, float max)
+	{
+		return Vec4(Clamp(value.mX, min, max), Clamp(value.mY, min, max), Clamp(value.mZ, min, max), Clamp(value.mW, min, max));
+	}
+	inline Vec4 Clamp(const Vec4& value, const Vec4& min, const Vec4& max)
+	{
+		return Vec4(Clamp(value.mX, min.mX, max.mX), Clamp(value.mY, min.mY, max.mY), Clamp(value.mZ, min.mZ, max.mZ), Clamp(value.mW, min.mW, max.mW));
+	}
+
+
 
 
 	inline Vec3::Vec3(const Vec4& v)

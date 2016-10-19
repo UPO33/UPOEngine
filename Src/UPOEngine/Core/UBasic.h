@@ -55,7 +55,7 @@
 #define ULOG_WARN(format, ...) UPO::Log::Get()->Add(UPO::ELogType::ELT_Warn, __FILE__, __FUNCTION__, __LINE__, format, __VA_ARGS__)
 #define ULOG_FATAL(format, ...) UPO::Log::Get()->Add(UPO::ELogType::ELT_Fatal, __FILE__, __FUNCTION__, __LINE__, format, __VA_ARGS__)
 
-#define UASSERT(expression) { if(!(expression)) UPO::Log::Get()->Add(UPO::ELogType::ELT_Assert, __FILE__, __FUNCTION__, __LINE__, "Assertaion Failed %s", #expression);}
+#define UASSERT(expression) { if(!(expression)) UPO::Log::Get()->Add(UPO::ELogType::ELT_Assert, __FILE__, __FUNCTION__, __LINE__, "Assertaion Failed  %s", #expression); }
 
 #define UASSERT_GTONLY() UASSERT(UPO::IsGameThread())
 #define UASSERT_RTONLY() UASSERT(UPO::IsRenderThread())
@@ -65,6 +65,10 @@
 //template<class T, size_t N> size_t size(T(&)[N]) { return N; }
 
 #define UARRAYLEN(Array)  (sizeof(Array) / sizeof(Array[0]))
+
+
+#define UWELD(Prefix, Suffix) Prefix##Suffix
+#define UWELDINNER(Prefix, Suffix) UWELD(Prefix, Suffix)
 
 namespace UPO
 {
@@ -82,7 +86,7 @@ public:\
 	typedef ParentClass Parent;\
 	typedef Class Self;\
 	friend struct ZZZ_##Class;\
-	static const UPO::ClassInfo* GetClassInfoStatic();\
+	static UPO::ClassInfo* GetClassInfoStatic();\
 	void ZZZIsMeta() { static_assert(std::is_same<std::remove_pointer<decltype(this)>::type, Class>::value, "wrong Claass"); }\
 
 

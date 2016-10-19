@@ -100,7 +100,7 @@ namespace UPO
 
 		mNumInstance++;
 
-		ULOG_MESSAGE("new instance creataed");
+// 		ULOG_MESSAGE("new instance creataed");
 		return newIns;
 	}
 

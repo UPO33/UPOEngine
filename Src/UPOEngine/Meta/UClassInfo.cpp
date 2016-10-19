@@ -14,6 +14,11 @@ namespace UPO
 	{
 		return 1;
 	}
+	//////////////////////////////////////////////////////////////////////////
+	String PropertyInfo::GetLegibleName() const
+	{
+		return String(mPropertyName.CStr(), mPropertyName.Length());
+	}
 
 	size_t PropertyInfo::GetTypeSize() const
 	{
@@ -53,7 +58,7 @@ namespace UPO
 
 		if(!mParentClassName.IsEmpty()) // has parent ?
 		{
-			mParentClass = (ClassInfo*)MetaSys::Get()->FindType(mParentClassName);
+			mParentClass = MetaSys::Get()->FindClass(mParentClassName);
 			if (mParentClass == nullptr)
 				mErrorUnregisteredParent = true;
 			else
@@ -98,7 +103,7 @@ namespace UPO
 	{
 		if (this == base) return true;
 
-		const ClassInfo* iter = mParentClass;
+		ClassInfo* iter = mParentClass;
 		while (iter)
 		{
 			if (iter == base) return true;
@@ -137,7 +142,14 @@ namespace UPO
 		mMetaSerialize(object, stream);
 	}
 
-	const ClassInfo* ClassInfo::GetRoot() const
+	bool ClassInfo::HasProperty(const PropertyInfo* prp) const
+	{
+		if (prp == nullptr) return false;
+		if (mProperties.Length() == 0) return false;
+		return mProperties.IsWithin(prp);
+	}
+
+	ClassInfo* ClassInfo::GetRoot() const
 	{
 		ClassInfo* p = GetParent();
 		while (p->GetParent())
@@ -147,10 +159,10 @@ namespace UPO
 		return p;
 	}
 	//////////////////////////////////////////////////////////////////////////
-	void ClassInfo::GetInheritedClasses(TArray<const ClassInfo*>& outClasses) const
+	void ClassInfo::GetInheritedClasses(TArray<ClassInfo*>& outClasses) const
 	{
 		outClasses.RemoveAll();
-		const ClassInfo* parent = GetParent();
+		ClassInfo* parent = GetParent();
 		while (parent)
 		{
 			outClasses.Add(parent);
@@ -158,21 +170,50 @@ namespace UPO
 		}
 		outClasses.Reverse();
 	}
+	//////////////////////////////////////////////////////////////////////////
+	void ClassInfo::GetClassChain(SClassChain& out, bool reverse, bool includingThis) const
+	{
+		unsigned numClass = 0;
+		ClassInfo* classesTowardRoot[MAX_INHERITANCE];
+
+		if (includingThis)
+			classesTowardRoot[numClass++] = (ClassInfo*)this;
+
+		ClassInfo* parent = GetParent();
+		while (parent)
+		{
+			classesTowardRoot[numClass++] = parent;
+			parent = parent->GetParent();
+		}
+
+		if(reverse)
+		{
+			for (unsigned i = 0; i < numClass; i++)
+				out.mClasses[i] = classesTowardRoot[i];
+		}
+		else
+		{
+			for (unsigned i = 0; i < numClass; i++)
+				out.mClasses[i] = classesTowardRoot[numClass - i - 1];
+		}
+
+		out.mNumClass = numClass;
+	}
 
 	//////////////////////////////////////////////////////////////////////////
-	void ClassInfo::GetInvolvedClasses(TArray<const ClassInfo*>& outClasses, bool subProperties, bool inheritedProperties, bool removeArrayFirst) const
+	void ClassInfo::GetInvolvedClasses(TArray<ClassInfo*>& outClasses, bool subProperties, bool inheritedProperties, bool removeArrayFirst) const
 	{
 		if(removeArrayFirst) outClasses.RemoveAll();
 
-		TArray<const ClassInfo*> classes;
+		TArray<ClassInfo*> classes;
 
 		if (inheritedProperties) GetInheritedClasses(classes);
 
-		classes.Add(this);
+		classes.Add((ClassInfo*)this);
 
 		for (size_t iClass = 0; iClass < classes.Length(); iClass++)
 		{
-			const ClassInfo* cls = classes[iClass];
+			ClassInfo* cls = classes[iClass];
 			outClasses.AddUnique(cls);
 
 			for (size_t iPrp = 0; iPrp < cls->NumProperty(); iPrp++)
@@ -188,6 +229,45 @@ namespace UPO
 			}
 		}
 		
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	bool _GetPropertyChain(const ClassInfo* classToFind, const PropertyInfo* propertyToFind, SPropertyChain& out)
+	{
+		//this, Entity, Object, ..
+		SClassChain classesTowardRoot;
+		classToFind->GetClassChain(classesTowardRoot, true, true);
+
+
+		for (unsigned iClass = 0; iClass < classesTowardRoot.mNumClass; iClass++)
+		{
+			auto cls = classesTowardRoot.mClasses[iClass];
+			for (unsigned iProperty = 0; iProperty < cls->NumProperty(); iProperty++)
+			{
+				PropertyInfo* prp = (PropertyInfo*)cls->GetProperty(iProperty);
+				if (prp == propertyToFind) // found?
+				{
+					out.mProperties[out.mNumProperty++] = prp;
+					return true;
+				}
+				else
+				{
+					if (prp->GetTypeInfo() && prp->GetTypeInfo()->IsClass())
+					{
+						out.mProperties[out.mNumProperty++] = prp;
+						if (_GetPropertyChain(((ClassInfo*)prp->GetType()), propertyToFind, out))
+							return true;
+					}
+				}
+			}
+		}
+		return false;
+	}
+	bool ClassInfo::GetPropertyChain(const PropertyInfo* propertyToFind, SPropertyChain& out) const
+	{
+		out.mNumProperty = 0;
+		if (propertyToFind == nullptr) return false;
+		return _GetPropertyChain(this, propertyToFind, out);
 	}
 
 	void ClassInfo::PrintLog()
@@ -206,7 +286,7 @@ namespace UPO
 	
 
 	//////////////////////////////////////////////////////////////////////////
-	const PropertyInfo* ClassInfo::FindPropertyByName(Name name, bool includingInheritedProperties) const
+	PropertyInfo* ClassInfo::FindPropertyByName(Name name, bool includingInheritedProperties) const
 	{
 		for (size_t i = 0; i < mProperties.Length(); i++)
 		{
@@ -276,6 +356,27 @@ namespace UPO
 			nullptr,
 		};
 		return MetaSys::Get()->FindType(lut[(unsigned)propertyType]);
+	}
+
+	void SPropertyChain::PerformMetaPropertyChanged(void* object)
+	{
+		UASSERT(object);
+
+		if (mNumProperty == 0) return;
+
+		void* objs[MAX_INHERITANCE];
+		void* obj = object;
+		for (unsigned i = 0; i < mNumProperty; i++)
+		{
+			objs[i] = obj = mProperties[i]->Map(obj);
+		}
+		for (unsigned i = mNumProperty - 1; i >= 0; i--)
+		{
+			if (mProperties[i]->GetOwner()->HasMetaPropertyChanged())
+			{
+				mProperties[i]->GetOwner()->CallMetaPropertyChanged(objs[i], mProperties[i]);
+			}
+		}
 	}
 
 };

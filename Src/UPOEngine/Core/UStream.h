@@ -35,6 +35,8 @@ namespace UPO
 			Bytes(&value, sizeof(T));
 			return *this;
 		}
+		
+		virtual ~Stream() {}
 
 		//indicates whether this stream reads data or writes
 		bool IsReader() const { return mIsReader; }

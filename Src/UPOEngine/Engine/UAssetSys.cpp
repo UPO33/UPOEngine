@@ -14,11 +14,9 @@ namespace UPO
 
 	//////////////////////////////////////////////////////////////////////////
 	//relative
-	void AssetNameToRelativePath(const String& assetName, String& out)
+	void AssetNameToRelativePath(Name assetName, String& out)
 	{
-		char buffer[256];
-		sprintf_s(buffer, "../Content/%s", assetName.CStr());
-		out = assetName;
+		out.SetFormatted("../Content/%s", assetName.CStr());
 	}
 	//////////////////////////////////////////////////////////////////////////
 	bool ReadAssetHeader(Stream& assetFile, AssetID* outID = nullptr, Name* outClassName = nullptr)
@@ -68,6 +66,7 @@ namespace UPO
 	AssetSys::AssetSys()
 	{
 		mAssets.SetCapacity(1024);
+		CollectAssetsInContent();
 	}
 
 	AssetSys::~AssetSys()
@@ -79,11 +78,19 @@ namespace UPO
 	{
 		if (assetClass)
 		{
-			if (!assetClass->IsBaseOf(Asset::GetClassInfoStatic())) return nullptr;
+			if (!assetClass->IsBaseOf(Asset::GetClassInfoStatic()))
+			{
+				ULOG_MESSAGE("Invalid asset class");
+				return nullptr;
+			}
 
-			if (FindAsset(assetName)) return nullptr;
+			if (FindAsset(assetName))
+			{
+				ULOG_MESSAGE("There is a asset with the same name");
+				return nullptr;
+			}
 
-			Asset* newAsset = (Asset*)NewObject(assetClass);
+			Asset* newAsset = NewObject<Asset>(assetClass);
 
 			AssetEntry* newEntry = new AssetEntry;
 			newEntry->mName = assetName;
@@ -91,11 +98,18 @@ namespace UPO
 			newEntry->mID = AssetID::GetNewID();
 			newEntry->mInstance = newAsset;
 
-			mAssets.Add(newEntry);
+			AddEntryToList(newEntry);
 
 			newAsset->mEntry = newEntry;
+
+			newAsset->OnConstruct();
+			
 			newAsset->FlagSet(EAssetFlag::EAF_Dirty);
 			newAsset->Save();
+
+			DeleteObject(newAsset);
+
+			newEntry->mInstance = nullptr;
 
 			return newEntry;
 		}
@@ -142,21 +156,7 @@ namespace UPO
 		return nullptr;
 	}
 	
-	//////////////////////////////////////////////////////////////////////////
-	bool AssetSys::SaveAsset(Asset* asset)
-	{
-		UASSERT(asset);
 
-		if (Stream* stream = asset->mEntry->OpenStreamForSaving())
-		{
-			WriteAssetHeader(*stream, asset->GetID(), asset->GetClassInfo()->GetName());
-			ObjectArchive::Save(asset, stream);
-			ULOG_SUCCESS("asset [%s] saved", asset->GetName().CStr());
-			return true;
-		}
-		ULOG_ERROR("failed to save asset [%s]", asset->GetName().CStr());
-		return false;
-	}
 
 	//////////////////////////////////////////////////////////////////////////
 	void AssetSys::CollectAssetsInContent()
@@ -168,17 +168,17 @@ namespace UPO
 		for (size_t i = 0; i < assetNamesString.Length(); i++)
 		{
 			String assetFileName;
-			AssetNameToRelativePath(assetNamesString[i], assetFileName);
+			AssetNameToRelativePath(Name(assetNamesString[i]), assetFileName);
 
 			AssetID assetID;
 			Name assetClassName;
 
 			if (CheckFile(assetFileName, &assetID, &assetClassName))
 			{
-				AssetEntry newAsset;
-				newAsset.mID = assetID;
-				newAsset.mClassName = assetClassName;
-				newAsset.mName = assetNamesString[i];
+				AssetEntry* newAsset = new AssetEntry;
+				newAsset->mID = assetID;
+				newAsset->mClassName = assetClassName;
+				newAsset->mName = assetNamesString[i];
 
 				mAssets.Add(newAsset);
 			}
@@ -191,9 +191,7 @@ namespace UPO
 
 		auto fStream = StreamWriterFile(filename);
 		
-		ReadAssetHeader(fStream, outAssetID, outClassName);
-
-		return false;
+		return ReadAssetHeader(fStream, outAssetID, outClassName);
 	}
 	
 	//////////////////////////////////////////////////////////////////////////
@@ -252,21 +250,21 @@ namespace UPO
 		{
 			ULOG_MESSAGE("start loading asset [%s] ...", mName.CStr());
 
-			TArray<Object*> objectsLoaded;
-			ObjectArchive::Load(objectsLoaded, OpenStreamForLoading());
+			Object* assetObject = ObjectArchive::Load(OpenStreamForLoading());
 			CloseStream();
-			if (objectsLoaded.Length() == 1)
+			if (assetObject)
 			{
-				Asset* loadedAsset = objectsLoaded[0]->Cast<Asset>();
-				UASSERT(loadedAsset);
-
-				loadedAsset->AddOwner(owner);
-				loadedAsset->mEntry = this;
-
-				mInstance = loadedAsset;
+				Asset* asset = assetObject->Cast<Asset>();
+				UASSERT(asset);
 				
-				loadedAsset->PostLoad();
-				ULOG_SUCCESS("asset loaded");
+				asset->AddOwner(owner);
+				asset->mEntry = this;
+
+				mInstance = asset;
+			
+				asset->PostLoad();
+
+				ULOG_SUCCESS("asset [%s] loaded", GetName());
 				return true;
 			}
 			else

@@ -23,16 +23,16 @@ namespace UPO
 		friend MetaSys;
 
 	private:
-		const ClassInfo*			mClassInfo;
-		mutable ObjectRefData*		mRefData;
+		ClassInfo*			mClassInfo;
+		ObjectRefData*		mRefData;
 
 		
 
 	public:
 		Object() {}
-		~Object();
+		virtual ~Object();
 
-		const ClassInfo* GetClassInfo() const { return mClassInfo; }
+		ClassInfo* GetClassInfo() const { return mClassInfo; }
 		ObjectRefData* GetRefData();
 
 		template<typename T> T* Cast() const

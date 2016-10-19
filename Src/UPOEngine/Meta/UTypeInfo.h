@@ -7,12 +7,25 @@
 #include "../Core/UArray.h"
 #include "../Object/UObject.h"
 
+//by default the properties, classes and enums has no attributes
+
 #define UATTR_Comment(Comment) Attrib(EAtrribID::EAT_Comment, (const char*)Comment)
+//expose the property in the specified category
+#define UATTR_Category(Category) Attrib(EAtrribID::EAT_Category, (const char*)Category)
+//specify the minimum and maximum value for the numeric properties
 #define UATTR_Range(Min, Max) Attrib(EAtrribID::EAT_Range, (float)Min, (float)Max)
+//abstract class cant be instanced
 #define UATTR_Abstract() Attrib(EAtrribID::EAT_Abstract)
+//the property can not be edited in editor
 #define UATTR_Uneditable() Attrib(EAtrribID::EAT_Uneditable)
+//the property is hidden in editor
 #define UATTR_Hidden() Attrib(EAtrribID::EAT_Hidden)
+//volatile property or class will no be serialized/deserialized
 #define UATTR_Volatile() Attrib(EAtrribID::EAT_Volatile)
+//a class that has this attribute can be instantiated through editor
+#define UATTR_Instanceable() Attrib(EAtrribID::EAT_Instanceable)
+//icons should be placed at Content\Icons
+#define UATTR_Icon(Name) Attrib(EAtrribID::EAT_Icon, (const char*)Name)
 
 //new attributes here ^^^^^^^^^^^^^
 
@@ -27,11 +40,14 @@ namespace UPO
 	{
 		EAT_None,
 		EAT_Comment,
+		EAT_Category,
 		EAT_Range,
 		EAT_Abstract,
 		EAT_Uneditable,
 		EAT_Hidden,
 		EAT_Volatile,
+		EAT_Instanceable,
+		EAT_Icon,
 
 		////new attributes here ^^
 	};

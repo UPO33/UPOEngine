@@ -53,12 +53,12 @@ namespace UPO
 
 		static T* Alloc(size_t size)
 		{
-			ULOG_MESSAGE("%zu bytes allocated", size);
+// 			ULOG_MESSAGE("%zu bytes allocated", size);
 			return (T*)MemAlloc(size);
 		}
 		static T* Realloc(T* memory, size_t newSize)
 		{
-			ULOG_SUCCESS("%zu bytes allocated ", newSize);
+// 			ULOG_SUCCESS("%zu bytes allocated ", newSize);
 			return (T*)MemRealloc(memory, newSize);
 		}
 		static void Free(T* memory)
@@ -357,15 +357,17 @@ namespace UPO
 // #endif
 // 			mLength -= count;
 // 		}
-		//doesn't call ctor dtor
-// 		void RemoveShift(size_t index, size_t count = 1)
-// 		{
-// 			XASSERT(index < mLength && count > 0);
-// 			XASSERT(index + count <= mLength);
-// 			size_t n = index + count;
-// 			MemMove(mElements + index, mElements + n, (mLength - n) * sizeof(T));
-// 			mLength -= count;
-// 		}
+
+		//only calls destructor on removing elements
+		void RemoveShift(size_t index, size_t count = 1)
+		{
+			UASSERT(index < mLength && count > 0);
+			UASSERT(index + count <= mLength);
+			size_t n = index + count;
+			CallDTor(mElements + index, count);
+			MemMove(mElements + index, mElements + n, (mLength - n) * sizeof(T));
+			mLength -= count;
+		}
 		void Shrink()
 		{
 			UASSERT(mCapacity >= mLength);
@@ -376,7 +378,14 @@ namespace UPO
 		size_t Unused() const { return mCapacity - mLength; }
 
 		T* Elements() const { return mElements; }
-
+		T* ElementAt(size_t index) const { return mElements + index; }
+		T* ElementAtSafe(size_t index) const { return (IsIndexValid(index) ? mElements + index : nullptr); }
+		
+		//checks whether 'ptr' is in array bound or not
+		bool IsWithin(const void* ptr) const
+		{
+			return ((size_t)ptr) >= ((size_t)mElements) && ((size_t)ptr) < ((size_t)(mElements + mLength));
+		}
 		const T& operator [] (size_t index) const
 		{
 			UASSERT(mElements && index < mLength);
@@ -443,8 +452,9 @@ namespace UPO
 	class TypeInfo;
 	enum EPropertyType;
 
+	////cast TArray to this class to manipulate TArray for serialization or editor stuff, 
 	//////////////////////////////////////////////////////////////////////////
-	class SerArray
+	class UAPI SerArray
 	{
 	public:
 		byte*	mElements;
@@ -453,6 +463,7 @@ namespace UPO
 
 		void CallDTor(size_t begin, size_t count, EPropertyType elementType, const TypeInfo* elementTypeInfo);
 		void CallDCTor(size_t begin, size_t count, EPropertyType elementType, const TypeInfo* elementTypeInfo);
+
 		void RemoveAll(EPropertyType elementType, const TypeInfo* elementTypeInfo);
 		void Empty(EPropertyType elementType, const TypeInfo* elementTypeInfo);
 		void* GetElement(size_t index, EPropertyType elementType, const TypeInfo* elementTypeInfo);

@@ -44,7 +44,7 @@ namespace Console
 	{
 		int LUTColors[UPO::ELogType::ELT_Max] =
 		{
-			Console::Dark::WHITE, Console::Bright::GREEN, Console::Bright::YELLOW, Console::Bright::RED, Console::Bright::RED
+			Console::Dark::WHITE, Console::Bright::GREEN, Console::Bright::YELLOW, Console::Bright::RED, Console::Bright::RED, Console::Bright::RED
 		};
 		Console::SetColor(LUTColors[logType]);
 	}
@@ -182,7 +182,7 @@ namespace UPO
 			WriteLog(newEntry);
 			CallListeners(newEntry);
 			if (type == ELT_Fatal || type == ELT_Assert)
-			{
+			{				
 				CloseLogFile();
 				AppCrash();
 			}

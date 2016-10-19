@@ -4,7 +4,7 @@ namespace UPO
 {
 	
 	//////////////////////////////////////////////////////////////////////////
-	bool ScreenDrawer::Init(Renderer* renderer)
+	bool ScreenDrawer::Init(GFXRenderer* renderer)
 	{
 		mRenderer = renderer;
 
@@ -111,7 +111,6 @@ namespace UPO
 
 			CBPerObject* obj = mCBPerObject->Map<CBPerObject>(EMapFlag::EMF_WRITE_DISCARD);
 			obj->mColor = color;
-			obj->mTime = GetTickCount() / 1000.f;
 			mCBPerObject->Unmap();
 		}
 
@@ -133,8 +132,8 @@ namespace UPO
 
 	void ScreenDrawer::Frame()
 	{
-		DrawTexture(mTextureTile1, Vec2(0.1), Vec2(0.1), Color(1,1,1,1));
-		DrawTexture(mTextureTile2, Vec2(0.1), Vec2(0.1), Color(1,1,1,0.2));
+		DrawTexture(mTextureTile1, Vec2(0.1), Vec2(0.2), Color(1,1,1,1));
+// 		DrawTexture(mTextureTile2, Vec2(0.1), Vec2(0.1), Color(1,1,1,0.2));
 	}
 
 	

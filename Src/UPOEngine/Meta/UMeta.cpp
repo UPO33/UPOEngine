@@ -17,6 +17,7 @@ namespace UPO
 	UCLASS_BEGIN_IMPL(TestMyStruct2)
 	UPROPERTY(mColor)
 	UPROPERTY(mEnum)
+	UPROPERTY(mFlag)
 	UCLASS_END_IMPL(TestMyStruct2)
 
 	void TestMyStruct2::MetaPropertyChanged(const PropertyInfo* prp)
@@ -24,7 +25,7 @@ namespace UPO
 		ULOG_MESSAGE("%s", prp->GetName().CStr());
 	}
 
-		UCLASS_BEGIN_IMPL(TestMetaClass)
+	UCLASS_BEGIN_IMPL(TestMetaClass)
 		UPROPERTY(mBool)
 		UPROPERTY(mChar)
 		UPROPERTY(mUChar)
@@ -46,8 +47,19 @@ namespace UPO
 		UPROPERTY(mTArrayVec3)
 		UPROPERTY(mTArrayInt)
 		UPROPERTY(mTArrayString)
-	UCLASS_END_IMPL(TestMetaClass)
+		UCLASS_END_IMPL(TestMetaClass)
 
+
+	UENUM(ETestEnum, false, nullptr
+		, ETestEnum::ETE_Element0
+		, ETestEnum::ETE_Element1
+		, ETestEnum::ETE_Element2);
+
+	UENUM(ETestFlag, true, nullptr
+		, ETestFlag::ETF_Flag1
+		, ETestFlag::ETF_Flag2
+		, ETestFlag::ETF_Flag3
+		, ETestFlag::ETF_All);
 
 
 		void TestMetaClass::SetZero()
@@ -57,6 +69,8 @@ namespace UPO
 
 		void TestMetaClass::SetValues()
 		{
+			srand(time(nullptr));
+
 			mBool = RandBool();
 			mChar = RandInt() % 128;
 			mUChar = RandInt() % 255;
@@ -69,8 +83,8 @@ namespace UPO
 			mVec2 = Vec2(RandFloat(-100, 100));
 			mVec3 = Vec3(RandFloat(-200, 200));
 			mVec4 = Vec4(RandFloat(-400, 400));
-			mColor = Color(RandFloat01(), 1);
-			mColor32 = Color32(RandInt() % 255, RandInt() % 255, RandInt() % 255, 255);
+			mColor = Color(1, 0, 0, 1);
+			mColor32 = Color32(255, 0, 0, 0); //Color32(RandInt() % 255, RandInt() % 255, RandInt() % 255, 255);
 			mString = "string";
 			mName = "name";
 			mMyStruct = { Vec3(10), Vec3(0,1,0), "naaaaame", "helllllllllo" };

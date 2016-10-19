@@ -8,6 +8,7 @@
 
 #define ULOGVAR_VEC3(v3) ULOG_WARN("%s %f  %f  %f", #v3, v3.mX, v3.mY, v3.mZ)
 #define ULOGVAR_STR(str) ULOG_WARN("%s %s", #str, str.CStr() ? str.CStr() : "")
+
 namespace UPO
 {
 	
@@ -105,61 +106,58 @@ namespace UPO
 	{
 		DirGetFiles(dir.CStr(), outFiles, nullptr);
 	}
+
+	void StrSplit(String& s, char split, TArray<String>& out)
+	{
+		out.RemoveAll();
+
+		auto len = s.Length();
+		if (len == 0) return;
+
+		const char* str = s.CStr();
+		size_t last = 0;
+
+		for (size_t i = 0; i < len; i++)
+		{
+			if (str[i] == split)
+			{
+					if (last == i)
+					{
+					//	out.AddDefault();
+					}
+					else
+					{
+						out.AddDefault();
+						out.LastElement() = String(str + last, i - last);
+					}
+
+				last = i + 1;
+			}
+		}
+
+		if (last == 0) // nothing found
+		{
+			//out.Add(s);
+		}
+		else if (last == len) //token is last char
+		{
+
+		}
+		else
+		{
+			out.AddDefault();
+			out.LastElement() = String(str + last, len - last);
+		}
+
+
+		for (size_t i = 0; i < out.Length(); i++)
+			ULOG_ERROR("[%s]", out[i].IsEmpty() ? "empty" : out[i].CStr());
+	}
 	//////////////////////////////////////////////////////////////////////////
 	UAPI void TestMain(int argc, const char** argv)
 	{
-		TArray<String> files;
-		TArray<String> folders;
-		PathGetFiles("C:/UPOEngine/Src/", files, false);
-		PathGetFolders("C:/UPOEngine/Src/", folders, false);
+		Engine::Get()->Run();
 
-		
-		for (size_t i = 0; i < files.Length(); i++)
-		{
-			ULOG_WARN("%s", files[i].CStr());
-		}
-		ULOG_WARN("*****************************************");
-		for (size_t i = 0; i < folders.Length(); i++)
-		{
-			ULOG_WARN("%s", folders[i].CStr());
-		}
-		/*
-		File fAsset;
-		fAsset.Open("../Content/StaticMesh/Sphere", EFileOpenMode::Write);
-		fAsset.Close();
-
-		TestObject* obj1 = NewObject<TestObject>();
-		obj1->SetValue();
-
-		StreamReaderMemory stream;
-
-		TArray<Object*> objectsToSave;
-		objectsToSave.Add(obj1);
-
-		ObjectArchive::Save(objectsToSave, &stream);
-
-		//DeleteObject(obj1);
-
-		TArray<Object*> loadedObjects;
-		StreamWriterMemory rs = StreamWriterMemory(stream.GetHead(), stream.GetSeek());
-		ObjectArchive::Load(loadedObjects, &rs);
-		
-		obj1->Print();
-
-		ULOG_WARN("num loaded obj %d", loadedObjects.Length());
-		for (size_t i = 0; i < loadedObjects.Length(); i++)
-		{
-			loadedObjects[i]->Cast<TestObject>()->Print();
-		}
-
-		File ff;
-		bool ofr = ff.Open("asd.txt", EFileOpenMode::Write);
-		ULOG_MESSAGE("opening file", ofr);
-		ff.WriteBytes(stream.GetHead(), stream.GetSeek());
-		ff.Close();
-
-		ULOG_MESSAGE("%d size ", stream.GetSeek());
-		*/
 		system("pause");
 		return;
 	}

@@ -113,7 +113,8 @@ namespace UPO
 
 	size_t SerArray::AddDefault(size_t count, EPropertyType elementType, const TypeInfo* elementTypeInfo)
 	{
-		SetCapacity(mCapacity + count, elementType, elementTypeInfo);
+		if (mCapacity <= (mLength + count))
+			SetCapacity(mCapacity + count, elementType, elementTypeInfo);
 		auto tmp = mLength;
 		mLength += count;
 		CallDCTor(tmp, count, elementType, elementTypeInfo);

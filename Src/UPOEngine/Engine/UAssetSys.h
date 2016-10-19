@@ -16,7 +16,7 @@ namespace UPO
 	class AssetSys;
 
 	//////////////////////////////////////////////////////////////////////////
-	class AssetEntry
+	class UAPI AssetEntry
 	{
 		friend AssetSys;
 
@@ -53,16 +53,24 @@ namespace UPO
 		AssetSys();
 		~AssetSys();
 
+		//create a asset with default properties 
 		AssetEntry* CreateAsset(const ClassInfo* assetClass, Name assetName);
 		Asset* LoadAsset(Name nanme, World* owner);
 		Asset* FindLoadedAsset(Name assetName);
 		Asset* FindLoadedAsset(AssetID id);
 		AssetEntry* FindAsset(Name name);
 		AssetEntry* FindAsset(AssetID id);
-		bool SaveAsset(Asset* asset);
 
 		void CollectAssetsInContent();
+		//return true if a file is asset
 		bool CheckFile(const String& filename, AssetID* outAssetID = nullptr, Name* outClassName = nullptr) const;
+
+		void AddEntryToList(AssetEntry* newEntry)
+		{
+			mAssets.Add(newEntry);
+		}
+		const TArray<AssetEntry*>& GetAssets() const { return mAssets; }
+		bool DeleteAsset(AssetEntry* asset);
 	};
 
 

@@ -22,7 +22,7 @@ namespace UPO
 			objs.Add(inObject);
 			Save(objs, stream);
 		}
-		static Object* load(Stream* stream)
+		static Object* Load(Stream* stream)
 		{
 			TArray<Object*> objs;
 			Load(objs, stream);

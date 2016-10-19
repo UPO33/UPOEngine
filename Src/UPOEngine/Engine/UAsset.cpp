@@ -6,8 +6,8 @@
 namespace UPO
 {
 	UCLASS_BEGIN_IMPL(Asset)
-		UPROPERTY(mAssetFlag)
-		UPROPERTY(mTags)
+		UPROPERTY(mAssetFlag, UATTR_Hidden())
+		UPROPERTY(mTag)
 	UCLASS_END_IMPL(Asset)
 
 	
@@ -37,8 +37,18 @@ namespace UPO
 	//////////////////////////////////////////////////////////////////////////
 	void Asset::Save()
 	{
-		if (AssetSys::Get()->SaveAsset(this))
-			FlagClear(EAssetFlag::EAF_Dirty);
+		FlagClear(EAssetFlag::EAF_Dirty);
+
+		if (Stream* stream = mEntry->OpenStreamForSaving())
+		{
+			ObjectArchive::Save(this, stream);
+			mEntry->CloseStream();
+			ULOG_SUCCESS("asset [%s] saved", GetName().CStr());
+		}
+		else
+		{
+			ULOG_ERROR("failed to save asset [%s]", GetName().CStr());
+		}
 	}
 
 	//////////////////////////////////////////////////////////////////////////

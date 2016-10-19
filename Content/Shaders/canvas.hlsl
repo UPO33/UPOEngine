@@ -29,8 +29,6 @@ struct VSOut
 cbuffer PerElement : register(b0)
 {
     float4 gColor;
-    float gTime;
-    float padding[3];
 };
 
 Texture2D gTexture : register(t0);
@@ -49,6 +47,7 @@ float4 PSMain(VSOut input) : SV_Target
 {
     //return float4(1,0,1,1);
     float4 color = gTexture.Sample(gLinearSampler, input.uv);
-    //clip(color.a - 0.1);
+
+       //clip(color.a - 0.1);
     return color;
 }

@@ -1,9 +1,13 @@
 #pragma once
 
 #include "UEntity.h"
+#include "UAsset.h"
 
 namespace UPO
 {
+	//////////////////////////////////////////////////////////////////////////
+	class AWorldSetting;
+
 	//////////////////////////////////////////////////////////////////////////
 	struct WorldTickResult
 	{
@@ -22,46 +26,50 @@ namespace UPO
 	struct EntityCreationParam
 	{
 		ClassInfo*	mClass;
-		Name		mName;
-		Vec3		mPosition;
+		Entity*		mParent;
 	};
 	//////////////////////////////////////////////////////////////////////////
-	class UAPI World : public Object
+	class UAPI World : public Asset
 	{
-		UCLASS(World, Object)
+		UCLASS(World, Asset)
 
 	private:
 		TArray<Entity*>			mEntities;
 		bool					mIsPlaying = false;
-		bool					mIsFirtsTick = false;
+		bool					mIsFirstTick = false;
 		WorldTickResult			mCurTickResult;
 		float					mSecondsSincePlay = 0;
 		TimeCounterHigh			mTimerSincePlay;
 		bool					mIsInTick = false;
 		bool					mDoExitPlay = false;
+		AWorldSetting*			mWorldSetting = nullptr;
+
+		unsigned				mNumDestroyedEntity = 0;
+		unsigned				mNumTickSinceLastDestroy = 0;
+
+		bool mDoBeginPlay = false;
+		bool mDoEndPlay = false;
+		
+		unsigned MAX_DESTROYED_ENTITY = 16;
+
 	public:
-		void Play() 
-		{
-			if (mIsPlaying) return;
+		void SetPlaying(bool playing);
 
-			mIsPlaying = true;
-			mIsFirtsTick = true;
-			mTimerSincePlay.Start();
-		}
-		void ExitPlay()
-		{
-			if (!mIsPlaying) return;
-
-			mIsPlaying = false;
-		}
-		void AddEntityToList(Entity* ent)
-		{
-			mEntities.Add(ent);
-		}
+		void AddEntityToList(Entity* ent);
 		//////////////////////////////////////////////////////////////////////////
 		Entity* CreateEntity(EntityCreationParam& param);
 		//////////////////////////////////////////////////////////////////////////
 		void SingleTick(WorldTickResult& result);
+
+		void PerformBeginPlay();
+		void PerformEndPlay();
+		void PerformTick();
+		void KillDestroyedEntities();
+
+		void PushToLimbo(Entity* deadEntity);
+		//children of the entity considered dead
+		//void GoToCemetery(Entity* entity);
+		void IncCemetery() { mNumDestroyedEntity++; }
 	};
 	//////////////////////////////////////////////////////////////////////////
 // 	class Renderer;

@@ -43,7 +43,7 @@ namespace UPO
 			mInvolvedClasses.RemoveAll();
 
 			/////////////extracting all used classes in parents, properties, ...
-			TArray<const ClassInfo*> classes;
+			TArray<ClassInfo*> classes;
 			for (size_t iObject = 0; iObject < mObjectsList.Length(); iObject++)
 			{
 				mObjectsList[iObject]->GetClassInfo()->GetInvolvedClasses(classes, true, true, true);
@@ -133,9 +133,9 @@ namespace UPO
 		*/
 		void WriteClass(const ClassInfo* ci, void* object, Stream& stream)
 		{
-			TArray<const ClassInfo*> classes;
+			TArray<ClassInfo*> classes;
 			ci->GetInheritedClasses(classes);
-			classes.Add(ci);
+			classes.Add((ClassInfo*)ci);
 
 			StreamReaderMemory memStream;
 

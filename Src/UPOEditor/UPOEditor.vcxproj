@@ -133,8 +133,10 @@
     <ClInclude Include="UColorSelectionDialog.h" />
     <ClInclude Include="UCommon.h" />
     <ClInclude Include="UD3DRenderWidget.h" />
+    <ClInclude Include="ULogWindow.h" />
     <ClInclude Include="UMainWindow.h" />
     <ClInclude Include="UPropertyBrowser.h" />
+    <ClInclude Include="UPropertyBrowserWidgets.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
@@ -142,8 +144,13 @@
     <ClCompile Include="UColorSelectionDialog.cpp" />
     <ClCompile Include="UCommon.cpp" />
     <ClCompile Include="UD3DRenderWidget.cpp" />
+    <ClCompile Include="ULogWindow.cpp" />
     <ClCompile Include="UMainWindow.cpp" />
     <ClCompile Include="UPropertyBrowser.cpp" />
+    <ClCompile Include="UPropertyBrowserWidgets.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="UPropertyBrowserWidgets" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

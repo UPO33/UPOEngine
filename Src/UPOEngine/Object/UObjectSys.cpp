@@ -11,10 +11,10 @@ namespace UPO
 		UASSERT(classInfo);
 		Object* newObj = (Object*)MemAlloc(classInfo->GetSize());
 
-		newObj->mClassInfo = classInfo;
+		newObj->mClassInfo = (ClassInfo*)classInfo;
 		newObj->mRefData = nullptr;
 
-		classInfo->CallDefaultConstructor(newObj);
+		classInfo->CallDefaultConstructor((void*)newObj);
 
 		return newObj;
 	}

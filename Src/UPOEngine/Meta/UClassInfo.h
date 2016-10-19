@@ -5,9 +5,30 @@
 
 namespace UPO
 {
+	static const unsigned MAX_INHERITANCE = 32;
+
 	//////////////////////////////////////////////////////////////////////////
 	class ClassInfo;
 	class Serializer;
+	class PropertyInfo;
+
+	//////////////////////////////////////////////////////////////////////////
+	struct UAPI SPropertyChain
+	{
+		PropertyInfo* mProperties[MAX_INHERITANCE];
+		unsigned mNumProperty;
+
+		//performs MetaPropertyChanged from down to up
+		//@object : the object that first property in inside it
+		void PerformMetaPropertyChanged(void* object);
+	};
+
+	//////////////////////////////////////////////////////////////////////////
+	struct UAPI SClassChain
+	{
+		ClassInfo* mClasses[MAX_INHERITANCE];
+		unsigned mNumClass;
+	};
 
 	//////////////////////////////////////////////////////////////////////////
 	enum EPropertyType
@@ -34,7 +55,7 @@ namespace UPO
 		/*
 		note: unregistered type , template , not baked property == null
 		*/
-		const TypeInfo*			mTypeInfo = nullptr;
+		TypeInfo*				mTypeInfo = nullptr;
 		/*
 		name of the type, e.g: int, UPO::Vec3,
 		for templates its UPO::TArray, UPO::TObjectPtr, etc.. 
@@ -44,26 +65,27 @@ namespace UPO
 		EPropertyType			mPropertyType = EPropertyType::EPT_Unknown;
 		unsigned				mOffset = 0;
 		AttribPack				mAttributes;
-		const ClassInfo*		mOwner = nullptr;
+		ClassInfo*				mOwner = nullptr;
 		
-		const TypeInfo*			mTemplateArgTypeInfo = nullptr;
+		TypeInfo*				mTemplateArgTypeInfo = nullptr;
 		Name					mTemplateArgTypeName;
 		EPropertyType			mTemplateArgType = EPropertyType::EPT_Unknown;
 
 
 		void Bake();
 		bool NeedBake() const;
-		const TypeInfo* GetTypeInfo() const { return mTypeInfo; }
+		TypeInfo* GetTypeInfo() const { return mTypeInfo; }
 		EPropertyType GetType() const { return mPropertyType; }
 		const Name& GetName() const { return mPropertyName; }
+		String GetLegibleName() const;
 		const Name& GetTypeName() const { return mTypeName; }
 		unsigned GetOffset() const { return mOffset; }
 		const AttribPack& GetAttributes() const { return mAttributes; }
-		const ClassInfo* GetOwner() const { return mOwner; }
+		ClassInfo* GetOwner() const { return mOwner; }
 
 		size_t GetTypeSize() const;
 
-		const TypeInfo* TemplateArgTypeInfo() const { return mTemplateArgTypeInfo; }
+		TypeInfo* TemplateArgTypeInfo() const { return mTemplateArgTypeInfo; }
 		const Name& TemplateArgTypeName() const { return mTemplateArgTypeName; }
 		EPropertyType TemplateArgType() const { return mTemplateArgType; }
 		size_t TemplateArgTypeSize() const;
@@ -91,6 +113,7 @@ namespace UPO
 		void PrintLog();
 	};
 
+	
 
 	//////////////////////////////////////////////////////////////////////////
 	class UAPI ClassInfo : public TypeInfo
@@ -112,7 +135,7 @@ namespace UPO
 		TMFP<void, Stream&>					mMetaSerialize = nullptr;
 		
 		TArray<PropertyInfo>				mProperties;
-		TArray<const ClassInfo*>			mSubClasses;
+		TArray<ClassInfo*>					mSubClasses;
 		bool								mRegistered = false;
 		
 		
@@ -138,118 +161,34 @@ namespace UPO
 		size_t NumProperty() const { return mProperties.Length(); }
 		const TArray<PropertyInfo>& GetProperties() const { return mProperties; }
 		const PropertyInfo* GetProperty(size_t index) const { return mProperties.Elements() + index; }
+		//return true if this class has specified property
+		bool HasProperty(const PropertyInfo* prp) const;
+
 		bool HasParent() const { return !mParentClassName.IsEmpty(); }
 		ClassInfo* GetParent() const { return mParentClass; }
 		Name GetParentName() const { return mParentClassName; }
-		const ClassInfo* GetRoot() const;
+		ClassInfo* GetRoot() const;
 		//Get all inherited classes from root
 		//e.g Object -> Entity -> Component -> 
-		void GetInheritedClasses(TArray<const ClassInfo*>& outClasses) const;
+		void GetInheritedClasses(TArray<ClassInfo*>& outClasses) const;
 
-		void GetInvolvedClasses(TArray<const ClassInfo*>& outClasses, bool subProperties, bool inheritedProperties, bool removeArrayFirst = true) const;
+		//Get all inherited classes from/toward root
+		//e.g Object -> Entity -> Component -> ... 
+		//@includingThis : add this class to list too
+		void GetClassChain(SClassChain& out, bool reverse = false, bool includingThis = true) const;
+
+		void GetInvolvedClasses(TArray<ClassInfo*>& outClasses, bool subProperties, bool inheritedProperties, bool removeArrayFirst = true) const;
+
+		bool GetPropertyChain(const PropertyInfo* propertyToFind, SPropertyChain& out) const;
 
 		//get all classes that inherit from this class
-		const TArray<const ClassInfo*>& GetSubClasses() const { return mSubClasses; }
+		const TArray<ClassInfo*>& GetSubClasses() const { return mSubClasses; }
 		void PrintLog();
 
-		const PropertyInfo* FindPropertyByName(Name name, bool includingInheritedProperties) const;
+		PropertyInfo* FindPropertyByName(Name name, bool includingInheritedProperties) const;
 
 	};
 	
-	//////////////////////////////////////////////////////////////////////////
-// 	class UAPI Serializer
-// 	{
-// 		struct UAPI SerProcess
-// 		{
-// 			const ClassInfo*	mClassInfo;
-// 			void*				mObject;
-// 			Stream				mStream;
-// 
-// 			SerProcess(const ClassInfo* ci, void* object, Stream& stream) : mClassInfo(ci), mObject(object), mStream(stream) { }
-// 
-// 			void Begin();
-// 
-// 			void WriteToeknBegin()
-// 			{
-// 			}
-// 			void WriteTokenEnd()
-// 			{
-// 
-// 			}
-// 			void WriteName(const Name& name)
-// 			{
-// 				uint16 len = name.Length();
-// 				mStream.RW(len);
-// 				if (len) mStream.Bytes((void*)name.CStr(), len);
-// 			}
-// 			void WriteEPropertyType(EPropertType type)
-// 			{
-// 				uint8 prpType = (uint8)type;
-// 				mStream.RW(prpType);
-// 			}
-// 			void WriteProperty(const PropertyInfo* prp, void* object)
-// 			{
-// 				WriteName(prp->GetName());
-// 				WriteEPropertyType(prp->GetType());
-// 				void* propValue = prp->Map(object);
-// 
-// 				switch (prp->GetType())
-// 				{
-// 				case EPropertType::EPT_ObjectPoniter:
-// 				{
-// 					Object** ppObject = ((Object**)propValue);
-// 					if (*ppObject == nullptr)
-// 					{
-// 						uint32 zero = 0;
-// 						mStream.RW(zero);
-// 					}
-// 					else
-// 					{
-// 
-// 					}
-// 				}
-// 				break;
-// 				case EPropertType::EPT_TArray :
-// 				{
-// 
-// 				};
-// 				break;
-// 				case EPropertType::EPT_TObjectPtr:
-// 				{
-// 
-// 				}
-// 				break;
-// 				case EPropertType::EPT_MetaClass :
-// 				{
-// 					ClassInfo* metaClass = (ClassInfo*)prp->GetTypeInfo();
-// 					WriteName(metaClass->GetName());
-// 					WriteToeknBegin();
-// 					for (size_t i = 0; i < metaClass->NumProperty(); i++)
-// 					{
-// 						WriteProperty(&metaClass->GetProperty(i), propValue);
-// 					}
-// 					WriteToeknBegin();
-// 				}
-// 				break;
-// 				default:
-// 				{
-// 					mStream.Bytes(propValue, prp->GetTypeSize());
-// 				}
-// 				break;
-// 				}
-// 			}
-// 			void Ser(const PropertyInfo* property, void* object)
-// 			{
-// 				//write property type
-// 				if (property->IsArithmetic() || property->IsEnum())
-// 				{
-// 					mStream.Bytes(object, property->GetTypeSize());
-// 				}
-// 			}
-// 		};
-// 		void Serialize(const ClassInfo* classInfo, void* object, Stream& stream);
-// 
-// 	};
 
 };
 
