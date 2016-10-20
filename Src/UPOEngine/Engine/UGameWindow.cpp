@@ -1,12 +1,19 @@
 #include "UGameWindow.h"
+#include "UInput.h"
+
 #include <windows.h>
+#include <windowsx.h>
+#include <WinUser.h>
+
 
 namespace UPO
 {
-	LRESULT WINAPI WNDProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam)
-	{
 
-	}
+	LRESULT WINAPI WNDProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam);
+
+	class GameWindowWin* gGameWindowWin = nullptr;
+
+	//////////////////////////////////////////////////////////////////////////
 	class GameWindowWin : public GameWindow
 	{
 		HINSTANCE mAppHandle = nullptr;
@@ -16,8 +23,24 @@ namespace UPO
 		unsigned mHeight;
 		wchar_t* mWindowName;
 
-		void InitWindow()
+	public:
+
+		unsigned GetWidth() override { return mWidth; }
+		unsigned GetHeight() override { return mHeight; }
+		
+		void* GetWinHandle() override { return reinterpret_cast<void*>(mHWND); }
+
+		GameWindowWin()
 		{
+			gGameWindowWin = this;
+		}
+		~GameWindowWin()
+		{
+			gGameWindowWin = nullptr;
+		}
+		void Init() override
+		{
+			ULOG_MESSAGE("");
 			mFullScreen = GEngineConfig()->AsBool("Window.FullScreen");
 			mWidth = GEngineConfig()->AsNumber("Window.Width");
 			mHeight = GEngineConfig()->AsNumber("Window.Height");
@@ -51,6 +74,9 @@ namespace UPO
 			// Determine the resolution of the clients desktop screen.
 			unsigned screenWidth = GetSystemMetrics(SM_CXSCREEN);
 			unsigned screenHeight = GetSystemMetrics(SM_CYSCREEN);
+			
+			unsigned dwStyleBorder = WS_SYSMENU | WS_CAPTION | WS_MINIMIZEBOX | WS_SIZEBOX;
+			unsigned dwStyleNoborder = WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_POPUP;
 
 			// Setup the screen settings depending on whether it is running in full screen or in windowed mode.
 			if (mFullScreen)
@@ -78,11 +104,20 @@ namespace UPO
 				// Place the window in the middle of the screen.
 				posX = (GetSystemMetrics(SM_CXSCREEN) - screenWidth) / 2;
 				posY = (GetSystemMetrics(SM_CYSCREEN) - screenHeight) / 2;
+
+				RECT wr = { 0, 0, mWidth, mHeight };
+				AdjustWindowRect(&wr, dwStyleBorder /*WS_OVERLAPPEDWINDOW*/, FALSE);    // adjust the size
+				
+				screenWidth = wr.right - wr.left;
+				screenHeight = wr.bottom - wr.top;
+
 			}
-			unsigned dwStyle = WS_SYSMENU | WS_CAPTION | WS_MINIMIZEBOX | WS_SIZEBOX;
+
+
+			ULOG_MESSAGE("");
 			// Create the window with the screen settings and get the handle to it.
 			mHWND = CreateWindowExW(WS_EX_APPWINDOW, mWindowName, mWindowName,
-				dwStyle,
+				dwStyleBorder,
 				posX, posY, screenWidth, screenHeight, NULL, NULL, mAppHandle, NULL);
 			// Bring the window up on the screen and set it as main focus.
 			ShowWindow(mHWND, SW_SHOW);
@@ -93,8 +128,9 @@ namespace UPO
 			ShowCursor(true);
 		}
 		//////////////////////////////////////////////////////////////////////////
-		void ReleaseWindow()
+		void Release() override
 		{
+			ULOG_MESSAGE("");
 			// Fix the display settings if leaving full screen mode.
 			if (mFullScreen)
 			{
@@ -109,13 +145,125 @@ namespace UPO
 			UnregisterClass(mWindowName, mAppHandle);
 			mAppHandle = NULL;
 		}
-		LRESULT MessageHandler(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam);
+		//////////////////////////////////////////////////////////////////////////
+		bool Tick() override
+		{
+			MSG msg;
+			ZeroType(msg);
+
+			// Handle the windows messages.
+			while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+			{
+				TranslateMessage(&msg);
+				DispatchMessage(&msg);
+
+				// If windows signals to end the application then exit out.
+				if (msg.message == WM_QUIT)
+				{
+					return false;
+				}
+			}
+			return true;
+		}
+		//////////////////////////////////////////////////////////////////////////
+		LRESULT MessageHandler(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam)
+		{
+			Input::SetMouseState(EMouseButton::EMB_WheelForward, false);
+			Input::SetMouseState(EMouseButton::EMB_WheelBackward, false);
+			Input::SetMouseWheelDelta(0);
+
+			switch (umsg)
+			{
+				// Check if a key has been pressed on the keyboard.
+			case WM_KEYDOWN:
+				Input::SetKeyState(wparam, true);
+				return 0;
+			case WM_KEYUP:
+				Input::SetKeyState(wparam, false);
+				return 0;
+			case WM_MOUSEMOVE:
+				Input::SetMousePos(GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam));
+				return 0;
+			case WM_LBUTTONDOWN:
+				Input::SetMouseState(EMouseButton::EMB_Left, true);
+				return 0;
+			case WM_RBUTTONDOWN:
+				Input::SetMouseState(EMouseButton::EMB_Right, true);
+				return 0;
+			case WM_MBUTTONDOWN:
+				Input::SetMouseState(EMouseButton::EMB_Middle, true);
+				return 0;
+
+			case WM_LBUTTONUP:
+				Input::SetMouseState(EMouseButton::EMB_Left, false);
+				return 0;
+			case WM_RBUTTONUP:
+				Input::SetMouseState(EMouseButton::EMB_Right, false);
+				return 0;
+			case WM_MBUTTONUP:
+				Input::SetMouseState(EMouseButton::EMB_Middle, false);
+				return 0;
+
+			case WM_MOUSEWHEEL:
+			{
+				//A positive value indicates that the wheel was rotated forward,
+				unsigned zDelta = GET_WHEEL_DELTA_WPARAM(wparam);
+				Input::SetMouseWheelDelta(zDelta);
+				if (zDelta > 0)
+					Input::SetMouseState(EMouseButton::EMB_WheelForward, true);
+				if (zDelta < 0)
+					Input::SetMouseState(EMouseButton::EMB_WheelBackward, true);
+
+				return 0;
+			}
+			case WM_SIZE:
+			{
+				unsigned w = LOWORD(lparam);
+				unsigned h = HIWORD(lparam);
+				ULOG_MESSAGE("window size changed %d  %d", w, h);
+				mWidth = w;
+				mHeight = h;
+				return 0;
+			}
+	
+			}
+			return DefWindowProc(hwnd, umsg, wparam, lparam);
+		}
 	};
 
 	
-	GameWindow* GameWindow::Get()
-	{
 
+	GameWindow* GameWindow::New()
+	{
+		return new GameWindowWin;
 	}
 
+	void GameWindow::Delete(GameWindow* gw)
+	{
+		delete gw;
+	}
+
+
+	
+
+	LRESULT WINAPI WNDProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam)
+	{
+		switch (umsg)
+		{
+			// Check if the window is being destroyed.
+		case WM_DESTROY:
+		{
+			PostQuitMessage(0);
+			return 0;
+		}
+
+		// Check if the window is being closed.
+		case WM_CLOSE:
+		{
+			PostQuitMessage(0);
+			return 0;
+		}
+		}
+		return gGameWindowWin->MessageHandler(hwnd, umsg, wparam, lparam);
+	}
 };

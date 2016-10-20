@@ -1,7 +1,8 @@
 #pragma once
 
-#include "UGFXDeviceDX.h"
+#include "URenderer.h"
 
+#if 0
 namespace UPO
 {
 	//////////////////////////////////////////////////////////////////////////fwd decl
@@ -38,3 +39,4 @@ namespace UPO
 	};
 
 };
+#endif 

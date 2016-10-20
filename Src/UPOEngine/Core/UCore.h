@@ -16,3 +16,4 @@
 #include "UMap.h"
 #include "UConfig.h"
 #include "UEngineConfig.h"
+#include "URefCount.h"

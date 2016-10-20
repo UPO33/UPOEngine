@@ -51,7 +51,7 @@ namespace UPOEd
 
 		mContext->Init(ip);
 
-		GFXRenderer::Get()->Init(mContext);
+		Renderer::Get()->Init(mContext);
 		
 		return true;
 	};

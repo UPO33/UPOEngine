@@ -4,41 +4,41 @@ namespace UPO
 {
 	
 	//////////////////////////////////////////////////////////////////////////
-	bool ScreenDrawer::Init(GFXRenderer* renderer)
+	ScreenDrawer::ScreenDrawer(Renderer* rdr) : RendererElement(rdr)
 	{
-		mRenderer = renderer;
-
-		mVertexShader = gGFXDX->GetShader("Canvas.hlsl", "VSMain", EShaderType::EST_VERTEX);
-		mPixelShader = gGFXDX->GetShader("Canvas.hlsl", "PSMain", EShaderType::EST_PIXEL);
+		mVertexShader = gGFX->GetShader("Canvas.hlsl", "VSMain", EShaderType::EST_VERTEX);
+		UASSERT(mVertexShader);
+		mPixelShader = gGFX->GetShader("Canvas.hlsl", "PSMain", EShaderType::EST_PIXEL);
+		UASSERT(mPixelShader);
 
 		///////////////constant buffer
 		GFXConstantBuffer_Desc cbDesc;
 		cbDesc.mSize = sizeof(CBPerObject);
 		cbDesc.mInitialData = new CBPerObject;
-		mCBPerObject = gGFXDX->CreateConstantBuffer(cbDesc);
+		mCBPerObject = gGFX->CreateConstantBuffer(cbDesc);
 
 		GFXVertexElement_Desc vElements[] =
 		{
 			GFXVertexElement_Desc("POSITION", EPixelFormat::EPT_R32G32_FLOAT),
 			GFXVertexElement_Desc("UV", EPixelFormat::EPT_R32G32_FLOAT)
 		};
-		mLayout = gGFXDX->CreateInputLayout(vElements, ARRAYSIZE(vElements), mVertexShader);
+		mLayout = gGFX->CreateInputLayout(vElements, ARRAYSIZE(vElements), mVertexShader);
 
 		GFXVertexBuffer_Desc vbDesc;
 		vbDesc.mUsage = EResourceUsage::EBU_DYNAMIC;
 		vbDesc.mSize = sizeof(VertexType) * 32;
-		mQuadBuffer = gGFXDX->CreateVertexBuffer(vbDesc);
+		mQuadBuffer = gGFX->CreateVertexBuffer(vbDesc);
 
 		GFXDepthStencilState_Desc dsDesc;
 		dsDesc.mDepthEnable = false;
 		dsDesc.mStencilEnable = false;
-		mDepthStencilState = gGFXDX->CreateDepthStencilState(dsDesc);
+		mDepthStencilState = gGFX->CreateDepthStencilState(dsDesc);
 
 		GFXSamplerState_Desc ssDesc;
 		ssDesc.mAddressU = ETextureAddress::ETA_CLAMP;
 		ssDesc.mAddressV = ETextureAddress::ETA_CLAMP;
 		ssDesc.mFilter = ETextureFilter::ETF_MIN_MAG_MIP_POINT;
-		mSampler = gGFXDX->CreateSamplerState(ssDesc);
+		mSampler = gGFX->CreateSamplerState(ssDesc);
 
 
 		/////////////blend state
@@ -46,32 +46,16 @@ namespace UPO
 		bdesc.mRenderTargets[0].mBlendEnable = true;
 		bdesc.mRenderTargets[0].mSrcBlend = EBlendElement::EBE_SRC_ALPHA;
 		bdesc.mRenderTargets[0].mDestBlend = EBlendElement::EBE_INV_SRC_ALPHA;
-		mAlphaBlend = gGFXDX->CreateBlendState(bdesc);
+		mAlphaBlend = gGFX->CreateBlendState(bdesc);
 
 		GFXRasterizerState_Desc rs;
 		rs.mCullMode = ECullMode::ECM_NONE;
-		mRaster = gGFXDX->CreateRasterizerState(rs);
-
-
-		mTextureTile1 = gGFXDX->LoadTextureFromFile("tile1.png");
-		mTextureTile2 = gGFXDX->LoadTextureFromFile("tile2.png");
-
-		return true;
+		mRaster = gGFX->CreateRasterizerState(rs);
 	}
 
-	void ScreenDrawer::Release()
+	ScreenDrawer::~ScreenDrawer()
 	{
-		mAlphaBlend->Release();
-		mCBPerObject->Release();
-		mDepthStencilState->Release();
-		mLayout->Release();
-		mQuadBuffer->Release();
-		mRaster->Release();
-		mSampler->Release();
-		mTextureTile1->Release();
-		mTextureTile2->Release();
-		mVertexShader->Release();
-		mPixelShader->Release();
+
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -116,26 +100,21 @@ namespace UPO
 
 
 
-		gGFXDX->BinInputLayout(mLayout);
-		gGFXDX->SetRasterizer(mRaster);
-		gGFXDX->SetDepthStencilState(mDepthStencilState);
-		gGFXDX->SetPrimitiveTopology(EPrimitiveTopology::EPT_TRIANGLELIST);
-		gGFXDX->BinVertexBuffer(mQuadBuffer, sizeof(VertexType), 0);
-		gGFXDX->BindShaders(mVertexShader, mPixelShader);
-		gGFXDX->BindTexture(texture, 0, EST_PIXEL);
-		gGFXDX->BindSamplerState(mSampler, 0, EST_PIXEL);
-		gGFXDX->BindConstantBuffer(mCBPerObject, 0, EST_PIXEL);
+		gGFX->BinInputLayout(mLayout);
+		gGFX->SetRasterizer(mRaster);
+		gGFX->SetDepthStencilState(mDepthStencilState);
+		gGFX->SetPrimitiveTopology(EPrimitiveTopology::EPT_TRIANGLELIST);
+		gGFX->BinVertexBuffer(mQuadBuffer, sizeof(VertexType), 0);
+		gGFX->BindShaders(mVertexShader, mPixelShader);
+		gGFX->BindTexture(texture, 0, EST_PIXEL);
+		gGFX->BindSamplerState(mSampler, 0, EST_PIXEL);
+		gGFX->BindConstantBuffer(mCBPerObject, 0, EST_PIXEL);
 		float brgba[] = { 0,0,0,0 };
-		gGFXDX->BindBlendState(mAlphaBlend, brgba);
-		gGFXDX->Draw(6, 0);
+		gGFX->BindBlendState(mAlphaBlend, brgba);
+		gGFX->Draw(6, 0);
 	}
 
-	void ScreenDrawer::Frame()
+	void ScreenDrawer::Present()
 	{
-		DrawTexture(mTextureTile1, Vec2(0.1), Vec2(0.2), Color(1,1,1,1));
-// 		DrawTexture(mTextureTile2, Vec2(0.1), Vec2(0.1), Color(1,1,1,0.2));
 	}
-
-	
-
 };

@@ -5,6 +5,11 @@
 namespace UPO
 {
 
+	Engine::Engine()
+	{
+
+	}
+
 	Engine::~Engine()
 	{
 
@@ -14,11 +19,18 @@ namespace UPO
 	{
 		Init();
 
-		bExit = false;
-		while (bExit)
+		bLoop = true;
+		while (bLoop)
 		{
-			GTTick();
-			RHTick();
+			bool result;
+			
+			result = GTTick();
+			if(!result) break;
+
+			result = RTTick();
+			if(!result) break;
+
+			Thread::Sleep(100);
 		}
 
 		Release();
@@ -27,34 +39,61 @@ namespace UPO
 
 	void Engine::Init()
 	{
-		mMainWindow = new GameWindow;
+		mMainWindow = GameWindow::New();
+		mMainWindow->Init();
 
-		mCurrentWorld = new World();
-		mCurrentWorld->SetPlaying(true);
+		mGFXContext = GFXContext::New();
+		mGFXContext->Init(mMainWindow);
+
+		mRenderer = Renderer::New();
+		mRenderer->Init(mGFXContext);
+
+		InitWorld();
 	}
 
 	void Engine::Release()
 	{
-		if (mMainWindow) delete mMainWindow;
-		mMainWindow = nullptr;
+		if (mRenderer) mRenderer->Release();
+		if (mGFXContext) mGFXContext->Release();
+		if (mMainWindow) mMainWindow->Release();
+		
 	}
 
 	bool Engine::GTTick()
 	{
-		if (mMainWindow)
-		{
-			mMainWindow->Tick();
-		}
+		bool result = true;
+		
+		result = mMainWindow->Tick();
+	
 		if(mCurrentWorld)
 		{ 
 			mCurrentWorld->SingleTick(WorldTickResult());
 		}
-		return true;
+
+		return result;
 	}
 
-	bool Engine::RHTick()
+	bool Engine::RTTick()
 	{
-		return true;
+		return mRenderer->RenderFrame();
+	}
+
+
+
+	void Engine::InitWorld()
+	{
+		mCurrentWorld = new World();
+		
+		EntityCreationParam ecp;
+		ecp.mClass = Entity::GetClassInfoStatic();
+		ecp.mParent = nullptr;
+
+		mCurrentWorld->CreateEntity(ecp);
+		mCurrentWorld->CreateEntity(ecp);
+		mCurrentWorld->CreateEntity(ecp);
+
+		mCurrentWorld->SetPlaying(true);
+
 	}
 
 	Engine* Engine::Get()

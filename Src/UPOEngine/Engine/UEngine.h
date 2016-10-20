@@ -14,14 +14,18 @@
 #include "UWorld.h"
 #include "UGameWindow.h"
 
+#include "../GFX/URenderer.h"
+
 namespace UPO
 {
 	class UAPI Engine
 	{
 		World* mCurrentWorld;
 		GameWindow* mMainWindow;
+		GFXContext* mGFXContext;
+		Renderer* mRenderer;
 
-		volatile bool bExit = false;
+		volatile bool bLoop = true;
 
 	public:
 		Engine();
@@ -33,7 +37,9 @@ namespace UPO
 		void Release();
 
 		bool GTTick();
-		bool RHTick();
+		bool RTTick();
+
+		void InitWorld();
 
 		void LoadWorld(Name name);
 

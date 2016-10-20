@@ -1,5 +1,5 @@
 #include "Test.h"
-#include "RasterTech/systemclass.h"
+
 #include "GFXCore/UGFXLauncherWin.h"
 
 #include <SDL.h>
@@ -153,6 +153,10 @@ namespace UPO
 		for (size_t i = 0; i < out.Length(); i++)
 			ULOG_ERROR("[%s]", out[i].IsEmpty() ? "empty" : out[i].CStr());
 	}
+	class STestRef : public RefCountable
+	{
+	public:
+	};
 	//////////////////////////////////////////////////////////////////////////
 	UAPI void TestMain(int argc, const char** argv)
 	{

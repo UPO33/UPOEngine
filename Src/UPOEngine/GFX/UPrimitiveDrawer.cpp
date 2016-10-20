@@ -1,5 +1,6 @@
 #include "UPrimitiveDrawer.h"
 
+#if 0
 namespace UPO
 {
 	//////////////////////////////////////////////////////////////////////////
@@ -84,3 +85,4 @@ namespace UPO
 	}
 
 };
+#endif

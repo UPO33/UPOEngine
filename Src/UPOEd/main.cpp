@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
 
 		mainWnd.Tick();
 
-		GFXRenderer::Get()->RenderFrame();
+		Renderer::Get()->RenderFrame();
 
 		Thread::Sleep(30);
 	}

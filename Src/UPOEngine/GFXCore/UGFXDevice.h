@@ -381,10 +381,10 @@ namespace UPO
 
 
 	//////////////////////////////////////////////////////////////////////////
-	class GFXResource
+	class GFXResource : public RefCountable
 	{
 	public:
-		virtual void Release() = 0;
+		virtual ~GFXResource(){}
 		template<typename T> T* As() const { return (T*)this; }
 	};
 	//////////////////////////////////////////////////////////////////////////
@@ -394,6 +394,8 @@ namespace UPO
 		GFXRasterizerState_Desc mDesc;
 		const GFXRasterizerState_Desc& GetDesc() const { return mDesc; }
 	};
+	typedef TSmartPtr<GFXRasterizerState> GFXRasterizerStateRef;
+
 	//////////////////////////////////////////////////////////////////////////
 	class GFXSamplerState : public GFXResource
 	{
@@ -402,6 +404,8 @@ namespace UPO
 	public:
 		const GFXSamplerState_Desc& GetDesc() const { return mDesc; }
 	};
+	typedef TSmartPtr<GFXSamplerState> GFXSamplerStateRef;
+
 	//////////////////////////////////////////////////////////////////////////
 	class GFXBuffer : public GFXResource
 	{
@@ -411,6 +415,8 @@ namespace UPO
 
 		template<typename T> T* Map(EMapFlag flag) { return (T*)Map(flag); }
 	};
+	typedef TSmartPtr<GFXBuffer> GFXBufferRef;
+
 	//////////////////////////////////////////////////////////////////////////
 	class GFXVertexBuffer : public GFXBuffer
 	{
@@ -419,6 +425,8 @@ namespace UPO
 	public:
 		const GFXVertexBuffer_Desc& GetDesc() const { return mDesc; }
 	};
+	typedef TSmartPtr<GFXVertexBuffer> GFXVertexBufferRef;
+
 	//////////////////////////////////////////////////////////////////////////
 	class GFXIndexBuffer : public GFXBuffer
 	{
@@ -427,6 +435,8 @@ namespace UPO
 	public:
 		const GFXIndexBuffer_Desc& GetDesc() const { return mDesc; }
 	};
+	typedef TSmartPtr<GFXIndexBuffer> GFXIndexBufferRef;
+
 	//////////////////////////////////////////////////////////////////////////
 	class GFXConstantBuffer : public GFXBuffer
 	{
@@ -435,6 +445,8 @@ namespace UPO
 	public:
 		const GFXConstantBuffer_Desc& GetDesc() const { return mDesc; }
 	};
+	typedef TSmartPtr<GFXConstantBuffer> GFXConstantBufferRef;
+
 	//////////////////////////////////////////////////////////////////////////
 	class GFXDepthStencilState : public GFXResource
 	{
@@ -443,6 +455,8 @@ namespace UPO
 	public:
 		const GFXDepthStencilState_Desc& GetDesc() const { return mDesc; }
 	};
+	typedef TSmartPtr<GFXDepthStencilState> GFXDepthStencilStateRef;
+
 	//////////////////////////////////////////////////////////////////////////
 	struct GFXTexture2D_Desc
 	{
@@ -464,6 +478,8 @@ namespace UPO
 	public:
 		const GFXTexture2D_Desc& GetDesc() const { return mDesc; }
 	};
+	typedef TSmartPtr<GFXTexture2D> GFXTexture2DRef;
+
 	//////////////////////////////////////////////////////////////////////////
 	struct GFXVertexElement_Desc
 	{
@@ -488,6 +504,8 @@ namespace UPO
 	class GFXInputLayout : public GFXResource
 	{
 	};
+	typedef TSmartPtr<GFXInputLayout> GFXInputLayoutRef;
+
 	//////////////////////////////////////////////////////////////////////////
 	typedef unsigned long long ShaderHash_t;
 	//////////////////////////////////////////////////////////////////////////
@@ -500,6 +518,8 @@ namespace UPO
 		EShaderType GetType() const { return mType; }
 		ShaderHash_t GetHash() const { return mHash; }
 	};
+	typedef TSmartPtr<GFXShader> GFXShaderRef;
+
 	//////////////////////////////////////////////////////////////////////////
 	class GFXBlendState : public GFXResource
 	{
@@ -508,6 +528,8 @@ namespace UPO
 	public:
 		const GFXBlendState_Desc& GetDesc() const { return mDesc; }
 	};
+	typedef TSmartPtr<GFXBlendState> GFXBlendStateRef;
+
 	//////////////////////////////////////////////////////////////////////////
 	class GFXProgram : public GFXResource
 	{

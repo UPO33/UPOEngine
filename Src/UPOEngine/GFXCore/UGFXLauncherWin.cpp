@@ -1,12 +1,12 @@
 #include "UGFXLauncherWin.h"
 #include "../Engine/UInput.h"
-#include "_URenderer.h"
 
 #include <windowsx.h>
 #include <WinUser.h>
 
 namespace UPO
 {
+#if 0
 	//////////////////////////////////////////////////////////////////////////
 	void GFXLauncherWin::Init(const InitParam& param)
 	{
@@ -14,14 +14,10 @@ namespace UPO
 		InitWindow();
 		InitDX();
 
-		mRenderer = new Renderer(mParam.mWidth, mParam.nHeight);
-		mRenderer->Init();
 	}
 
 	void GFXLauncherWin::Shutdown()
 	{
-		mRenderer->Shutdown();
-		delete mRenderer;
 
 		ShutdownDX();
 		ShutdownWindow();
@@ -487,5 +483,6 @@ namespace UPO
 		}
 		}
 	}
+#endif
 
 }

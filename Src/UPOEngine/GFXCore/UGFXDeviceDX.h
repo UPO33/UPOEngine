@@ -175,7 +175,7 @@ namespace UPO
 
 	public:
 		ID3D11Buffer* GetHandle() const { return mHandle; }
-		void Release()
+		~GFXBufferDX()
 		{
 			if (mHandle) mHandle->Release();
 			mHandle = nullptr;
@@ -200,9 +200,8 @@ namespace UPO
 	{
 		friend GFXDeviceDX;
 
-		virtual void Release() override
+		~GFXVertexBufferDX()
 		{
-			GFXBufferDX::Release();
 		}
 		virtual void* Map(EMapFlag flag) override
 		{
@@ -218,9 +217,8 @@ namespace UPO
 	{
 		friend GFXDeviceDX;
 
-		virtual void Release() override
+		~GFXIndexBufferDX()
 		{
-			GFXBufferDX::Release();
 		}
 		virtual void* Map(EMapFlag flag) override
 		{
@@ -236,9 +234,8 @@ namespace UPO
 	{
 		friend GFXDeviceDX;
 
-		virtual void Release() override
+		~GFXConstantBufferDX()
 		{
-			GFXBufferDX::Release();
 		}
 		virtual void* Map(EMapFlag flag) override
 		{
@@ -256,7 +253,7 @@ namespace UPO
 	public:
 		ID3D11DepthStencilState* mHandle;
 
-		virtual void Release() override
+		~GFXDepthStencilStateDX()
 		{
 			if (mHandle) mHandle->Release();
 			mHandle = nullptr;
@@ -270,7 +267,7 @@ namespace UPO
 	public:
 		ID3D11SamplerState* mHandle;
 
-		virtual void Release() override
+		~GFXSamplerStateDX()
 		{
 			if (mHandle) mHandle->Release();
 			mHandle = nullptr;
@@ -283,7 +280,7 @@ namespace UPO
 	public:
 		ID3D11RasterizerState* mHandle;
 
-		virtual void Release() override
+		~GFXRasterizerStateDX()
 		{
 			if (mHandle) mHandle->Release();
 			mHandle = nullptr;
@@ -304,7 +301,7 @@ namespace UPO
 		ID3D11RenderTargetView*		mRenderTargetView = nullptr;
 		ID3D11DepthStencilView*		mDepthStencilView = nullptr;
 
-		virtual void Release() override
+		~GFXTexture2DDX()
 		{
 			if (mResourceView) mResourceView->Release();
 			mResourceView = nullptr;
@@ -325,7 +322,7 @@ namespace UPO
 		Buffer mByteCodes;
 
 
-		virtual void Release() override
+		~GFXShaderDX()
 		{
 			switch (mType)
 			{
@@ -350,7 +347,7 @@ namespace UPO
 		friend GFXDeviceDX;
 	public:
 		ID3D11InputLayout* mHandle = nullptr;
-		virtual void Release() override
+		~GFXInputLayoutDX()
 		{
 			if (mHandle) mHandle->Release();
 			mHandle = nullptr;
@@ -365,7 +362,7 @@ namespace UPO
 
 		ID3D11BlendState* mHandle;
 
-		virtual void Release() override
+		~GFXBlendStateDX()
 		{
 			if (mHandle) mHandle->Release();
 			mHandle = nullptr;
@@ -421,12 +418,6 @@ namespace UPO
 			if (clearDepth) clearFlag |= D3D11_CLEAR_DEPTH;
 			if (clearStencil) clearFlag |= D3D11_CLEAR_STENCIL;
 			mDeviceContext->ClearDepthStencilView(dsv, clearFlag, depth, stencil);
-		}
-		//////////////////////////////////////////////////////////////////////////
-		virtual void Release()
-		{
-			if (mDevice) mDevice->Release();
-			mDevice = nullptr;
 		}
 		//////////////////////////////////////////////////////////////////////////
 		virtual GFXIndexBuffer* CreateIndexBuffer(const GFXIndexBuffer_Desc& param) override

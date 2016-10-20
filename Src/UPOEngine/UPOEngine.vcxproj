@@ -34,6 +34,7 @@
     <ClInclude Include="Core\UModule.h" />
     <ClInclude Include="Core\UName.h" />
     <ClInclude Include="Core\UQueue.h" />
+    <ClInclude Include="Core\URefCount.h" />
     <ClInclude Include="Core\UStream.h" />
     <ClInclude Include="Core\UString.h" />
     <ClInclude Include="Core\UThreading.h" />
@@ -57,17 +58,19 @@
     <ClInclude Include="Engine\UWorldSetting.h" />
     <ClInclude Include="GFXCore\UEditorContextDX.h" />
     <ClInclude Include="GFXCore\UGFXContext.h" />
-    <ClInclude Include="GFXCore\UMeshDrawer.h" />
-    <ClInclude Include="GFXCore\UPrimitiveDrawer.h" />
+    <ClInclude Include="GFXCore\UGFXContextDX.h" />
+    <ClInclude Include="GFXCore\UGFXContextGL.h" />
     <ClInclude Include="GFXCore\UGFXLauncherWin.h" />
     <ClInclude Include="GFXCore\UGFXCore.h" />
     <ClInclude Include="GFXCore\UGFXDevice.h" />
     <ClInclude Include="GFXCore\UGFXDeviceDX.h" />
     <ClInclude Include="GFXCore\UGFXDeviceGL.h" />
-    <ClInclude Include="GFXCore\URenderElement.h" />
-    <ClInclude Include="GFXCore\URenderer.h" />
-    <ClInclude Include="GFXCore\_URenderer.h" />
-    <ClInclude Include="GFXCore\UScreenDrawer.h" />
+    <ClInclude Include="GFX\UGFX.h" />
+    <ClInclude Include="GFX\UMeshDrawer.h" />
+    <ClInclude Include="GFX\UPrimitiveDrawer.h" />
+    <ClInclude Include="GFX\URenderer.h" />
+    <ClInclude Include="GFX\UScreenDrawer.h" />
+    <ClInclude Include="GFX\UTestQuad.h" />
     <ClInclude Include="Meta\UClassInfo.h" />
     <ClInclude Include="Meta\UEnumInfo.h" />
     <ClInclude Include="Meta\UMeta.h" />
@@ -78,17 +81,6 @@
     <ClInclude Include="Object\UObjectArchive.h" />
     <ClInclude Include="Object\UObjectPtr.h" />
     <ClInclude Include="Object\UObjectSys.h" />
-    <ClInclude Include="RasterTech\cameraclass.h" />
-    <ClInclude Include="RasterTech\d3dclass.h" />
-    <ClInclude Include="RasterTech\DInput.h" />
-    <ClInclude Include="RasterTech\DirectSound.h" />
-    <ClInclude Include="RasterTech\graphicsclass.h" />
-    <ClInclude Include="RasterTech\inputclass.h" />
-    <ClInclude Include="RasterTech\lightclass.h" />
-    <ClInclude Include="RasterTech\lightshaderclass.h" />
-    <ClInclude Include="RasterTech\modelclass.h" />
-    <ClInclude Include="RasterTech\systemclass.h" />
-    <ClInclude Include="RasterTech\textureclass.h" />
     <ClInclude Include="Test.h" />
     <ClInclude Include="UPOEngine.h" />
   </ItemGroup>
@@ -127,16 +119,15 @@
     <ClCompile Include="Engine\UWorldSetting.cpp" />
     <ClCompile Include="GFXCore\UEditorContextDX.cpp" />
     <ClCompile Include="GFXCore\UGFXContext.cpp" />
-    <ClCompile Include="GFXCore\UMeshDrawer.cpp" />
-    <ClCompile Include="GFXCore\UPrimitiveDrawer.cpp" />
     <ClCompile Include="GFXCore\UGFXLauncherWin.cpp" />
     <ClCompile Include="GFXCore\UGFXDevice.cpp" />
     <ClCompile Include="GFXCore\UGFXDeviceDX.cpp" />
     <ClCompile Include="GFXCore\UGFXDeviceGL.cpp" />
-    <ClCompile Include="GFXCore\URenderElement.cpp" />
-    <ClCompile Include="GFXCore\URenderer.cpp" />
-    <ClCompile Include="GFXCore\_URenderer.cpp" />
-    <ClCompile Include="GFXCore\UScreenDrawer.cpp" />
+    <ClCompile Include="GFX\UMeshDrawer.cpp" />
+    <ClCompile Include="GFX\UPrimitiveDrawer.cpp" />
+    <ClCompile Include="GFX\URenderer.cpp" />
+    <ClCompile Include="GFX\UScreenDrawer.cpp" />
+    <ClCompile Include="GFX\UTestQuad.cpp" />
     <ClCompile Include="Meta\UClassInfo.cpp" />
     <ClCompile Include="Meta\UEnumInfo.cpp" />
     <ClCompile Include="Meta\UMeta.cpp" />
@@ -146,17 +137,6 @@
     <ClCompile Include="Object\UObjectArchive.cpp" />
     <ClCompile Include="Object\UObjectPtr.cpp" />
     <ClCompile Include="Object\UObjectSys.cpp" />
-    <ClCompile Include="RasterTech\cameraclass.cpp" />
-    <ClCompile Include="RasterTech\d3dclass.cpp" />
-    <ClCompile Include="RasterTech\DInput.cpp" />
-    <ClCompile Include="RasterTech\DirectSound.cpp" />
-    <ClCompile Include="RasterTech\graphicsclass.cpp" />
-    <ClCompile Include="RasterTech\inputclass.cpp" />
-    <ClCompile Include="RasterTech\lightclass.cpp" />
-    <ClCompile Include="RasterTech\lightshaderclass.cpp" />
-    <ClCompile Include="RasterTech\modelclass.cpp" />
-    <ClCompile Include="RasterTech\systemclass.cpp" />
-    <ClCompile Include="RasterTech\textureclass.cpp" />
     <ClCompile Include="Test.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -216,8 +196,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(SolutionDir)..\Bin\</OutDir>
-    <IncludePath>$(SolutionDir)..\Libs\DirectXTK\Inc;$(SolutionDir)..\Libs\SDL2\include;$(SolutionDir)..\Libs\DirectXTex\DirectXTex;$(DXSDK_DIR)\Include\;$(SolutionDir)..\Libs\assimp\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)..\Libs\DirectXTK\Bin\Desktop_2015\Win32\Debug;$(SolutionDir)..\Libs\DirectXTex\DirectXTex\Bin\Desktop_2015\Win32\Debug;$(DXSDK_DIR)\Lib\x86;$(SolutionDir)..\Libs\SDL2\lib\x86;$(SolutionDir)..\Libs\assimp\lib\Debug;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\VulkanSDK\1.0.30.0\Include;$(SolutionDir)..\Libs\DirectXTK\Inc;$(SolutionDir)..\Libs\SDL2\include;$(SolutionDir)..\Libs\DirectXTex\DirectXTex;$(DXSDK_DIR)\Include\;$(SolutionDir)..\Libs\glew-2.0.0\include;$(SolutionDir)..\Libs\assimp\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\VulkanSDK\1.0.30.0\Bin32;$(SolutionDir)..\Libs\glew-2.0.0\lib\Release\Win32;$(SolutionDir)..\Libs\DirectXTK\Bin\Desktop_2015\Win32\Debug;$(SolutionDir)..\Libs\DirectXTex\DirectXTex\Bin\Desktop_2015\Win32\Debug;$(DXSDK_DIR)\Lib\x86;$(SolutionDir)..\Libs\SDL2\lib\x86;$(SolutionDir)..\Libs\assimp\lib\Debug;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -228,7 +208,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>assimp-vc140-mt.lib;d3dx11d.lib;d3d11.lib;d3dcompiler.lib;dxgi.lib;d3dx10d.lib;DirectXTex.lib;DirectXTK.lib;SDL2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>assimp-vc140-mt.lib;d3dx11d.lib;d3d11.lib;d3dcompiler.lib;dxgi.lib;d3dx10d.lib;DirectXTex.lib;DirectXTK.lib;SDL2.lib;glew32s.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

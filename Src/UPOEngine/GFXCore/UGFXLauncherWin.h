@@ -4,6 +4,7 @@
 
 namespace UPO
 {
+#if 0
 	class UAPI GFXLauncherWin
 	{
 	public:
@@ -61,4 +62,5 @@ namespace UPO
 
 		static LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 	};
+#endif
 };
