@@ -72,7 +72,7 @@ namespace UPOEd
 			QString className = ci->GetName().CStr();
 			QTreeWidgetItem* item = parent;
 			
-			if(SearchCheck(className, mSearch->text()) && !ci->GetAttributes().HasAttrib(EAtrribID::EAT_Hidden))
+			if(SearchCheck(mSearch->text(), className) && !ci->GetAttributes().HasAttrib(EAtrribID::EAT_Hidden))
 			{
 				item = new QTreeWidgetItem(parent);
 				item->setText(0, className);

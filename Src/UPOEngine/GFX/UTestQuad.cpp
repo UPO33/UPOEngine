@@ -2,22 +2,20 @@
 
 namespace UPO
 {
+	UIMPL_GLOBAL_SHADER(gVShaderTest, "TestColorQuad.hlsl", "VSMain", { "TEST_COLOR", "float4(1,1,0,0)" });
+	UIMPL_GLOBAL_SHADER(gPShaderTest, "TestColorQuad.hlsl", "PSMain", { "TEST_COLOR", "float4(1,1,0,0)" });
+
+
+
 	//////////////////////////////////////////////////////////////////////////
 	TestQuadRE::TestQuadRE(Renderer* rdr) : RendererElement(rdr)
 	{
-		mVShader = gGFX->GetShader("TestColorQuad.hlsl", "VSMain", EShaderType::EST_VERTEX);
-		mPShader = gGFX->GetShader("TestColorQuad.hlsl", "PSMain", EShaderType::EST_PIXEL);
+		GFXRasterizerState_Desc rsd;
+		rsd.mCullMode = ECullMode::ENone;
 
-		Vec2 verts[] = { Vec2(0,0), Vec2(1,0), Vec2(0,1) };
-
-		GFXVertexBuffer_Desc vbd;
-		vbd.mInitialData = verts;
-		vbd.mSize = sizeof(verts);
-
-		mVBuffer = gGFX->CreateVertexBuffer(vbd);
-
-		GFXVertexElement_Desc elemDisc[] = { { "POSITION", EPixelFormat::EPT_R32G32_FLOAT } };
-		mInputLayout = gGFX->CreateInputLayout(elemDisc, 1, mVShader);
+		mRSDisable = gGFX->CreateRasterizerState(rsd);
+		
+		
 	}
 	//////////////////////////////////////////////////////////////////////////
 	TestQuadRE::~TestQuadRE()
@@ -28,12 +26,13 @@ namespace UPO
 	void TestQuadRE::Present()
 	{
 
-		gGFX->BindShaders(mVShader, mPShader);
-		gGFX->BinVertexBuffer(mVBuffer, sizeof(Vec2), 0);
-		gGFX->BinIndexBuffer(nullptr);
-		gGFX->BinInputLayout(mInputLayout);
-		gGFX->SetPrimitiveTopology(EPT_TRIANGLELIST);
-
+		gGFX->BindShaders(gVShaderTest, gPShaderTest);
+		//gGFX->BinVertexBuffer(mVBuffer, sizeof(Vec2), 0);
+		//gGFX->BinIndexBuffer(nullptr);
+		//gGFX->BinInputLayout(mInputLayout);
+		gGFX->SetPrimitiveTopology(EPrimitiveTopology::EPT_TRIANGLELIST);
+		//gGFX->BinInputLayout(nullptr);
+		//gGFX->SetRasterizer(mRSDisable);
 		gGFX->Draw(3, 0);
 	}
 

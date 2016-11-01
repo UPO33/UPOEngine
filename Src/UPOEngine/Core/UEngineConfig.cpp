@@ -10,11 +10,12 @@ namespace UPO
 
 		SetDefault("Camera.MaxFOV", 170.0f);
 
-		SetDefault("GFX.MultiSample", 0.0f);
+		SetDefault("GFX.MultiSample", 0);
 		SetDefault("GFX.VSync", false);
 
 
 		//^^^^^^^^^^^^^ new config here ^^^^^^^^^^^^^
+		
 
 		InitFromINI("Engine.ini");
 	}

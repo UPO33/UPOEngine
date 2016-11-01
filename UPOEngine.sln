@@ -1,0 +1,53 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "UPOLauncher", "Src\UPOLauncher\UPOLauncher.vcxproj", "{E380C0B1-71BF-4EBC-A657-AE3928118E1E}"
+	ProjectSection(ProjectDependencies) = postProject
+		{2B904F4E-FD87-4938-AEE5-8C722714F5BD} = {2B904F4E-FD87-4938-AEE5-8C722714F5BD}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "UPOEngine", "Src\UPOEngine\UPOEngine.vcxproj", "{2B904F4E-FD87-4938-AEE5-8C722714F5BD}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "UPOEd", "Src\UPOEd\UPOEd.vcxproj", "{B12702AD-ABFB-343A-A199-8E24837244A3}"
+	ProjectSection(ProjectDependencies) = postProject
+		{2B904F4E-FD87-4938-AEE5-8C722714F5BD} = {2B904F4E-FD87-4938-AEE5-8C722714F5BD}
+		{E380C0B1-71BF-4EBC-A657-AE3928118E1E} = {E380C0B1-71BF-4EBC-A657-AE3928118E1E}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E380C0B1-71BF-4EBC-A657-AE3928118E1E}.Debug|x64.ActiveCfg = Debug|x64
+		{E380C0B1-71BF-4EBC-A657-AE3928118E1E}.Debug|x64.Build.0 = Debug|x64
+		{E380C0B1-71BF-4EBC-A657-AE3928118E1E}.Debug|x86.ActiveCfg = Debug|Win32
+		{E380C0B1-71BF-4EBC-A657-AE3928118E1E}.Debug|x86.Build.0 = Debug|Win32
+		{E380C0B1-71BF-4EBC-A657-AE3928118E1E}.Release|x64.ActiveCfg = Release|x64
+		{E380C0B1-71BF-4EBC-A657-AE3928118E1E}.Release|x64.Build.0 = Release|x64
+		{E380C0B1-71BF-4EBC-A657-AE3928118E1E}.Release|x86.ActiveCfg = Release|Win32
+		{E380C0B1-71BF-4EBC-A657-AE3928118E1E}.Release|x86.Build.0 = Release|Win32
+		{2B904F4E-FD87-4938-AEE5-8C722714F5BD}.Debug|x64.ActiveCfg = Debug|x64
+		{2B904F4E-FD87-4938-AEE5-8C722714F5BD}.Debug|x64.Build.0 = Debug|x64
+		{2B904F4E-FD87-4938-AEE5-8C722714F5BD}.Debug|x86.ActiveCfg = Debug|Win32
+		{2B904F4E-FD87-4938-AEE5-8C722714F5BD}.Debug|x86.Build.0 = Debug|Win32
+		{2B904F4E-FD87-4938-AEE5-8C722714F5BD}.Release|x64.ActiveCfg = Release|x64
+		{2B904F4E-FD87-4938-AEE5-8C722714F5BD}.Release|x64.Build.0 = Release|x64
+		{2B904F4E-FD87-4938-AEE5-8C722714F5BD}.Release|x86.ActiveCfg = Release|Win32
+		{2B904F4E-FD87-4938-AEE5-8C722714F5BD}.Release|x86.Build.0 = Release|Win32
+		{B12702AD-ABFB-343A-A199-8E24837244A3}.Debug|x64.ActiveCfg = Debug|Win32
+		{B12702AD-ABFB-343A-A199-8E24837244A3}.Debug|x86.ActiveCfg = Debug|Win32
+		{B12702AD-ABFB-343A-A199-8E24837244A3}.Debug|x86.Build.0 = Debug|Win32
+		{B12702AD-ABFB-343A-A199-8E24837244A3}.Release|x64.ActiveCfg = Release|Win32
+		{B12702AD-ABFB-343A-A199-8E24837244A3}.Release|x86.ActiveCfg = Release|Win32
+		{B12702AD-ABFB-343A-A199-8E24837244A3}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

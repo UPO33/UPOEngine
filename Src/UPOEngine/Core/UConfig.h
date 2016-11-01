@@ -65,6 +65,7 @@ namespace UPO
 		ConfigValue* Find(Name name) const;
 		bool AddKey(Name name, ConfigValue value);
 		void SetDefault(Name name, float value);
+		void SetDefault(Name name, int value) { SetDefault(name, (float)value); }
 		void SetDefault(Name name, const char* value);
 		void SetDefault(Name name, bool value);
 

@@ -13,9 +13,11 @@
 #include <QtWidgets/QAction>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QButtonGroup>
+#include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QHeaderView>
 #include <QtWidgets/QLineEdit>
-#include <QtWidgets/QListWidget>
+#include <QtWidgets/QPushButton>
+#include <QtWidgets/QTreeWidget>
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
 
@@ -25,27 +27,44 @@ class Ui_AssetBrowser
 {
 public:
     QVBoxLayout *verticalLayout;
-    QLineEdit *mFilter;
-    QListWidget *mList;
+    QHBoxLayout *horizontalLayout;
+    QLineEdit *filterLineEdit;
+    QPushButton *btnSave;
+    QTreeWidget *assetsTree;
 
     void setupUi(QWidget *AssetBrowser)
     {
         if (AssetBrowser->objectName().isEmpty())
             AssetBrowser->setObjectName(QStringLiteral("AssetBrowser"));
-        AssetBrowser->resize(567, 486);
+        AssetBrowser->resize(662, 549);
         verticalLayout = new QVBoxLayout(AssetBrowser);
         verticalLayout->setObjectName(QStringLiteral("verticalLayout"));
-        mFilter = new QLineEdit(AssetBrowser);
-        mFilter->setObjectName(QStringLiteral("mFilter"));
-        mFilter->setClearButtonEnabled(true);
+        horizontalLayout = new QHBoxLayout();
+        horizontalLayout->setObjectName(QStringLiteral("horizontalLayout"));
+        filterLineEdit = new QLineEdit(AssetBrowser);
+        filterLineEdit->setObjectName(QStringLiteral("filterLineEdit"));
+        filterLineEdit->setClearButtonEnabled(true);
 
-        verticalLayout->addWidget(mFilter);
+        horizontalLayout->addWidget(filterLineEdit);
 
-        mList = new QListWidget(AssetBrowser);
-        mList->setObjectName(QStringLiteral("mList"));
-        mList->setContextMenuPolicy(Qt::ActionsContextMenu);
+        btnSave = new QPushButton(AssetBrowser);
+        btnSave->setObjectName(QStringLiteral("btnSave"));
 
-        verticalLayout->addWidget(mList);
+        horizontalLayout->addWidget(btnSave);
+
+
+        verticalLayout->addLayout(horizontalLayout);
+
+        assetsTree = new QTreeWidget(AssetBrowser);
+        QTreeWidgetItem *__qtreewidgetitem = new QTreeWidgetItem();
+        __qtreewidgetitem->setText(0, QStringLiteral("1"));
+        assetsTree->setHeaderItem(__qtreewidgetitem);
+        assetsTree->setObjectName(QStringLiteral("assetsTree"));
+        assetsTree->setAlternatingRowColors(true);
+        assetsTree->setIndentation(18);
+        assetsTree->header()->setVisible(false);
+
+        verticalLayout->addWidget(assetsTree);
 
 
         retranslateUi(AssetBrowser);
@@ -56,6 +75,8 @@ public:
     void retranslateUi(QWidget *AssetBrowser)
     {
         AssetBrowser->setWindowTitle(QApplication::translate("AssetBrowser", "Form", 0));
+        filterLineEdit->setPlaceholderText(QApplication::translate("AssetBrowser", "Filter", 0));
+        btnSave->setText(QApplication::translate("AssetBrowser", "Save", 0));
     } // retranslateUi
 
 };

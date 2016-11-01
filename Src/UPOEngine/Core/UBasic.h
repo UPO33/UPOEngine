@@ -45,7 +45,9 @@
 
 #pragma  endregion
 
+#define UBREAK_DEBUGGER() *((int*)0) = 0
 
+UAPI void UOutputDebugString(const char* str);
 
 #pragma region Log and assert
 
@@ -53,9 +55,32 @@
 #define ULOG_SUCCESS(format, ...) UPO::Log::Get()->Add(UPO::ELogType::ELT_Success, __FILE__, __FUNCTION__, __LINE__, format, __VA_ARGS__)
 #define ULOG_ERROR(format, ...) UPO::Log::Get()->Add(UPO::ELogType::ELT_Error, __FILE__, __FUNCTION__, __LINE__, format, __VA_ARGS__)
 #define ULOG_WARN(format, ...) UPO::Log::Get()->Add(UPO::ELogType::ELT_Warn, __FILE__, __FUNCTION__, __LINE__, format, __VA_ARGS__)
-#define ULOG_FATAL(format, ...) UPO::Log::Get()->Add(UPO::ELogType::ELT_Fatal, __FILE__, __FUNCTION__, __LINE__, format, __VA_ARGS__)
 
-#define UASSERT(expression) { if(!(expression)) UPO::Log::Get()->Add(UPO::ELogType::ELT_Assert, __FILE__, __FUNCTION__, __LINE__, "Assertaion Failed  %s", #expression); }
+#ifdef NDEBUG
+#define ULOG_FATAL(format, ...)
+#define UASSERT(expression)
+#else
+
+#define ULOG_FATAL(format, ...)\
+	{\
+	UPO::Log::Get()->Add(UPO::ELogType::ELT_Fatal, __FILE__, __FUNCTION__, __LINE__, format, __VA_ARGS__);\
+	UBREAK_DEBUGGER();\
+	}\
+
+
+#define UASSERT(expression)\
+	{\
+		if(!(expression)){\
+			char DebugMessage[1024];\
+			sprintf_s(DebugMessage, "Assertaion Failed  [%s] ", #expression);\
+			UOutputDebugString(DebugMessage);\
+			UPO::Log::Get()->Add(UPO::ELogType::ELT_Assert, __FILE__, __FUNCTION__, __LINE__, DebugMessage);\
+			UBREAK_DEBUGGER(); /*break  debugger*/ \
+		}\
+	}\
+
+#endif
+
 
 #define UASSERT_GTONLY() UASSERT(UPO::IsGameThread())
 #define UASSERT_RTONLY() UASSERT(UPO::IsRenderThread())
@@ -160,6 +185,7 @@ namespace UPO
 	UAPI bool IsRenderThread();
 
 	UAPI void AppCrash();
+	
 
 #pragma region function pointer helper
 	template <typename TFunction = VoidMemFuncPtr> void* MemFunc2Ptr(TFunction function)
@@ -292,7 +318,17 @@ namespace UPO
 		UASSERT(multiple);
 		return ((numToRound + multiple - 1) / multiple) * multiple;
 	}
-
+	inline unsigned RoundUpToPow2(unsigned v)
+	{
+		v--;
+		v |= v >> 1;
+		v |= v >> 2;
+		v |= v >> 4;
+		v |= v >> 8;
+		v |= v >> 16;
+		v++;
+		return v;
+	}
 
 	static const float PI = 3.141592653589f;
 	static float const RAD2DEG = 180.0f / PI;

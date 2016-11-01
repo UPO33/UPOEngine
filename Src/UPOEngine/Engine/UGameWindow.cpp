@@ -117,7 +117,7 @@ namespace UPO
 			ULOG_MESSAGE("");
 			// Create the window with the screen settings and get the handle to it.
 			mHWND = CreateWindowExW(WS_EX_APPWINDOW, mWindowName, mWindowName,
-				dwStyleBorder,
+				mFullScreen ? dwStyleNoborder : dwStyleBorder,
 				posX, posY, screenWidth, screenHeight, NULL, NULL, mAppHandle, NULL);
 			// Bring the window up on the screen and set it as main focus.
 			ShowWindow(mHWND, SW_SHOW);

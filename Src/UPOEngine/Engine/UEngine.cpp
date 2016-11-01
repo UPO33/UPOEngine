@@ -1,105 +1,100 @@
 #include "UEngine.h"
 
-#include "../GFXCore/UGFXLauncherWin.h"
+#include "../GFXCore/UGFXCore.h"
+#include "../GFX/UGFX.h"
 
 namespace UPO
 {
 
-	Engine::Engine()
+
+	struct 
 	{
+		World* mCurrentWorld;
+		GameWindow* mMainWindow;
+		GFXContext* mGFXContext;
+		Renderer* mRenderer;
+		IEngineInterface* mInterface;
+		bool mLoop;
 
-	}
-
-	Engine::~Engine()
-	{
-
-	}
-
-	void Engine::Run()
-	{
-		Init();
-
-		bLoop = true;
-		while (bLoop)
+		void Init()
 		{
-			bool result;
+			mInterface->OnInit();
+
+			mMainWindow = mInterface->OnCreateGameWindow();
+			UASSERT(mMainWindow);
+
+			mGFXContext = GFXContext::New();
+			UASSERT(mGFXContext);
+			mGFXContext->Init(mMainWindow);
+
+			mInterface->OnAfterDeviceCreation();
+
+			mRenderer = Renderer::New();
+			UASSERT(mRenderer);
+			mRenderer->Init(mGFXContext);
+		}
+		void Loop()
+		{
+			bool bLoop = true;
+			while (bLoop)
+			{
+				bool result;
+
+				result = GTick();
+				if (!result) break;
+
+				result = RTick();
+				if (!result) break;
+
+				Thread::Sleep(10);
+			}
+		}
+		void Release()
+		{
+			mInterface->OnBeforeRendererRelease();
+
+			if (mRenderer) mRenderer->Release();
+			if (mGFXContext) mGFXContext->Release();
 			
-			result = GTTick();
-			if(!result) break;
+			mInterface->OnReleaseGameWindow();
+			mMainWindow = nullptr;
 
-			result = RTTick();
-			if(!result) break;
+			mInterface->OnRelease();
 
-			Thread::Sleep(100);
+			delete mRenderer;
+			delete mGFXContext;
+			delete mMainWindow;
+		}
+		bool GTick()
+		{
+			bool result = true;
+
+			result = mInterface->OnTick();
+
+			if (mCurrentWorld)
+			{
+				mCurrentWorld->SingleTick(WorldTickResult());
+			}
+
+			return result;
+		}
+		bool RTick()
+		{
+			return mRenderer->RenderFrame();
 		}
 
-		Release();
-		
-	}
+	} gEngine;
 
-	void Engine::Init()
+
+	UAPI void LaunchEngine(IEngineInterface* itf)
 	{
-		mMainWindow = GameWindow::New();
-		mMainWindow->Init();
+		gEngine.mInterface = itf;
 
-		mGFXContext = GFXContext::New();
-		mGFXContext->Init(mMainWindow);
 
-		mRenderer = Renderer::New();
-		mRenderer->Init(mGFXContext);
-
-		InitWorld();
+		gEngine.Init();
+		gEngine.Loop();
+		gEngine.Release();
 	}
 
-	void Engine::Release()
-	{
-		if (mRenderer) mRenderer->Release();
-		if (mGFXContext) mGFXContext->Release();
-		if (mMainWindow) mMainWindow->Release();
-		
-	}
-
-	bool Engine::GTTick()
-	{
-		bool result = true;
-		
-		result = mMainWindow->Tick();
-	
-		if(mCurrentWorld)
-		{ 
-			mCurrentWorld->SingleTick(WorldTickResult());
-		}
-
-		return result;
-	}
-
-	bool Engine::RTTick()
-	{
-		return mRenderer->RenderFrame();
-	}
-
-
-
-	void Engine::InitWorld()
-	{
-		mCurrentWorld = new World();
-		
-		EntityCreationParam ecp;
-		ecp.mClass = Entity::GetClassInfoStatic();
-		ecp.mParent = nullptr;
-
-		mCurrentWorld->CreateEntity(ecp);
-		mCurrentWorld->CreateEntity(ecp);
-		mCurrentWorld->CreateEntity(ecp);
-
-		mCurrentWorld->SetPlaying(true);
-
-	}
-
-	Engine* Engine::Get()
-	{
-		static TInstance<Engine> Ins;
-		return Ins;
-	}
 
 };

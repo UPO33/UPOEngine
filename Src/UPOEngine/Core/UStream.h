@@ -91,7 +91,7 @@ namespace UPO
 	/*
 		a stream which writes the taken data to a file
 	*/
-	class StreamReaderFile : public Stream
+	class UAPI StreamReaderFile : public Stream
 	{
 		File mFile;
 		size_t mPos;

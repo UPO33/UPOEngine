@@ -10,4 +10,5 @@ namespace UPOEd
 
 		static EditorConfig* Get();
 	};
+	inline EditorConfig* GEditorConfig() { return EditorConfig::Get(); }
 };

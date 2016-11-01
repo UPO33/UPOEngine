@@ -76,7 +76,7 @@ namespace UPO
 		//[SectionName]
 		void ParseSection(const String& line)
 		{
-			auto endSecIndex = line.FindNChar(']');
+			auto endSecIndex = line.FindN(']');
 			if (endSecIndex != ~0)
 			{
 				mCurSection = line.SubStr(1, endSecIndex - 1);
@@ -92,7 +92,7 @@ namespace UPO
 		//Keyname=value
 		void ParseKey(const String& line)
 		{
-			auto assignIndex = line.FindNChar('=');
+			auto assignIndex = line.FindN('=');
 			if (assignIndex != ~0)
 			{
 				String keyName = line.SubStr(0, assignIndex);

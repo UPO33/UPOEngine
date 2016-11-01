@@ -10,9 +10,10 @@ namespace UPO
 		template<typename T> friend class TSmartPtr;
 
 		unsigned mRefCount;
-	protected:
+	public:
 		RefCountable() : mRefCount(0) {}
 		~RefCountable() { UASSERT(mRefCount == 0); }
+		void IncRefCount(int num = 1) { mRefCount += num; }
 	};
 
 
@@ -82,6 +83,9 @@ namespace UPO
 		operator bool() const { return mPtr != nullptr; }
 		operator T* () const { return mPtr; }
 		T* operator -> () const { return mPtr; }
+
+		bool operator == (const TSmartPtr& other) const { return mPtr == other.mPtr; }
+		bool operator != (const TSmartPtr& other) const { return mPtr != other.mPtr; }
 	};
 
 };

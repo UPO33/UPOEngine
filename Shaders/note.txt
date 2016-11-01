@@ -1,0 +1,4 @@
+dont use semantic index
+
+constant varible should be 'static const'
+

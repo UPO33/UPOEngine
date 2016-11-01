@@ -6,10 +6,10 @@ namespace UPO
 	//////////////////////////////////////////////////////////////////////////
 	ScreenDrawer::ScreenDrawer(Renderer* rdr) : RendererElement(rdr)
 	{
-		mVertexShader = gGFX->GetShader("Canvas.hlsl", "VSMain", EShaderType::EST_VERTEX);
-		UASSERT(mVertexShader);
-		mPixelShader = gGFX->GetShader("Canvas.hlsl", "PSMain", EShaderType::EST_PIXEL);
-		UASSERT(mPixelShader);
+// 		mVertexShader = gGFX->CreateShader<GFXVertexShader>("Canvas.hlsl", "VSMain");
+// 		UASSERT(mVertexShader);
+// 		mPixelShader = gGFX->CreateShader<GFXPixelShader>("Canvas.hlsl", "PSMain");
+// 		UASSERT(mPixelShader);
 
 		///////////////constant buffer
 		GFXConstantBuffer_Desc cbDesc;
@@ -17,15 +17,22 @@ namespace UPO
 		cbDesc.mInitialData = new CBPerObject;
 		mCBPerObject = gGFX->CreateConstantBuffer(cbDesc);
 
-		GFXVertexElement_Desc vElements[] =
+
 		{
-			GFXVertexElement_Desc("POSITION", EPixelFormat::EPT_R32G32_FLOAT),
-			GFXVertexElement_Desc("UV", EPixelFormat::EPT_R32G32_FLOAT)
-		};
-		mLayout = gGFX->CreateInputLayout(vElements, ARRAYSIZE(vElements), mVertexShader);
+			GFXInputLayoutDesc desc = 
+			{
+				{
+					GFXVertexElementDesc("POSITION", EVertexFormat::EFloat2),
+					GFXVertexElementDesc("UV", EVertexFormat::EFloat2),
+				},
+				mVertexShader
+			};
+
+			mLayout = gGFX->CreateInputLayout(desc);
+		}
 
 		GFXVertexBuffer_Desc vbDesc;
-		vbDesc.mUsage = EResourceUsage::EBU_DYNAMIC;
+		vbDesc.mUsage = EResourceUsage::EDynamic;
 		vbDesc.mSize = sizeof(VertexType) * 32;
 		mQuadBuffer = gGFX->CreateVertexBuffer(vbDesc);
 
@@ -35,8 +42,8 @@ namespace UPO
 		mDepthStencilState = gGFX->CreateDepthStencilState(dsDesc);
 
 		GFXSamplerState_Desc ssDesc;
-		ssDesc.mAddressU = ETextureAddress::ETA_CLAMP;
-		ssDesc.mAddressV = ETextureAddress::ETA_CLAMP;
+		ssDesc.mAddressU = ETextureAddress::EClamp;
+		ssDesc.mAddressV = ETextureAddress::EClamp;
 		ssDesc.mFilter = ETextureFilter::ETF_MIN_MAG_MIP_POINT;
 		mSampler = gGFX->CreateSamplerState(ssDesc);
 
@@ -44,12 +51,12 @@ namespace UPO
 		/////////////blend state
 		GFXBlendState_Desc bdesc;
 		bdesc.mRenderTargets[0].mBlendEnable = true;
-		bdesc.mRenderTargets[0].mSrcBlend = EBlendElement::EBE_SRC_ALPHA;
-		bdesc.mRenderTargets[0].mDestBlend = EBlendElement::EBE_INV_SRC_ALPHA;
+		bdesc.mRenderTargets[0].mSrcBlend = EBlendFactor::ESrcAlpha;
+		bdesc.mRenderTargets[0].mDestBlend = EBlendFactor::EInvSrcAlpha;
 		mAlphaBlend = gGFX->CreateBlendState(bdesc);
 
 		GFXRasterizerState_Desc rs;
-		rs.mCullMode = ECullMode::ECM_NONE;
+		rs.mCullMode = ECullMode::ENone;
 		mRaster = gGFX->CreateRasterizerState(rs);
 	}
 
@@ -62,7 +69,7 @@ namespace UPO
 	void ScreenDrawer::DrawTexture(GFXTexture2D* texture, Vec2 pos, Vec2 size, Color color, Vec2 uvTopLeft, Vec2 uvRightBottom)
 	{
 		{
-			VertexType* vertices = mQuadBuffer->Map<VertexType>(EMapFlag::EMF_WRITE_DISCARD);
+			VertexType* vertices = mQuadBuffer->Map<VertexType>(EMapFlag::EWriteDiscard);
 			//0,0
 			vertices[0].mPosition = pos;
 			vertices[0].mUV = uvTopLeft;
@@ -93,7 +100,7 @@ namespace UPO
 
 			mQuadBuffer->Unmap();
 
-			CBPerObject* obj = mCBPerObject->Map<CBPerObject>(EMapFlag::EMF_WRITE_DISCARD);
+			CBPerObject* obj = mCBPerObject->Map<CBPerObject>(EMapFlag::EWriteDiscard);
 			obj->mColor = color;
 			mCBPerObject->Unmap();
 		}
@@ -106,9 +113,9 @@ namespace UPO
 		gGFX->SetPrimitiveTopology(EPrimitiveTopology::EPT_TRIANGLELIST);
 		gGFX->BinVertexBuffer(mQuadBuffer, sizeof(VertexType), 0);
 		gGFX->BindShaders(mVertexShader, mPixelShader);
-		gGFX->BindTexture(texture, 0, EST_PIXEL);
-		gGFX->BindSamplerState(mSampler, 0, EST_PIXEL);
-		gGFX->BindConstantBuffer(mCBPerObject, 0, EST_PIXEL);
+		gGFX->BindTexture(texture, 0, EShaderType::EPixel);
+		gGFX->BindSamplerState(mSampler, 0, EShaderType::EPixel);
+		gGFX->BindConstantBuffer(mCBPerObject, 0, EShaderType::EPixel);
 		float brgba[] = { 0,0,0,0 };
 		gGFX->BindBlendState(mAlphaBlend, brgba);
 		gGFX->Draw(6, 0);
@@ -116,5 +123,6 @@ namespace UPO
 
 	void ScreenDrawer::Present()
 	{
+		DrawTexture(nullptr, Vec2(0.1), Vec2(0.4), Color(1));
 	}
 };

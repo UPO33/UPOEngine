@@ -39,7 +39,7 @@ namespace UPOEd
 	//////////////////////////////////////////////////////////////////////////
 	class MainWindow : public QMainWindow
 	{
-
+	public:
 		QWidget* mCentralWidget = nullptr;
 		QStatusBar* mStatusBar = nullptr;
 		
@@ -67,6 +67,20 @@ namespace UPOEd
 		float mTickCounter = 0;
 		void Tick();
 		
+// 		void dragEnterEvent(QDragEnterEvent *e) override
+// 		{
+// 			if (e->mimeData()->hasUrls()) {
+// 				e->acceptProposedAction();
+// 			}
+// 		}
+// 		void dropEvent(QDropEvent *e)
+// 		{
+// 			foreach(const QUrl &url, e->mimeData()->urls()) {
+// 				QString fileName = url.toLocalFile();
+// 				qDebug() << "Dropped file:" << fileName;
+// 				ULOG_MESSAGE("dropped file %s", fileName);
+// 			}
+// 		}
 		void InitWorld();
 	};
 };

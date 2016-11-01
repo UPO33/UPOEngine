@@ -72,8 +72,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LibraryPath>$(SolutionDir)..\Bin\;$(LibraryPath)</LibraryPath>
-    <OutDir>$(SolutionDir)..\Bin\</OutDir>
+    <LibraryPath>$(SolutionDir)Bin\;$(LibraryPath)</LibraryPath>
+    <OutDir>$(SolutionDir)Bin\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LibraryPath>$(SolutionDir)..\Bin\;$(LibraryPath)</LibraryPath>

@@ -6,8 +6,11 @@
 #include <vector>
 #include <string.h>
 
+#include "Misc/UMisc.h"
+
 #define ULOGVAR_VEC3(v3) ULOG_WARN("%s %f  %f  %f", #v3, v3.mX, v3.mY, v3.mZ)
 #define ULOGVAR_STR(str) ULOG_WARN("%s %s", #str, str.CStr() ? str.CStr() : "")
+
 
 namespace UPO
 {
@@ -65,105 +68,92 @@ namespace UPO
 		UPROPERTY(mMetaClass)
 	UCLASS_END_IMPL(TestObject)
 
-	struct AsElement
+	//////////////////////////////////////////////////////////////////////////
+	class EngineLauncher : public IEngineInterface
 	{
-		THTreeNode<AsElement> mTree;
+		GameWindow* mGameWnd = nullptr;
+
+
+		virtual bool OnInit() override
+		{
+			AssetSys::Get();
+
+			return true;
+		}
+
+		virtual bool OnTick() override
+		{
+			return mGameWnd->Tick();
+		}
+
+		virtual bool OnRelease() override
+		{
+			return true;
+		}
+
+		virtual GameWindow* OnCreateGameWindow() override
+		{
+			mGameWnd = GameWindow::New();
+			mGameWnd->Init();
+			return mGameWnd;
+		}
+
+		virtual void OnReleaseGameWindow() override
+		{
+			mGameWnd->Release();
+			mGameWnd = nullptr;
+			delete mGameWnd;
+		}
+
+		virtual void OnAfterDeviceCreation() override
+		{
+			UGlobalShader_CompileAll();
+		}
+
+		virtual void OnBeforeRendererRelease() override
+		{
+			UGlobalShader_ReleaseAll();
+		}
+
 	};
 
-	uint64 GetNewAssetID()
+	//////////////////////////////////////////////////////////////////////////
+	/*
+	command lines
+	projdir="project directory"
+	*/
+	void ParseCommandLine(int argc, const char** argv)
 	{
-		FILETIME filetime;
-		GetSystemTimeAsFileTime(&filetime);
-		LARGE_INTEGER ret;
-		ret.LowPart = filetime.dwLowDateTime;
-		ret.HighPart = filetime.dwHighDateTime;
-		return (uint64)ret.QuadPart;
-	}
-	std::vector<std::string> get_all_files_names_within_folder(std::string folder)
-	{
-		using namespace std;
-		vector<string> names;
-		string search_path = folder + "*";
-		WIN32_FIND_DATAA fd;
-		HANDLE hFind = ::FindFirstFileA(search_path.c_str(), &fd);
-		if (hFind != INVALID_HANDLE_VALUE) {
-			do {
-				// read all (real) files in current folder
-				// , delete '!' read other 2 default folder . and ..
-				ULOG_WARN("file %s", fd.cFileName);
-				if (!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
-					names.push_back(fd.cFileName);
-					
-				}
-			} while (::FindNextFileA(hFind, &fd));
-			::FindClose(hFind);
-		}
-		return names;
-	}
-
-	
-	void DirGetFiles(const String& dir, TArray<String>& outFiles, bool subDirectories)
-	{
-		DirGetFiles(dir.CStr(), outFiles, nullptr);
-	}
-
-	void StrSplit(String& s, char split, TArray<String>& out)
-	{
-		out.RemoveAll();
-
-		auto len = s.Length();
-		if (len == 0) return;
-
-		const char* str = s.CStr();
-		size_t last = 0;
-
-		for (size_t i = 0; i < len; i++)
 		{
-			if (str[i] == split)
-			{
-					if (last == i)
-					{
-					//	out.AddDefault();
-					}
-					else
-					{
-						out.AddDefault();
-						out.LastElement() = String(str + last, i - last);
-					}
+			String strExePath = argv[0];
+			gEnginePath = strExePath.SubStr(0, strExePath.FindRN(PATH_SEPARATOR_CHAR, 1));
+			ULOG_MESSAGE("engine path %s", gEnginePath.CStr());
+		}
 
-				last = i + 1;
+		String argValue;
+		String ProjDir = "projdir=";
+
+		for (size_t i = 1; i < argc; i++)
+		{
+			argValue = argv[i];
+			if (argValue.BeginsWith(ProjDir))
+			{
+				gProjectPath = argValue.SubStr(ProjDir.Length(), argValue.Length() - ProjDir.Length());
+				ULOG_MESSAGE("Project directory %s", gProjectPath.CStr());
 			}
 		}
 
-		if (last == 0) // nothing found
-		{
-			//out.Add(s);
-		}
-		else if (last == len) //token is last char
-		{
-
-		}
-		else
-		{
-			out.AddDefault();
-			out.LastElement() = String(str + last, len - last);
-		}
-
-
-		for (size_t i = 0; i < out.Length(); i++)
-			ULOG_ERROR("[%s]", out[i].IsEmpty() ? "empty" : out[i].CStr());
 	}
-	class STestRef : public RefCountable
-	{
-	public:
-	};
+
 	//////////////////////////////////////////////////////////////////////////
 	UAPI void TestMain(int argc, const char** argv)
 	{
-		Engine::Get()->Run();
+		ParseCommandLine(argc, argv);
 
-		system("pause");
-		return;
+		gIsEditor = false;
+
+		LaunchEngine(new EngineLauncher);
 	}
+	
 
 };

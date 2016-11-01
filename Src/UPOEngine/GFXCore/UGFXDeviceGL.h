@@ -15,14 +15,14 @@ namespace UPO
 	{
 		switch (in)
 		{
-		case EMapFlag::EMF_READ: return GL_READ_ONLY;
+		case EMapFlag::ERead: return GL_READ_ONLY;
 			break;
-		case EMapFlag::EMF_WRITE:
-		case EMapFlag::EMF_WRITE_DISCARD:
-		case EMapFlag::EMF_WRITE_NO_OVERWRITE:
+		case EMapFlag::EWrite:
+		case EMapFlag::EWriteDiscard:
+		case EMapFlag::EWriteNoOverwrite:
 			return GL_WRITE_ONLY;
 			break;
-		case EMapFlag::EMF_READ_WRITE: return GL_READ_WRITE;
+		case EMapFlag::EReadWrite: return GL_READ_WRITE;
 			break;
 		}
 
@@ -109,7 +109,7 @@ namespace UPO
 		//////////////////////////////////////////////////////////////////////////
 		virtual GFXVertexBuffer* CreateVertexBuffer(const GFXVertexBuffer_Desc& param) override
 		{
-			GLenum usage = param.mUsage == EResourceUsage::EBU_DYNAMIC ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
+			GLenum usage = param.mUsage == EResourceUsage::EDynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
 			GLuint handle = CreateBuffer(GL_ARRAY_BUFFER, param.mSize, param.mInitialData, usage);
 			if (handle)
 				return new GFXVertexBufferGL(handle, param);
@@ -119,7 +119,7 @@ namespace UPO
 		//////////////////////////////////////////////////////////////////////////
 		virtual GFXIndexBuffer* CreateIndexBuffer(const GFXIndexBuffer_Desc& param) override
 		{
-			GLenum usage = param.mUsage == EResourceUsage::EBU_DYNAMIC ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
+			GLenum usage = param.mUsage == EResourceUsage::EDynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
 			GLuint handle = CreateBuffer(GL_ELEMENT_ARRAY_BUFFER, param.mSize, param.mInitialData, usage);
 			if (handle)
 				return new GFXIndexBufferGL(handle, param);
@@ -139,15 +139,15 @@ namespace UPO
 			}
 		}
 		//////////////////////////////////////////////////////////////////////////
-		void Draw(unsigned vertexCount, unsigned startVertexLocation /* = 0 */) override
-		{
-			glDrawArrays(mPrimitiveTopology, startVertexLocation, vertexCount);
-		}
-		//////////////////////////////////////////////////////////////////////////
-		void DrawIndexed(unsigned indexCount, unsigned startIndexLocation /* = 0 */, unsigned baseVertexLocation /* = 0 */) override
-		{
-			glDrawElements(mPrimitiveTopology, indexCount, GL_UNSIGNED_SHORT, nullptr);
-		}
+// 		void Draw(unsigned vertexCount, unsigned startVertexLocation /* = 0 */) override
+// 		{
+// 			glDrawArrays(mPrimitiveTopology, startVertexLocation, vertexCount);
+// 		}
+// 		//////////////////////////////////////////////////////////////////////////
+// 		void DrawIndexed(unsigned indexCount, unsigned startIndexLocation /* = 0 */, unsigned baseVertexLocation /* = 0 */) override
+// 		{
+// 			glDrawElements(mPrimitiveTopology, indexCount, GL_UNSIGNED_SHORT, nullptr);
+// 		}
 		//////////////////////////////////////////////////////////////////////////
 		void SetPrimitiveTopology(EPrimitiveTopology topology) override
 		{

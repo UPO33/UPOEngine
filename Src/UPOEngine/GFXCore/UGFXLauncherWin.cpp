@@ -1,12 +1,95 @@
 #include "UGFXLauncherWin.h"
 #include "../Engine/UInput.h"
+#include "../GFX/UGFX.h"
 
 #include <windowsx.h>
 #include <WinUser.h>
 
 namespace UPO
 {
-#if 0
+// 	TestQuadRE* gTestQuad;
+// 	struct MyStruct
+// 	{
+// 		Buffer vsByteCode;
+// 		Buffer psByteCode;
+// 		ID3D11VertexShader* vs;
+// 		ID3D11PixelShader* ps;
+// 		ID3D11Buffer* mVBuffer;
+// 		ID3D11DepthStencilState* mDepthState;
+// 		ID3D11Device* mDevice;
+// 		ID3D11DeviceContext* mContext;
+// 		ID3D11InputLayout* mInputLayout;
+// 
+// 		void Init(ID3D11Device* device, ID3D11DeviceContext* context)
+// 		{
+// 			mDevice = device;
+// 			mContext = context;
+// 			
+// 			ShaderMgr::GetByteCode("TestColorQuad.hlsl", "VSMain", EShaderType::EVertex, vsByteCode);
+// 			if (FAILED(mDevice->CreateVertexShader(vsByteCode.Data(), vsByteCode.Size(), nullptr, &vs)))
+// 			{
+// 				ULOG_FATAL("");
+// 			}
+// 			ShaderMgr::GetByteCode("TestColorQuad.hlsl", "PSMain", EShaderType::EPixel, psByteCode);
+// 			if (FAILED(mDevice->CreatePixelShader(psByteCode.Data(), psByteCode.Size(), nullptr, &ps)))
+// 			{
+// 				ULOG_FATAL("");
+// 			}
+// 
+// 			{
+// 				CD3D11_DEPTH_STENCIL_DESC desc = CD3D11_DEPTH_STENCIL_DESC(CD3D11_DEFAULT());
+// 				desc.DepthEnable = FALSE;
+// 				desc.StencilEnable = FALSE;
+// 
+// 				if (FAILED(mDevice->CreateDepthStencilState(&desc, &mDepthState))) ULOG_FATAL("");
+// 			}
+// 
+// 			{
+// 				Vec2 pos[] = { Vec2(0,0), Vec2(1,0), Vec2(0,1) };
+// 				D3D11_BUFFER_DESC desc;
+// 				desc.BindFlags = D3D11_BIND_FLAG::D3D11_BIND_VERTEX_BUFFER;
+// 				desc.ByteWidth = sizeof(pos);
+// 				desc.CPUAccessFlags = 0;
+// 				desc.MiscFlags = 0;
+// 				desc.StructureByteStride = 0;
+// 				desc.Usage = D3D11_USAGE_DEFAULT;
+// 
+// 				D3D11_SUBRESOURCE_DATA init;
+// 				init.pSysMem = pos;
+// 				init.SysMemPitch = 0;
+// 				init.SysMemSlicePitch = 0;
+// 				if (FAILED(mDevice->CreateBuffer(&desc, &init, &mVBuffer))) ULOG_FATAL("");
+// 			}
+// 
+// 			{
+// 				D3D11_INPUT_ELEMENT_DESC elements[] =
+// 				{
+// 					{ "POSITION", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+// 				};
+// 				if (FAILED(mDevice->CreateInputLayout(elements, UARRAYLEN(elements), vsByteCode.Data(), vsByteCode.Size(), &mInputLayout)))
+// 					ULOG_FATAL("");
+// 			}
+// 		}
+// 		void Present()
+// 		{
+// 			mContext->VSSetShader(vs, nullptr, 0);
+// 			mContext->PSSetShader(ps, nullptr, 0);
+// // 			mContext->RSSetState(nullptr);
+// 			UINT stride[] = { sizeof(Vec2) };
+// 			UINT offset[] = { 0 };
+// 			mContext->IASetVertexBuffers(0, 1, &mVBuffer, stride, offset);
+// 			mContext->IASetInputLayout(mInputLayout);
+//  			mContext->OMSetDepthStencilState(mDepthState, 1);
+// 			mContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+// 
+// 			mContext->Draw(3, 0);
+// 
+// 			
+// 		}
+// 	};
+// 
+// 	MyStruct gTest;
+
 	//////////////////////////////////////////////////////////////////////////
 	void GFXLauncherWin::Init(const InitParam& param)
 	{
@@ -14,6 +97,8 @@ namespace UPO
 		InitWindow();
 		InitDX();
 
+// 		gTestQuad = new TestQuadRE(nullptr);
+// 		gTest.Init(mDXDevice, mDXDeviceContext);
 	}
 
 	void GFXLauncherWin::Shutdown()
@@ -198,8 +283,15 @@ namespace UPO
 	{
 		if (Input::IsKeyDown(VK_ESCAPE)) return false;
 
-		mRenderer->Tick();
 
+		mDXDeviceContext->OMSetRenderTargets(1, &mBackBufferView, nullptr);
+		Color clearColor(0.9);
+		mDXDeviceContext->ClearRenderTargetView(mBackBufferView, clearColor.mRGBA);
+
+// 
+// 		gTestQuad->Present();
+
+		this->SawpChainPresent();
 		return true;
 	}
 	//////////////////////////////////////////////////////////////////////////
@@ -483,6 +575,5 @@ namespace UPO
 		}
 		}
 	}
-#endif
 
 }

@@ -14,35 +14,25 @@
 #include "UWorld.h"
 #include "UGameWindow.h"
 
-#include "../GFX/URenderer.h"
 
 namespace UPO
 {
-	class UAPI Engine
+
+
+	//////////////////////////////////////////////////////////////////////////
+	class IEngineInterface
 	{
-		World* mCurrentWorld;
-		GameWindow* mMainWindow;
-		GFXContext* mGFXContext;
-		Renderer* mRenderer;
-
-		volatile bool bLoop = true;
-
 	public:
-		Engine();
-		~Engine();
+		virtual bool OnInit() { return true; }
+		virtual bool OnTick() { return true; }
+		virtual bool OnRelease() { return true; }
 
-		void Run();
+		virtual GameWindow* OnCreateGameWindow() { return nullptr; }
+		virtual void OnReleaseGameWindow() {}
 
-		void Init();
-		void Release();
-
-		bool GTTick();
-		bool RTTick();
-
-		void InitWorld();
-
-		void LoadWorld(Name name);
-
-		static Engine* Get();
+		virtual void OnAfterDeviceCreation() {};
+		virtual void OnBeforeRendererRelease() {};
 	};
+
+	UAPI void LaunchEngine(IEngineInterface* itf);
 }

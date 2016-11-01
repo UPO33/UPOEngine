@@ -65,7 +65,7 @@ namespace UPO
 
 
 
-		void Save();
+		bool Save();
 		bool IsDirty() const { return FlagTest(EAssetFlag::EAF_Dirty); }
 		
 		void IsOwnedBy(World*) {}

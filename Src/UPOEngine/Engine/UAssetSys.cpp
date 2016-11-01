@@ -1,6 +1,7 @@
 #include "UAssetSys.h"
 #include "../Meta/UMeta.h"
 #include "../Object/UObject.h"
+#include "../Misc/UApp.h"
 
 namespace UPO
 {
@@ -16,7 +17,7 @@ namespace UPO
 	//relative
 	void AssetNameToRelativePath(Name assetName, String& out)
 	{
-		out.SetFormatted("../Content/%s", assetName.CStr());
+		out.SetFormatted("..//Content//%s", assetName.CStr());
 	}
 	//////////////////////////////////////////////////////////////////////////
 	bool ReadAssetHeader(Stream& assetFile, AssetID* outID = nullptr, Name* outClassName = nullptr)
@@ -66,7 +67,7 @@ namespace UPO
 	AssetSys::AssetSys()
 	{
 		mAssets.SetCapacity(1024);
-		CollectAssetsInContent();
+		CollectAssetEntries();
 	}
 
 	AssetSys::~AssetSys()
@@ -102,16 +103,21 @@ namespace UPO
 
 			newAsset->mEntry = newEntry;
 
-			newAsset->OnConstruct();
+			//newAsset->OnConstruct();
 			
 			newAsset->FlagSet(EAssetFlag::EAF_Dirty);
-			newAsset->Save();
-
-			DeleteObject(newAsset);
-
-			newEntry->mInstance = nullptr;
-
-			return newEntry;
+			if (newAsset->Save())
+			{
+				DeleteObject(newAsset);
+				newEntry->mInstance = nullptr;
+				return newEntry;
+			}
+			else
+			{
+				DeleteObject(newAsset);
+				delete newEntry;
+				return nullptr;
+			}
 		}
 		return nullptr;
 	}
@@ -159,22 +165,51 @@ namespace UPO
 
 
 	//////////////////////////////////////////////////////////////////////////
-	void AssetSys::CollectAssetsInContent()
+	void AssetSys::CollectAssetEntries()
 	{
 		mAssets.RemoveAll();
+// 
+// 		auto func = [&](const String& path){
+// 			TArray<String> assetNamesString;
+// 			PathGetFiles(path, assetNamesString, true);
+// 			for (size_t i = 0; i < assetNamesString.Length(); i++)
+// 			{
+// 				String assetFileName;
+// 				AssetNameToRelativePath(Name(assetNamesString[i]), assetFileName);
+// 
+// 				AssetID assetID;
+// 				Name assetClassName;
+// 
+// 				if (CheckFile(assetFileName, &assetID, &assetClassName))
+// 				{
+// 					AssetEntry* newAsset = new AssetEntry;
+// 					newAsset->mID = assetID;
+// 					newAsset->mClassName = assetClassName;
+// 					newAsset->mName = assetNamesString[i];
+// 
+// 					mAssets.Add(newAsset);
+// 				}
+// 			}
+// 		};
+// 
+// 		func(GetEngineContentPath());
+// 		func(GetProjectContentPath());
+
 
 		TArray<String> assetNamesString;
-		PathGetFiles("../Content/", assetNamesString, true);
+		String engineContentPath = GetEngineContentPath();
+		PathGetFiles(engineContentPath, assetNamesString, true);
 		for (size_t i = 0; i < assetNamesString.Length(); i++)
 		{
-			String assetFileName;
-			AssetNameToRelativePath(Name(assetNamesString[i]), assetFileName);
+			String assetFileName = engineContentPath + assetNamesString[i];
+			//AssetNameToRelativePath(Name(assetNamesString[i]), assetFileName);
 
 			AssetID assetID;
 			Name assetClassName;
 
 			if (CheckFile(assetFileName, &assetID, &assetClassName))
 			{
+				ULOG_MESSAGE("assest found [%s]", assetFileName);
 				AssetEntry* newAsset = new AssetEntry;
 				newAsset->mID = assetID;
 				newAsset->mClassName = assetClassName;
@@ -184,6 +219,17 @@ namespace UPO
 			}
 		}
 	}
+
+	String AssetSys::GetEngineContentPath()
+	{
+		return gEnginePath + "/Content/";
+	}
+
+	String AssetSys::GetProjectContentPath()
+	{
+		return gProjectPath + "/Content/";
+	}
+
 	//////////////////////////////////////////////////////////////////////////
 	bool AssetSys::CheckFile(const String& filename, AssetID* outAssetID, Name* outClassName) const
 	{
@@ -194,6 +240,11 @@ namespace UPO
 		return ReadAssetHeader(fStream, outAssetID, outClassName);
 	}
 	
+	ClassInfo* AssetEntry::GetClassInfo() const
+	{
+		return MetaSys::Get()->FindClass(mClassName);
+	}
+
 	//////////////////////////////////////////////////////////////////////////
 	Stream* AssetEntry::OpenStreamForLoading()
 	{

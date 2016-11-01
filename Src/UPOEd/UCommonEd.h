@@ -8,11 +8,14 @@
 #include <QtGui/QtGui>
 #include <QtWidgets/QtWidgets>
 
+#include "UFlowLayout.h"
+
+
 namespace UPOEd
 {
 	using namespace UPO;
 
-	extern bool SearchCheck(const QString& string, const QString& searchString);
+	extern bool SearchCheck(const QString& filter, const QString& string);
 	extern QString GetPropertyName(const PropertyInfo& prp);
 
 	Color ToColor(QColor c);
@@ -23,4 +26,7 @@ namespace UPOEd
 	QString ToQString(Name  name);
 	String ToString(const QString& str);
 	Name ToName(const QString& str);
+
+	QIcon* GetIcon(const QString& iconName);
+
 };

@@ -7,10 +7,4 @@ namespace UPOEd
 	{
 
 	}
-
-	void MainViewport::Tick()
-	{
-		this->Render();
-	}
-
 }

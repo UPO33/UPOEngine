@@ -81,6 +81,8 @@ namespace UPO
 		const Name& GetTypeName() const { return mTypeName; }
 		unsigned GetOffset() const { return mOffset; }
 		const AttribPack& GetAttributes() const { return mAttributes; }
+		bool HasAttrib(EAtrribID id) const { return mAttributes.HasAttrib(id); }
+		bool GetAttrib(EAtrribID id, Attrib& out) const { return mAttributes.GetAttrib(id, out); }
 		ClassInfo* GetOwner() const { return mOwner; }
 
 		size_t GetTypeSize() const;

@@ -33,8 +33,8 @@ namespace UPO
 
 		Renderer*						mRenderer = nullptr;
 
-		GFXShaderRef					mVertexShader = nullptr;
-		GFXShaderRef					mPixelShader = nullptr;
+		GFXVertexShaderRef				mVertexShader = nullptr;
+		GFXPixelShaderRef				mPixelShader = nullptr;
 		GFXVertexBufferRef				mQuadBuffer = nullptr;
 		GFXDepthStencilStateRef			mDepthStencilState = nullptr;
 		GFXSamplerStateRef				mSampler = nullptr;

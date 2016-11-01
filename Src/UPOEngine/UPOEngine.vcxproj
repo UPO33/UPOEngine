@@ -60,11 +60,15 @@
     <ClInclude Include="GFXCore\UGFXContext.h" />
     <ClInclude Include="GFXCore\UGFXContextDX.h" />
     <ClInclude Include="GFXCore\UGFXContextGL.h" />
+    <ClInclude Include="GFXCore\UGFXDeviceVulkan.h" />
     <ClInclude Include="GFXCore\UGFXLauncherWin.h" />
     <ClInclude Include="GFXCore\UGFXCore.h" />
     <ClInclude Include="GFXCore\UGFXDevice.h" />
     <ClInclude Include="GFXCore\UGFXDeviceDX.h" />
     <ClInclude Include="GFXCore\UGFXDeviceGL.h" />
+    <ClInclude Include="GFXCore\UGFXUniform.h" />
+    <ClInclude Include="GFXCore\UGlobalShader.h" />
+    <ClInclude Include="GFXCore\UShaderMgr.h" />
     <ClInclude Include="GFX\UGFX.h" />
     <ClInclude Include="GFX\UMeshDrawer.h" />
     <ClInclude Include="GFX\UPrimitiveDrawer.h" />
@@ -76,6 +80,7 @@
     <ClInclude Include="Meta\UMeta.h" />
     <ClInclude Include="Meta\UMetaSys.h" />
     <ClInclude Include="Meta\UTypeInfo.h" />
+    <ClInclude Include="Misc\UApp.h" />
     <ClInclude Include="Misc\UMisc.h" />
     <ClInclude Include="Object\UObject.h" />
     <ClInclude Include="Object\UObjectArchive.h" />
@@ -119,10 +124,15 @@
     <ClCompile Include="Engine\UWorldSetting.cpp" />
     <ClCompile Include="GFXCore\UEditorContextDX.cpp" />
     <ClCompile Include="GFXCore\UGFXContext.cpp" />
+    <ClCompile Include="GFXCore\UGFXDeviceVulkan.cpp" />
     <ClCompile Include="GFXCore\UGFXLauncherWin.cpp" />
     <ClCompile Include="GFXCore\UGFXDevice.cpp" />
     <ClCompile Include="GFXCore\UGFXDeviceDX.cpp" />
     <ClCompile Include="GFXCore\UGFXDeviceGL.cpp" />
+    <ClCompile Include="GFXCore\UGFXUniform.cpp" />
+    <ClCompile Include="GFXCore\UGlobalShader.cpp" />
+    <ClCompile Include="GFXCore\UShaderMgr.cpp" />
+    <ClCompile Include="GFXCore\UShaderMgr_DX.cpp" />
     <ClCompile Include="GFX\UMeshDrawer.cpp" />
     <ClCompile Include="GFX\UPrimitiveDrawer.cpp" />
     <ClCompile Include="GFX\URenderer.cpp" />
@@ -133,6 +143,8 @@
     <ClCompile Include="Meta\UMeta.cpp" />
     <ClCompile Include="Meta\UMetaSys.cpp" />
     <ClCompile Include="Meta\UTypeInfo.cpp" />
+    <ClCompile Include="Misc\UApp.cpp" />
+    <ClCompile Include="Misc\UMisc.cpp" />
     <ClCompile Include="Object\UObject.cpp" />
     <ClCompile Include="Object\UObjectArchive.cpp" />
     <ClCompile Include="Object\UObjectPtr.cpp" />
@@ -195,9 +207,9 @@
     <LibraryPath>$(SolutionDir)..\Libs\DirectXTK\Bin\Desktop_2015\Win32\Debug;$(SolutionDir)..\Libs\DirectXTex\DirectXTex\Bin\Desktop_2015\Win32\Debug;$(DXSDK_DIR)\Lib\x86;$(SolutionDir)..\Libs\SDL2\lib\x86;$(SolutionDir)..\Libs\assimp\lib\Debug;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>$(SolutionDir)..\Bin\</OutDir>
-    <IncludePath>C:\VulkanSDK\1.0.30.0\Include;$(SolutionDir)..\Libs\DirectXTK\Inc;$(SolutionDir)..\Libs\SDL2\include;$(SolutionDir)..\Libs\DirectXTex\DirectXTex;$(DXSDK_DIR)\Include\;$(SolutionDir)..\Libs\glew-2.0.0\include;$(SolutionDir)..\Libs\assimp\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\VulkanSDK\1.0.30.0\Bin32;$(SolutionDir)..\Libs\glew-2.0.0\lib\Release\Win32;$(SolutionDir)..\Libs\DirectXTK\Bin\Desktop_2015\Win32\Debug;$(SolutionDir)..\Libs\DirectXTex\DirectXTex\Bin\Desktop_2015\Win32\Debug;$(DXSDK_DIR)\Lib\x86;$(SolutionDir)..\Libs\SDL2\lib\x86;$(SolutionDir)..\Libs\assimp\lib\Debug;$(LibraryPath)</LibraryPath>
+    <OutDir>$(SolutionDir)Bin\</OutDir>
+    <IncludePath>$(SolutionDir)Libs\zlib\;C:\VulkanSDK\1.0.30.0\Include;$(SolutionDir)Libs\DirectXTK\Inc;$(SolutionDir)Libs\SDL2\include;$(SolutionDir)Libs\DirectXTex\DirectXTex;$(DXSDK_DIR)\Include\;$(SolutionDir)Libs\glew-2.0.0\include;$(SolutionDir)Libs\assimp\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)Libs\zlib\Debug;C:\VulkanSDK\1.0.30.0\Bin32;$(SolutionDir)Libs\glew-2.0.0\lib\Release\Win32;$(SolutionDir)Libs\DirectXTK\Bin\Desktop_2015\Win32\Debug;$(SolutionDir)Libs\DirectXTex\DirectXTex\Bin\Desktop_2015\Win32\Debug;$(DXSDK_DIR)\Lib\x86;$(SolutionDir)Libs\SDL2\lib\x86;$(SolutionDir)Libs\assimp\lib\Debug;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -205,10 +217,11 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>UEXPORT_ENGINE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <BufferSecurityCheck>true</BufferSecurityCheck>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>assimp-vc140-mt.lib;d3dx11d.lib;d3d11.lib;d3dcompiler.lib;dxgi.lib;d3dx10d.lib;DirectXTex.lib;DirectXTK.lib;SDL2.lib;glew32s.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>assimp-vc140-mt.lib;d3dx11d.lib;d3d11.lib;d3dcompiler.lib;dxgi.lib;d3dx10d.lib;DirectXTex.lib;DirectXTK.lib;SDL2.lib;glew32s.lib;vulkan-1.lib;zlibstaticd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

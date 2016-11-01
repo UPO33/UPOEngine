@@ -45,7 +45,7 @@ namespace UPO
 	template<typename T> class TArray
 	{
 		friend class HelperArray;
-
+		friend class String;
 	private:
 		T*			mElements;
 		size_t		mLength;
@@ -412,11 +412,26 @@ namespace UPO
 				if (element == mElements[i]) return i;
 			return ~0;
 		}
+		//lambda must return true if element found
+		template<typename Lambda> size_t FindLambda(Lambda compareLambda) const
+		{
+			for (size_t i = 0; i < mLength; i++)
+				if (compareLambda(mElements[i])) return i;
+			return ~0;
+		}
 		size_t FindLast(const T& element) const
 		{
 			size_t find = ~0;
 			for (size_t i = 0; i < mLength; i++)
 				if (element == mElements[i])
+					find = i;
+			return find;
+		}
+		template<typename Lambda> size_t FindLastLambda(Lambda compareLambda) const
+		{
+			size_t find = ~0;
+			for (size_t i = 0; i < mLength; i++)
+				if (compareLambda(mElements[i]))
 					find = i;
 			return find;
 		}

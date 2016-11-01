@@ -69,7 +69,9 @@ namespace UPOEd
 	}
 
 	MainWindow::MainWindow(QWidget *parent /*= nullptr*/, Qt::WindowFlags flags /*= Qt::WindowFlags()*/) : QMainWindow(parent, flags)
-	{		
+	{	
+// 		setAcceptDrops(true);
+
 		mStatusBar = new QStatusBar(this);
 		setStatusBar(mStatusBar);
 		setMinimumSize(QSize(500, 500));
@@ -90,8 +92,8 @@ namespace UPOEd
 
 		//////////////asset browser
 		mAssetBrowser = new AssetBrowserDW(this);
-		this->addDockWidget(Qt::DockWidgetArea::RightDockWidgetArea, mAssetBrowser);
-
+		this->addDockWidget(Qt::DockWidgetArea::BottomDockWidgetArea, mAssetBrowser);
+		
 		//////////entity browser
 		mEntityBrowser = new EntityBrowserDW(this);
 		this->addDockWidget(Qt::DockWidgetArea::RightDockWidgetArea, mEntityBrowser);

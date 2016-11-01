@@ -34,8 +34,11 @@ namespace UPO
 		{
 			ChekingResize();
 
+			//gGFX->SetRenderTarget(mContext->GetBackBuffer(), nullptr);
+			gGFX->ClearRenderTarget(mContext->GetBackBuffer(), Color(1, 1, RandFloat01(), 1));
 			gGFX->SetRenderTarget(mContext->GetBackBuffer(), nullptr);
-			gGFX->ClearRenderTarget(mContext->GetBackBuffer(), Color(0.1, 0, 0, 0));
+
+			
 			
 			mTestQuad->Present();
 

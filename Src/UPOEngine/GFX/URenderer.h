@@ -1,8 +1,7 @@
 #pragma once
 
 
-#include "../GFXCore/UGFXDevice.h"
-#include "../GFXCore/UGFXContext.h"
+#include "../GFXCore/UGFXCore.h"
 
 namespace UPO
 {

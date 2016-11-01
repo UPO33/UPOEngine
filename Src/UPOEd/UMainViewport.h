@@ -9,7 +9,6 @@ namespace UPOEd
 	{
 	public:
 		MainViewport(QWidget* parent = nullptr);
-		void Tick();
 
 	};
 };

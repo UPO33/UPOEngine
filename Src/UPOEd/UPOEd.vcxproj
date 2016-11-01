@@ -38,9 +38,9 @@
     <_ProjectFileVersion>14.0.25420.1</_ProjectFileVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>$(SolutionDir)\..\Bin\</OutDir>
+    <OutDir>$(SolutionDir)Bin\</OutDir>
     <IncludePath>$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)..\Bin\;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)\Bin\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(SolutionDir)\..\Bin\</OutDir>
@@ -81,6 +81,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="UEngineEd.cpp" />
     <ClCompile Include="UEntityBrowser.cpp" />
     <ClCompile Include="GeneratedFiles\qrc_upoed.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -93,32 +94,22 @@
     <ClCompile Include="UAssetViewer.cpp" />
     <ClCompile Include="UClassViewer.cpp" />
     <ClCompile Include="UColorSelectionDialog.cpp" />
-    <ClCompile Include="UCommon.cpp" />
+    <ClCompile Include="UCommonEd.cpp" />
     <ClCompile Include="UD3DRenderWidget.cpp" />
     <ClCompile Include="UEditorConfig.cpp" />
+    <ClCompile Include="UFlowLayout.cpp" />
     <ClCompile Include="ULogWindow.cpp" />
     <ClCompile Include="UMainViewport.cpp" />
     <ClCompile Include="UMainWindow.cpp" />
+    <ClCompile Include="UProject.cpp" />
     <ClCompile Include="UPropertyBrowser.cpp" />
     <ClCompile Include="UPropertyBrowserWidgets.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="upoed.ui">
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTDIR)\bin\uic.exe;%(AdditionalInputs)</AdditionalInputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Uic%27ing %(Identity)...</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\GeneratedFiles\ui_%(Filename).h;%(Outputs)</Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(QTDIR)\bin\uic.exe" -o ".\GeneratedFiles\ui_%(Filename).h" "%(FullPath)"</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTDIR)\bin\uic.exe;%(AdditionalInputs)</AdditionalInputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Uic%27ing %(Identity)...</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.\GeneratedFiles\ui_%(Filename).h;%(Outputs)</Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"$(QTDIR)\bin\uic.exe" -o ".\GeneratedFiles\ui_%(Filename).h" "%(FullPath)"</Command>
-    </CustomBuild>
-  </ItemGroup>
-  <ItemGroup>
+    <ClInclude Include="GeneratedFiles\ui_ab_asset_item.h" />
     <ClInclude Include="GeneratedFiles\ui_asset_browser.h" />
+    <ClInclude Include="UEngineEd.h" />
     <ClInclude Include="UEntityBrowser.h" />
-    <ClInclude Include="GeneratedFiles\ui_UILog.h" />
-    <ClInclude Include="GeneratedFiles\ui_upoed.h" />
     <ClInclude Include="UAssetBrowser.h" />
     <ClInclude Include="UAssetViewer.h" />
     <ClInclude Include="UClassViewer.h" />
@@ -126,9 +117,11 @@
     <ClInclude Include="UCommonEd.h" />
     <ClInclude Include="UD3DRenderWidget.h" />
     <ClInclude Include="UEditorConfig.h" />
+    <ClInclude Include="UFlowLayout.h" />
     <ClInclude Include="ULogWindow.h" />
     <ClInclude Include="UMainViewport.h" />
     <ClInclude Include="UMainWindow.h" />
+    <ClInclude Include="UProject.h" />
     <ClInclude Include="UPropertyBrowser.h" />
     <ClInclude Include="UPropertyBrowserWidgets.h" />
   </ItemGroup>
@@ -145,7 +138,7 @@
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="UILog.ui">
+    <CustomBuild Include="asset_browser.ui">
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTDIR)\bin\uic.exe;%(AdditionalInputs)</AdditionalInputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Uic%27ing %(Identity)...</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\GeneratedFiles\ui_%(Filename).h;%(Outputs)</Outputs>
@@ -157,7 +150,7 @@
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="asset_browser.ui">
+    <CustomBuild Include="ab_asset_item.ui">
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTDIR)\bin\uic.exe;%(AdditionalInputs)</AdditionalInputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Uic%27ing %(Identity)...</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\GeneratedFiles\ui_%(Filename).h;%(Outputs)</Outputs>

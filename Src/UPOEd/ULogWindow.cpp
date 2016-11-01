@@ -91,13 +91,27 @@ namespace UPOEd
 
 
 		{
-			this->setContextMenuPolicy(Qt::ContextMenuPolicy::ActionsContextMenu);
+			mTextEdit->setContextMenuPolicy(Qt::ContextMenuPolicy::CustomContextMenu);
 
+			////////////clear action
 			mActionClear = new QAction("Clear", this);
 			connect(mActionClear, &QAction::triggered, this, [&](bool) {
-				mLogsQueue.~QQueue();
+				mLogsQueue.clear();
 				FillHTML();
 			});
+
+			//adding clear to context menu
+			{
+				connect(mTextEdit, &QTextEdit::customContextMenuRequested, this, [&](const QPoint p)
+				{
+					QMenu* menu = mTextEdit->createStandardContextMenu(p);
+					menu->addAction(mActionClear);
+					menu->exec(mTextEdit->mapToGlobal(p));
+					delete menu;
+				});
+
+				mTextEdit->addAction(mActionClear);
+			}
 		}
 
 
@@ -169,7 +183,7 @@ namespace UPOEd
 			QString line = QString::asprintf("<p  style=\"%s\"> [%s] [%s] [%d] [%s] \t\t    %s</p>",
 				 strSyle, strFilename, iter->mFunctionName, iter->mLineNumber, strThreadID, iter->mText);
 			
-			if(SearchCheck(line, mFiltter->text()))
+			if(SearchCheck(mFiltter->text(), line))
 				htmlResult += line;
 
 			iter++;

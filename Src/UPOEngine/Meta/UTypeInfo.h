@@ -24,7 +24,6 @@
 #define UATTR_Volatile() Attrib(EAtrribID::EAT_Volatile)
 //a class that has this attribute can be instantiated through editor
 #define UATTR_Instanceable() Attrib(EAtrribID::EAT_Instanceable)
-//icons should be placed at Content\Icons
 #define UATTR_Icon(Name) Attrib(EAtrribID::EAT_Icon, (const char*)Name)
 
 //new attributes here ^^^^^^^^^^^^^
@@ -139,6 +138,8 @@ namespace UPO
 		unsigned GetDefinitionLineNumber() { return mDefinitionLineNumber; }
 		Module* GetModule() const { return mOwner; }
 		const AttribPack& GetAttributes() const { return mAttributes; }
+		bool HasAttrib(EAtrribID id) const { return mAttributes.HasAttrib(id); }
+		bool GetAttrib(EAtrribID id, Attrib& out) const { return mAttributes.GetAttrib(id, out); }
 		bool IsClass() const { return mIsClass; }
 		bool IsEnum() const { return mIsEnum; }
 		bool IsArithmetic() const { return mIsArithmetic; }

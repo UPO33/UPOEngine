@@ -1,6 +1,7 @@
 #pragma once
 
 #include "UGFXDevice.h"
+#include "UShaderMgr.h"
 
 #include <DirectXTex.h>
 #include <D3DX11.h>
@@ -34,90 +35,36 @@ namespace UPO
 	{
 		switch (type)
 		{
-		case UPO::EST_VERTEX:
+		case EShaderType::EVertex:
 			return "vs_5_0";
-		case UPO::EST_PIXEL:
+		case EShaderType::EPixel:
 			return "ps_5_0";
-		default:
-			UASSERT(false);
-			return nullptr;
 		}
+
+		ULOG_FATAL("invalid type");
+		return nullptr;
 	}
-	class ShaderIncludeer : public ID3DInclude
-	{
-	public:
-		HRESULT __stdcall Open(D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes);
-		HRESULT __stdcall Close(LPCVOID pData);
-
-	};
-
-	struct UAPI ShaderMgr
-	{
-		static D3D_SHADER_MACRO* GetGlobalDefines()
-		{
-			return nullptr;
-		}
-		static void FixShaderPath(const char* shaderFilename, char outFullFilename[256])
-		{
-			sprintf_s(outFullFilename, 256, "..\\Content\\Shaders\\%s", shaderFilename);
-		}
-		static bool GetByteCode(const char* filename, const char* entryPoint, EShaderType type, Buffer& outByteCodes)
-		{
-			outByteCodes = Buffer();
-
-			if (!filename || !entryPoint) return false;
-
-			char fullFileName[256];
-			FixShaderPath(filename, fullFileName);
-			
-			Buffer fileContent;
-			if (!File::OpenReadFull(fullFileName, fileContent))
-			{
-				ULOG_ERROR("there is no such a shader file %s", filename);
-				return false;
-			}
-
-			static const char* TypeToProfile[] = { "vs_5_0", "ps_5_0" };
-			ShaderIncludeer inc;
-			ID3D10Blob* shaderByteCode = nullptr;
-			ID3D10Blob* shaderError = nullptr;
-			if (SUCCEEDED(D3DCompile(fileContent.Data(), fileContent.Size(), fullFileName, GetGlobalDefines()
-				, /*D3D_COMPILE_STANDARD_FILE_INCLUDE*/ &inc, entryPoint, ShaderTypeToDXProfile(type), D3D10_SHADER_ENABLE_STRICTNESS, 
-				0, &shaderByteCode, &shaderError)))
-			{
-				outByteCodes = Buffer(shaderByteCode->GetBufferSize(), shaderByteCode->GetBufferPointer());
-				return true;
-			}
-			else
-			{
-				if (shaderError)
-					ULOG_ERROR("Compiling shader failed %s %s : %s", filename, entryPoint, ((char*)shaderError->GetBufferPointer()));
-				else
-					ULOG_ERROR("Mising Shader File : %s", filename);
-				return false;
-			}
-		}
-
-	};
 
 	//////////////////////////////////////////////////////////////////////////
 	inline DXGI_FORMAT ToDXType(EIndexBufferType in)
 	{
 		switch (in)
 		{
-		case UPO::EBT_USHORT: return DXGI_FORMAT::DXGI_FORMAT_R16_UINT;
-		case UPO::EBT_UINT: return DXGI_FORMAT::DXGI_FORMAT_R32_UINT;
-		default: return DXGI_FORMAT::DXGI_FORMAT_R16_UINT;
+		case EIndexBufferType::EUShort: return DXGI_FORMAT::DXGI_FORMAT_R16_UINT;
+		case EIndexBufferType::EUInt: return DXGI_FORMAT::DXGI_FORMAT_R32_UINT;
 		}
+
+		UASSERT(false);
+		return DXGI_FORMAT::DXGI_FORMAT_R16_UINT;
 	}
 	//////////////////////////////////////////////////////////////////////////
 	inline D3D11_USAGE ToDXType(EResourceUsage in)
 	{
 		switch (in)
 		{
-		case UPO::EBU_DEFAULT: return D3D11_USAGE_DEFAULT;
-		case UPO::EBU_IMMUTABLE: return D3D11_USAGE_IMMUTABLE;
-		case UPO::EBU_DYNAMIC: return D3D11_USAGE_DYNAMIC;
+		case EResourceUsage::EDefault: return D3D11_USAGE_DEFAULT;
+		case EResourceUsage::EImmutable: return D3D11_USAGE_IMMUTABLE;
+		case EResourceUsage::EDynamic: return D3D11_USAGE_DYNAMIC;
 		default: return D3D11_USAGE_DEFAULT;
 		}
 	}
@@ -137,7 +84,7 @@ namespace UPO
 		return (D3D11_MAP)in;
 	}
 	//////////////////////////////////////////////////////////////////////////
-	inline D3D11_BLEND ToDXType(EBlendElement in)
+	inline D3D11_BLEND ToDXType(EBlendFactor in)
 	{
 		return (D3D11_BLEND)in;
 	}
@@ -151,6 +98,20 @@ namespace UPO
 	{
 		return (UINT8)in;
 	}
+	//////////////////////////////////////////////////////////////////////////
+	inline DXGI_FORMAT ToDXType(EVertexFormat in)
+	{
+		switch (in)
+		{
+		case EVertexFormat::EFloat1: return DXGI_FORMAT::DXGI_FORMAT_R32_FLOAT;
+		case EVertexFormat::EFloat2: return DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT;
+		case EVertexFormat::EFloat3: return DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT;
+		case EVertexFormat::EFloat4: return DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT;
+			break;
+		}
+		return DXGI_FORMAT::DXGI_FORMAT_UNKNOWN;
+	}
+
 	//////////////////////////////////////////////////////////////////////////
 	class GFXResourceDX
 	{
@@ -196,7 +157,7 @@ namespace UPO
 		}
 	};
 	//////////////////////////////////////////////////////////////////////////
-	class GFXVertexBufferDX : public GFXBufferDX, GFXVertexBuffer
+	class GFXVertexBufferDX : public GFXBufferDX, public GFXVertexBuffer
 	{
 		friend GFXDeviceDX;
 
@@ -213,7 +174,7 @@ namespace UPO
 		}
 	};
 	//////////////////////////////////////////////////////////////////////////
-	class GFXIndexBufferDX : public GFXBufferDX, GFXIndexBuffer
+	class GFXIndexBufferDX : public GFXBufferDX, public GFXIndexBuffer
 	{
 		friend GFXDeviceDX;
 
@@ -230,7 +191,7 @@ namespace UPO
 		}
 	};
 	//////////////////////////////////////////////////////////////////////////
-	class GFXConstantBufferDX : public GFXBufferDX, GFXConstantBuffer
+	class GFXConstantBufferDX : public GFXBufferDX, public GFXConstantBuffer
 	{
 		friend GFXDeviceDX;
 
@@ -247,7 +208,7 @@ namespace UPO
 		}
 	};
 	//////////////////////////////////////////////////////////////////////////
-	class GFXDepthStencilStateDX : GFXDepthStencilState
+	class GFXDepthStencilStateDX : public GFXDepthStencilState
 	{
 		friend GFXDeviceDX;
 	public:
@@ -261,7 +222,7 @@ namespace UPO
 	};
 	
 	//////////////////////////////////////////////////////////////////////////
-	class GFXSamplerStateDX : GFXSamplerState
+	class GFXSamplerStateDX : public GFXSamplerState
 	{
 		friend class GFXDeviceDX;
 	public:
@@ -274,7 +235,7 @@ namespace UPO
 		}
 	};
 	//////////////////////////////////////////////////////////////////////////
-	class GFXRasterizerStateDX : GFXRasterizerState
+	class GFXRasterizerStateDX : public GFXRasterizerState
 	{
 		friend GFXDeviceDX;
 	public:
@@ -314,33 +275,118 @@ namespace UPO
 		}
 	};
 	//////////////////////////////////////////////////////////////////////////
-	class GFXShaderDX : public GFXResourceDX, GFXShader
+	struct GFXShaderDXBase
 	{
-		friend GFXDeviceDX;
-
 		void* mHandle = nullptr;
 		Buffer mByteCodes;
 
-
-		~GFXShaderDX()
-		{
-			switch (mType)
-			{
-			case UPO::EST_VERTEX:
-				if (mHandle) ((ID3D11VertexShader*)mHandle)->Release();
-				break;
-			case UPO::EST_PIXEL:
-				if (mHandle) ((ID3D11PixelShader*)mHandle)->Release();
-				break;
-			}
-			mByteCodes.Free();
-		}
 		void* GetByteCode() const { return mByteCodes.Data(); }
 		size_t GetByteCodeSize() const { return mByteCodes.Size(); }
 
+		void Release(EShaderType type)
+		{
+			if(mHandle)
+			{
+				switch (type)
+				{
+				case UPO::EShaderType::EVertex: reinterpret_cast<ID3D11VertexShader*>(mHandle)->Release();
+					break;
+				case UPO::EShaderType::EHull: reinterpret_cast<ID3D11HullShader*>(mHandle)->Release();
+					break;
+				case UPO::EShaderType::EDomain: reinterpret_cast<ID3D11DomainShader*>(mHandle)->Release();
+					break;
+				case UPO::EShaderType::EGeometry: reinterpret_cast<ID3D11GeometryShader*>(mHandle)->Release();
+					break;
+				case UPO::EShaderType::EPixel: reinterpret_cast<ID3D11PixelShader*>(mHandle)->Release();
+					break;
+				case UPO::EShaderType::ECompute: reinterpret_cast<ID3D11ComputeShader*>(mHandle)->Release();
+					break;
+				}
+			}
+			mHandle = nullptr;
+		}
 	};
+	//////////////////////////////////////////////////////////////////////////
+	class GFXVertexShaderDX : public GFXResourceDX, public GFXVertexShader
+	{
+	public:
+		GFXShaderDXBase mShader;
 
+		GFXVertexShaderDX(const GFXShaderDXBase& shader) : mShader(shader) {}
 
+		~GFXVertexShaderDX()
+		{
+			mShader.Release(EShaderType::EVertex);
+		}
+		ID3D11VertexShader* Handle() { return reinterpret_cast<ID3D11VertexShader*>(mShader.mHandle); }
+	};
+	//////////////////////////////////////////////////////////////////////////
+	class GFXHullShaderDX : public GFXResourceDX, public GFXHullShader
+	{
+	public:
+		GFXShaderDXBase mShader;
+
+		GFXHullShaderDX(const GFXShaderDXBase& shader) : mShader(shader) {}
+
+		~GFXHullShaderDX()
+		{
+			mShader.Release(EShaderType::EHull);
+		}
+		ID3D11HullShader* Handle() { return reinterpret_cast<ID3D11HullShader*>(mShader.mHandle); }
+	};
+	//////////////////////////////////////////////////////////////////////////
+	class GFXDomainShaderDX : public GFXResourceDX, public GFXDomainShader
+	{
+	public:
+		GFXShaderDXBase mShader;
+
+		GFXDomainShaderDX(const GFXShaderDXBase& shader) : mShader(shader) {}
+
+		~GFXDomainShaderDX()
+		{
+			mShader.Release(EShaderType::EDomain);
+		}
+		ID3D11DomainShader* Handle() { return reinterpret_cast<ID3D11DomainShader*>(mShader.mHandle); }
+	};
+	//////////////////////////////////////////////////////////////////////////
+	class GFXGeometryShaderDX : public GFXResourceDX, public GFXGeometryShader
+	{
+	public:
+		GFXShaderDXBase mShader;
+
+		GFXGeometryShaderDX(const GFXShaderDXBase& shader) : mShader(shader) {}
+		~GFXGeometryShaderDX()
+		{
+			mShader.Release(EShaderType::EGeometry);
+		}
+		ID3D11GeometryShader* Handle() { return reinterpret_cast<ID3D11GeometryShader*>(mShader.mHandle); }
+	};
+	//////////////////////////////////////////////////////////////////////////
+	class GFXPixelShaderDX : public GFXResourceDX, public GFXPixelShader
+	{
+	public:
+		GFXShaderDXBase mShader;
+
+		GFXPixelShaderDX(const GFXShaderDXBase& shader) : mShader(shader) {}
+		~GFXPixelShaderDX()
+		{
+			mShader.Release(EShaderType::EPixel);
+		}
+		ID3D11PixelShader* Handle() { return reinterpret_cast<ID3D11PixelShader*>(mShader.mHandle); }
+	};
+	//////////////////////////////////////////////////////////////////////////
+	class GFXComputeShaderDX : public GFXResourceDX, public GFXComputeShader
+	{
+	public:
+		GFXShaderDXBase mShader;
+
+		GFXComputeShaderDX(const GFXShaderDXBase& shader) : mShader(shader) {}
+		~GFXComputeShaderDX()
+		{
+			mShader.Release(EShaderType::ECompute);
+		}
+		ID3D11ComputeShader* Handle() { return reinterpret_cast<ID3D11ComputeShader*>(mShader.mHandle); }
+	};
 	//////////////////////////////////////////////////////////////////////////
 	class GFXInputLayoutDX : public GFXInputLayout
 	{
@@ -422,7 +468,7 @@ namespace UPO
 		//////////////////////////////////////////////////////////////////////////
 		virtual GFXIndexBuffer* CreateIndexBuffer(const GFXIndexBuffer_Desc& param) override
 		{
-			if (param.mInitialData == nullptr && param.mUsage == EResourceUsage::EBU_IMMUTABLE)
+			if (param.mInitialData == nullptr && param.mUsage == EResourceUsage::EImmutable)
 			{
 				ULOG_ERROR("immutable buffer needs initial data");
 				return nullptr;
@@ -438,7 +484,7 @@ namespace UPO
 			if (param.mCPUWriteAccess) desc.CPUAccessFlags |= D3D11_CPU_ACCESS_FLAG::D3D11_CPU_ACCESS_WRITE;
 			if (param.mCPUReadAccess) desc.CPUAccessFlags |= D3D11_CPU_ACCESS_FLAG::D3D11_CPU_ACCESS_READ;
 
-			if (param.mUsage == EResourceUsage::EBU_DYNAMIC)
+			if (param.mUsage == EResourceUsage::EDynamic)
 				desc.CPUAccessFlags = D3D11_CPU_ACCESS_FLAG::D3D11_CPU_ACCESS_WRITE;
 
 			desc.Usage = ToDXType(param.mUsage);
@@ -466,7 +512,7 @@ namespace UPO
 		//////////////////////////////////////////////////////////////////////////
 		virtual GFXVertexBuffer* CreateVertexBuffer(const GFXVertexBuffer_Desc& param) override
 		{
-			if (param.mInitialData == nullptr && param.mUsage == EResourceUsage::EBU_IMMUTABLE)
+			if (param.mInitialData == nullptr && param.mUsage == EResourceUsage::EImmutable)
 			{
 				ULOG_ERROR("immutable buffer needs initial data");
 				return nullptr;
@@ -481,7 +527,7 @@ namespace UPO
 			if (param.mCPUWriteAccess) desc.CPUAccessFlags |= D3D11_CPU_ACCESS_FLAG::D3D11_CPU_ACCESS_WRITE;
 			if (param.mCPUReadAccess) desc.CPUAccessFlags |= D3D11_CPU_ACCESS_FLAG::D3D11_CPU_ACCESS_READ;
 
-			if (param.mUsage == EResourceUsage::EBU_DYNAMIC)
+			if (param.mUsage == EResourceUsage::EDynamic)
 				desc.CPUAccessFlags = D3D11_CPU_ACCESS_FLAG::D3D11_CPU_ACCESS_WRITE;
 
 			desc.Usage = ToDXType(param.mUsage);
@@ -663,9 +709,9 @@ namespace UPO
 		virtual void BindConstantBuffer(const GFXConstantBuffer* buffer, unsigned slot, EShaderType whichShader) override
 		{
 			ID3D11Buffer* d3dBuffer = buffer ? buffer->As<GFXConstantBufferDX>()->GetHandle() : nullptr;
-			if (whichShader == EShaderType::EST_VERTEX)
+			if (whichShader == EShaderType::EVertex)
 				mDeviceContext->VSSetConstantBuffers(slot, 1, &d3dBuffer);
-			else if (whichShader == EShaderType::EST_PIXEL)
+			else if (whichShader == EShaderType::EHull)
 				mDeviceContext->PSSetConstantBuffers(slot, 1, &d3dBuffer);
 		}
 		//////////////////////////////////////////////////////////////////////////
@@ -674,20 +720,26 @@ namespace UPO
 			mDeviceContext->IASetPrimitiveTopology(ToDXType(topology));
 		}
 		//////////////////////////////////////////////////////////////////////////
-		virtual void Draw(unsigned vertexCount, unsigned startVertexLocation) override
+		virtual void Draw(unsigned vertexCount, unsigned startVertexLocation, unsigned instanceCount, unsigned startInstanceLocation) override
 		{
-			mDeviceContext->Draw(vertexCount, startVertexLocation);
+			if(instanceCount > 1)
+				mDeviceContext->DrawInstanced(vertexCount, instanceCount, startVertexLocation, startInstanceLocation);
+			else
+				mDeviceContext->Draw(vertexCount, startVertexLocation);
 		}
 		//////////////////////////////////////////////////////////////////////////
-		virtual void DrawIndexed(unsigned indexCount, unsigned startIndexLocation, unsigned baseVertexLocation) override
+		virtual void DrawIndexed(unsigned indexCount, unsigned startIndexLocation, unsigned baseVertexLocation, unsigned instanceCount, unsigned startInstanceLocation) override
 		{
-			mDeviceContext->DrawIndexed(indexCount, startIndexLocation, baseVertexLocation);
+			if(instanceCount > 1)
+				mDeviceContext->DrawIndexedInstanced(indexCount, instanceCount, startIndexLocation, baseVertexLocation, startInstanceLocation);
+			else
+				mDeviceContext->DrawIndexed(indexCount, startIndexLocation, baseVertexLocation);
 		}
 		//////////////////////////////////////////////////////////////////////////
 		virtual GFXTexture2D* CreateTexture2D(const GFXTexture2D_Desc& param)
 		{
 			UASSERT(param.mWidth < MAX_TEXTURE2D_SIZE && param.mHeight < MAX_TEXTURE2D_SIZE);
-			if (param.mUsage == EResourceUsage::EBU_IMMUTABLE && param.mInitialData == nullptr)
+			if (param.mUsage == EResourceUsage::EImmutable && param.mInitialData == nullptr)
 			{
 				ULOG_FATAL("immutable texture needs initial data");
 				return nullptr;
@@ -812,11 +864,13 @@ namespace UPO
 			if (renderTarget)
 			{
 				rtv = renderTarget->As<GFXTexture2DDX>()->mRenderTargetView;
+				UASSERT(rtv);
 			}
 			ID3D11DepthStencilView* dsv = nullptr;
 			if (depthStencil)
 			{
 				dsv = depthStencil->As<GFXTexture2DDX>()->mDepthStencilView;
+				UASSERT(dsv);
 			}
 			mDeviceContext->OMSetRenderTargets(1, &rtv, dsv);
 		}
@@ -825,96 +879,86 @@ namespace UPO
 		{
 			mDeviceContext->RSSetState(state ? state->As<GFXRasterizerStateDX>()->mHandle : nullptr);
 		}
-		//////////////////////////////////////////////////////////////////////////
-		virtual GFXShader* GetShader(const char* filename, const char* entryPoint, EShaderType type) override
+		
+		GFXShader* CreateShaderFromBytecode(const Buffer& bytecodes, EShaderType type)
 		{
-			if (filename == nullptr || entryPoint == nullptr) return nullptr;
+			HRESULT result = S_OK;
+			GFXShader* shader = nullptr;
+			GFXShaderDXBase shaderDX;
+
+			switch (type)
+			{
+			case EShaderType::EVertex:
+				result = mDevice->CreateVertexShader(bytecodes.Data(), bytecodes.Size(), nullptr, (ID3D11VertexShader**)&shaderDX.mHandle);
+				shader = new GFXVertexShaderDX(shaderDX);
+				break;
+			case EShaderType::EHull:
+				result = mDevice->CreateHullShader(bytecodes.Data(), bytecodes.Size(), nullptr, (ID3D11HullShader**)&shaderDX.mHandle);
+				shader = new GFXHullShaderDX(shaderDX);
+				break;
+			case EShaderType::EDomain:
+				result = mDevice->CreateDomainShader(bytecodes.Data(), bytecodes.Size(), nullptr, (ID3D11DomainShader**)&shaderDX.mHandle);
+				shader = new GFXDomainShaderDX(shaderDX);
+				break;
+			case EShaderType::EGeometry:
+				result = mDevice->CreateGeometryShader(bytecodes.Data(), bytecodes.Size(), nullptr, (ID3D11GeometryShader**)&shaderDX.mHandle);
+				shader = new GFXGeometryShaderDX(shaderDX);
+				break;
+			case EShaderType::EPixel:
+				result = mDevice->CreatePixelShader(bytecodes.Data(), bytecodes.Size(), nullptr, (ID3D11PixelShader**)&shaderDX.mHandle);
+				shader = new GFXPixelShaderDX(shaderDX);
+				break;
+			case EShaderType::ECompute:
+				result = mDevice->CreateComputeShader(bytecodes.Data(), bytecodes.Size(), nullptr, (ID3D11ComputeShader**)&shaderDX.mHandle);
+				shader = new GFXComputeShaderDX(shaderDX);
+				break;
+			}
+			
+			if (SUCCEEDED(result))
+			{
+				return shader;
+			}
+			else
+			{
+				if (shader) delete shader;
+				return nullptr;
+			}
+		}
+		//////////////////////////////////////////////////////////////////////////
+		virtual GFXShader* CreateShader(const ShaderUniqueParam& param) override
+		{
+			if (param.mFileName == nullptr || param.mEntryPoint == nullptr) return nullptr;
 
 			Buffer byteCodes;
-			if (!ShaderMgr::GetByteCode(filename, entryPoint, type, byteCodes))
+
+			if (!ShaderMgr::Get()->GetShaderCode(param, byteCodes))
 			{
-				ULOG_ERROR("failed to get shader bytecodes");
+				ULOG_ERROR("failed to get shader [%s] bytecodes", param.mFileName);
 				return nullptr;
 			}
 
-			void* shader = nullptr; /*ID3D11VertexShader*   ID3D11PixelShader*/
-			if (type == EShaderType::EST_VERTEX)
+			GFXShader* ret = CreateShaderFromBytecode(byteCodes, param.mType);
+			if (ret == nullptr)
 			{
-				if (FAILED(mDevice->CreateVertexShader(byteCodes.Data(), byteCodes.Size(), nullptr, (ID3D11VertexShader**)&shader)))
-				{
-					ULOG_ERROR("Failed to create vertex shader");
-					return nullptr;
-				}
+				ULOG_ERROR("failed to create shader; name: [%s], entryPoint: [%s], type: [%s]", param.mFileName, param.mEntryPoint, EnumToStr(param.mType));
+				return nullptr;
 			}
-			else if (type == EShaderType::EST_PIXEL)
-			{
-				if (FAILED(mDevice->CreatePixelShader(byteCodes.Data(), byteCodes.Size(), nullptr, (ID3D11PixelShader**)&shader)))
-				{
-					ULOG_ERROR("Failed to create pixel shader");
-					return nullptr;
-				}
-			}
-			GFXShaderDX* ret = new GFXShaderDX;
-			ret->mDevice = mDevice;
-			ret->mDeviceContext = mDeviceContext;
-			ret->mType = type;
-			ret->mHandle = shader;
-			ret->mByteCodes = byteCodes;
-
-			ULOG_SUCCESS("Shader Created");
+			ULOG_SUCCESS("shader created. name: [%s], type: [%s]", param.mFileName, EnumToStr(param.mType));
 			return ret;
-#if 0
-			char fullFileName[256];
-			sprintf_s(fullFileName, "..\\Content\\Shaders\\%s", filename);
-			static const char* TypeToProfile[] = { "vs_5_0", "ps_5_0" };
-
-			ID3D10Blob* shaderByteCode = nullptr;
-			ID3D10Blob* shaderError = nullptr;
-
-			if (SUCCEEDED(D3DX11CompileFromFileA(fullFileName, nullptr, nullptr, functionName, TypeToProfile[type]
-				, D3D10_SHADER_ENABLE_STRICTNESS, 0, nullptr, &shaderByteCode, &shaderError, nullptr)))
-			{
-				void* shader = nullptr; /*ID3D11VertexShader*   ID3D11PixelShader*/
-				if (type == EShaderType::EST_VERTEX)
-				{
-					if (FAILED(mDevice->CreateVertexShader(shaderByteCode->GetBufferPointer(), shaderByteCode->GetBufferSize(), 
-						nullptr, (ID3D11VertexShader**)&shader)))
-					{
-						ULOG_ERROR("Failed to create vertex shader");
-						shaderByteCode->Release();
-						if (shaderError) shaderError->Release();
-						return nullptr;
-					}
-
-				}
-				else if (type == EShaderType::EST_PIXEL)
-				{
-					if (FAILED(mDevice->CreatePixelShader(shaderByteCode->GetBufferPointer(), shaderByteCode->GetBufferSize(), 
-						nullptr, (ID3D11PixelShader**)&shader)))
-					{
-						ULOG_ERROR("Failed to create pixel shader");
-						shaderByteCode->Release();
-						if (shaderError)shaderError->Release();
-						return nullptr;
-					}
-				}
-#endif
 		}
+
 		//////////////////////////////////////////////////////////////////////////
-		virtual void BindShaders(GFXShader* vertexShader, GFXShader* pixelShader)
+		virtual void BindShaders(GFXVertexShader* vertexShader, GFXPixelShader* pixelShader) override
 		{
-			ID3D11VertexShader* vs = nullptr;
-			if (vertexShader)
-			{
-				vs = (ID3D11VertexShader*)vertexShader->As<GFXShaderDX>()->mHandle;
-			}
-			ID3D11PixelShader* ps = nullptr;
-			if (pixelShader)
-			{
-				ps = (ID3D11PixelShader*)pixelShader->As<GFXShaderDX>()->mHandle;
-			}
-			mDeviceContext->VSSetShader(vs, nullptr, 0);
-			mDeviceContext->PSSetShader(ps, nullptr, 0);
+			if(auto vs = vertexShader->As<GFXVertexShaderDX>())
+				mDeviceContext->VSSetShader(vs->Handle(), nullptr, 0);
+			if (auto ps = pixelShader->As<GFXPixelShaderDX>())
+				mDeviceContext->PSSetShader(ps->Handle(), nullptr, 0);
+		}
+
+		virtual void BindShader(const GFXShaderBound& shaders) override
+		{
+
 		}
 		//////////////////////////////////////////////////////////////////////////
 		virtual void BindTexture(GFXTexture2D* texture, unsigned slot, EShaderType whichShader) override
@@ -930,9 +974,9 @@ namespace UPO
 					return;
 				}
 			}
-			if(whichShader == EShaderType::EST_VERTEX)
+			if(whichShader == EShaderType::EVertex)
 				mDeviceContext->VSSetShaderResources(slot, 1, &view);
-			else if (whichShader == EShaderType::EST_PIXEL)
+			else if (whichShader == EShaderType::EHull)
 				mDeviceContext->PSSetShaderResources(slot, 1, &view);
 		}
 		//////////////////////////////////////////////////////////////////////////
@@ -941,40 +985,46 @@ namespace UPO
 			ID3D11SamplerState* samplerState = nullptr;
 			if(sampler) samplerState = sampler->As<GFXSamplerStateDX>()->mHandle;
 			
-			if (shader == EShaderType::EST_VERTEX)
+			if (shader == EShaderType::EVertex)
 				mDeviceContext->VSSetSamplers(slot, 1, &samplerState);
-			else if (shader == EShaderType::EST_PIXEL)
+			else if (shader == EShaderType::EHull)
 				mDeviceContext->PSSetSamplers(slot, 1, &samplerState);
 		}
 		//////////////////////////////////////////////////////////////////////////
-		virtual GFXInputLayout* CreateInputLayout(const GFXVertexElement_Desc* elements, unsigned numElement, const GFXShader* vertexShader) override
+		virtual GFXInputLayout* CreateInputLayout(const GFXInputLayoutDesc& param) override
 		{
-			if (elements == nullptr || numElement == 0 || vertexShader == nullptr) return nullptr;
-
-			GFXShaderDX* shader = vertexShader->As<GFXShaderDX>();
-			if (shader->GetType() != EST_VERTEX)
+			UASSERT(param.mVertexShader);
+			
+			unsigned numElement = 0;
+			for (;numElement < param.MAX_ELEMENT; numElement++)
 			{
-				ULOG_ERROR("inpult layout needs vertex shader");
-				return nullptr;
+				if(param.mElements[numElement].mName == nullptr) break;
 			}
-			D3D11_INPUT_ELEMENT_DESC d3DElements[128];
+
+			UASSERT(numElement != 0);
+
+			D3D11_INPUT_ELEMENT_DESC d3DElements[GFXInputLayoutDesc::MAX_ELEMENT];
 			for (unsigned i = 0; i < numElement; i++)
 			{
-				d3DElements[i].SemanticName = elements[i].mName;
+				auto elem = param.mElements[i];
+				d3DElements[i].SemanticName = elem.mName;
 				d3DElements[i].SemanticIndex = 0;
 				d3DElements[i].InstanceDataStepRate = 0;
-				d3DElements[i].InputSlotClass = elements[i].mPerInstance ? D3D11_INPUT_PER_INSTANCE_DATA : D3D11_INPUT_PER_VERTEX_DATA;
-				d3DElements[i].InputSlot = elements[i].mSlot;
-				d3DElements[i].Format = ToDXType(elements[i].mFormat);
-				d3DElements[i].AlignedByteOffset = elements[i].mOffset >= 0 ? elements[i].mOffset : D3D11_APPEND_ALIGNED_ELEMENT;
+				d3DElements[i].InputSlotClass = elem.mPerInstance ? D3D11_INPUT_PER_INSTANCE_DATA : D3D11_INPUT_PER_VERTEX_DATA;
+				d3DElements[i].InputSlot = elem.mSlot;
+				d3DElements[i].Format = ToDXType(elem.mFormat);
+				d3DElements[i].AlignedByteOffset = elem.mOffset >= 0 ? elem.mOffset : D3D11_APPEND_ALIGNED_ELEMENT;
 			}
+			GFXVertexShaderDX* shader = param.mVertexShader->As<GFXVertexShaderDX>();
+			
 			ID3D11InputLayout* handle = nullptr;
-			if (FAILED(mDevice->CreateInputLayout(d3DElements, numElement, shader->GetByteCode(), shader->GetByteCodeSize(), &handle)))
+			if (FAILED(mDevice->CreateInputLayout(d3DElements, numElement, shader->mShader.GetByteCode(), shader->mShader.GetByteCodeSize(), &handle)))
 			{
 				ULOG_ERROR("failed to create InputLayout");
 				return nullptr;
 			}
 			GFXInputLayoutDX* ret = new GFXInputLayoutDX;
+			ret->mDesc = param;
 			ret->mHandle = handle;
 			ULOG_SUCCESS("InputLayout Created");
 			return ret;

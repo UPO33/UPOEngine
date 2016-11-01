@@ -181,11 +181,11 @@ namespace UPO
 			mLock.Lock();
 			WriteLog(newEntry);
 			CallListeners(newEntry);
-			if (type == ELT_Fatal || type == ELT_Assert)
-			{				
-				CloseLogFile();
-				AppCrash();
-			}
+// 			if (type == ELT_Fatal || type == ELT_Assert)
+// 			{				
+// 				CloseLogFile();
+// 				AppCrash();
+// 			}
 			mLock.Unlock();
 		}
 		

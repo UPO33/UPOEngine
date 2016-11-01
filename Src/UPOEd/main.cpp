@@ -2,49 +2,80 @@
 #include "UMainWindow.h"
 #include "UEditorConfig.h"
 #include "UD3DRenderWidget.h"
-#include "../UPOEngine/GFXCore/URenderer.h"
+
+#include <qfilesystemwatcher.h>
+
+
+
+#include "../UPOEngine/GFXCore/UGFXCore.h"
+
+namespace UPOEd
+{
+	using namespace UPO;
+	QFileSystemWatcher* fsw = new QFileSystemWatcher(nullptr);
+	
+
+	class EngineEd : public IEngineInterface
+	{
+		QApplication* mQApp;
+		UPOEd::MainWindow* mMainWindow;
+
+		//////////////////////////////////////////////////////////////////////////
+		virtual bool OnInit() override
+		{
+			mQApp = new QApplication(__argc, __argv);
+
+			QLocale::setDefault(QLocale::c());
+			QApplication::setStyle("Fusion");
+			/////loading style sheet
+			{
+				UPO::Buffer styleSheet;
+				if (UPO::File::OpenReadFull(UPOEd::GEditorConfig()->AsName("Style").CStr(), styleSheet))
+				{
+					QString strSheet = QString::fromLatin1((const char*)styleSheet.Data(), (int)styleSheet.Size());
+					mQApp->setStyleSheet(strSheet);
+				}
+			}
+
+			mMainWindow = new UPOEd::MainWindow();
+			mMainWindow->showMaximized();
+			return true;
+		}
+
+		virtual bool OnTick() override
+		{
+			QApplication::processEvents();
+
+			mMainWindow->Tick();
+
+			return mMainWindow->isVisible();
+		}
+
+		virtual bool OnRelease() override
+		{
+			QApplication::exit();
+			delete mMainWindow;
+			return true;
+		}
+
+		virtual GameWindow* OnCreateGameWindow() override
+		{
+			return mMainWindow->mMainViewport;
+		}
+
+		virtual void OnReleaseGameWindow() override
+		{
+		}
+
+	};
+}
+
 
 int main(int argc, char *argv[])
 {
-	using namespace UPO;
+// 	UPO::File theFile;
+// 	theFile.Open("C:/asd/asd.txt", UPO::EFileOpenMode::Write);
+// 	UASSERT(theFile.IsOpen());
 
-    QApplication a(argc, argv);
-    //QApplication::setStyle(QStyleFactory::create("Fusion"));
-	
-	//ULOG_FATAL("");
-	//UASSERT(false);
-	//UASSERT(false);
-
-    QLocale::setDefault(QLocale::c());
-
-	UPO::Buffer styleSheet;
-	if (UPO::File::OpenReadFull(UPOEd::EditorConfig::Get()->AsName("Style").CStr(), styleSheet))
-	{
-		QString strSheet = QString::fromLatin1((const char*)styleSheet.Data(), (int)styleSheet.Size());
-		a.setStyleSheet(strSheet);
-	}
-	UPOEd::EditorConfig::Get()->PrintDbg();
-	
-#if 1
-    UPOEd::MainWindow mainWnd;
-    mainWnd.showMaximized();
-
-
-	while (mainWnd.isVisible())
-	{
-		QApplication::processEvents();
-
-		mainWnd.Tick();
-
-		Renderer::Get()->RenderFrame();
-
-		Thread::Sleep(30);
-	}
-#else
-	UPOEd::D3DRenderWidget* rw = new UPOEd::D3DRenderWidget;
-	rw->show();
-
-#endif // 0
-
-	QApplication::exit();
+	UPO::LaunchEngine(new UPOEd::EngineEd);
 }

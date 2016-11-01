@@ -4,6 +4,8 @@
 #include "UMemory.h"
 #include "UArray.h"
 
+#include <string.h>
+
 namespace UPO
 {
 #if UPLATFORM_WIN
@@ -25,8 +27,139 @@ namespace UPO
 	UAPI const char* StrFindNChar(const char* str, char chr, unsigned n);
 	UAPI const char* StrFindRNChar(const char* str, char chr, unsigned n);
 
-
+// 	class StringStd
+// 	{
+// 	private:
+// 		std::string str;
+// 	public:
+// 		StringStd() {}
+// 		~StringStd(){}
+// 		StringStd(const char* cstr) : str(cstr){}
+// 		StringStd(const StringStd& copy) : str(copy.str){}
+// 		StringStd(const char* str, size_t length) : str(str, length){}
+// 		char* CStr() const { return ((char*)str.c_str()); }
+// 		size_t Length() const { return str.length(); }
+// 		bool IsEmpty() const { return str.empty(); }
+// 		String SubStr(unsigned index, unsigned count = ~0) const { return str.substr(index, count == ~0 ? std::string::npos : count); }
+// 	};
 	//////////////////////////////////////////////////////////////////////////
+	class UAPI String 
+	{
+		UCLASS(String, void)
+
+		TArray<char> mChars;
+
+	public:
+		static String Empty;
+
+		String()
+		{
+		}
+		String(const char* str)
+		{
+			if (str && str[0])
+			{
+				size_t len = StrLen(str);
+				new (this) String(str, len);
+			}
+			else
+			{
+				new (this) String();
+			}
+		}
+		String(const char* str, size_t length)
+		{
+			if (length)
+			{
+				mChars.SetCapacity(length + 1);
+				MemCopy(mChars.mElements, str, length * sizeof(char));
+				mChars.mLength = length;
+				mChars.mElements[length] = '\0';
+			}
+			else
+			{
+				new (this) String();
+			}
+		}
+		String(const String& other)
+		{
+			if (other.mChars.Length())
+			{
+				new (this) String(other.mChars.Elements(), other.mChars.Length());
+			}
+			else
+			{
+				new (this) String();
+			}
+		}
+		String(const Name& name);
+
+		String& operator = (const String& other)
+		{
+			this->~String();
+			new (this) String(other);
+			return *this;
+		}
+		void SetEmpty()
+		{
+			mChars.Empty();
+		}
+		~String()
+		{
+			SetEmpty();
+		}
+		bool BeginsWith(const String& other, bool caseSensitive = true) const;
+		bool Equal(const String& other, bool caseSensitive = true) const;
+		bool operator == (const String& other) const
+		{
+			return Equal(other);
+		}
+		bool operator != (const String& other) const
+		{
+			return !Equal(other);
+		}
+		char& operator [] (unsigned index)
+		{
+			return mChars[index];
+		}
+		char* CStr() const
+		{
+			return mChars.Elements();
+		}
+		operator const char* () const
+		{
+			return mChars.Elements();
+		}
+		unsigned Length() const
+		{
+			return mChars.Length();
+		}
+		bool IsEmpty() const
+		{
+			return mChars.Length() == 0;
+		}
+		operator bool() const { return !IsEmpty(); }
+
+		unsigned FindN(char chr, unsigned n = 0, bool caseSensitive = true) const;
+		unsigned FindRN(char chr, unsigned n = 0, bool caseSensitive = true) const;
+		void Split(char seprator, TArray<String>& out, bool caseSensitive = true) const;
+		void Trim();
+
+		String operator + (const String& str) const;
+		String& operator += (const String& str);
+		String operator + (const char* str) const { return this->operator+(String(str)); }
+		String& operator += (const char* str) { this->operator+=(String(str));  return *this; }
+		String operator + (char chr) const;
+		String& operator += (char chr);
+
+		String SubStr(unsigned index, unsigned count = ~0) const;
+		String& Append(const String& str);
+		bool ToFloat(float& out) const;
+		void SetFormatted(const char* format, ...);
+		void MetaSerialize(Stream&);
+	};
+
+#if 0
 	class UAPI String
 	{
 		UCLASS(String, void)
@@ -45,6 +178,8 @@ namespace UPO
 			newIns->mLen = length;
 			return newIns;
 		}
+		TArray<char> mChars;
+
 	public:
 		Chunk* mStr;
 	public:
@@ -124,17 +259,8 @@ namespace UPO
 		{
 			SetEmpty();
 		}
-		bool BeginsWith(const String& other) const
-		{
-// 			if (mStr == nullptr) return false;
-// 			if (mStr->mLen < other.mStr->mLen) return false;
-// 			for (unsigned i = 0; i < other.mStr->mLen; i++)
-// 			{
-// 				if (mStr->mChars[i] != other.mStr->mChars[i]) return false;
-// 			}
-			return true;
-		}
-		bool Equal(const String& other) const;
+		bool BeginsWith(const String& other, bool caseSensitive = true) const;
+		bool Equal(const String& other, bool caseSensitive = true) const;
 		bool operator == (const String& other) const
 		{
 			return Equal(other);
@@ -167,6 +293,7 @@ namespace UPO
 		{
 			return mStr == nullptr;
 		}
+		operator bool() const { return !IsEmpty(); }
 
 		unsigned FindNChar(char chr, unsigned n = 0) const;
 		unsigned FindNCharReverse(char chr, unsigned n = 0) const;
@@ -179,4 +306,5 @@ namespace UPO
 		void SetFormatted(const char* format, ...);
 		void MetaSerialize(Stream&);
 	};
+#endif // 
 };

@@ -9,6 +9,7 @@
 
 namespace UPO
 {
+	static const unsigned UMAX_PATH = FILENAME_MAX;
 
 	//////////////////////////////////////////////////////////////////////////
 	enum class EFileOpenMode

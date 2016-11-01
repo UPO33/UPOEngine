@@ -50,7 +50,7 @@ namespace UPO
 	//////////////////////////////////////////////////////////////////////////
 	String EnumElement::LegibleName() const
 	{
-		auto index = mName.FindNCharReverse(':', 0);
+		auto index = mName.FindRN(':', 0);
 		if (index != ~0)
 			return mName.SubStr(index + 1);
 		return mName;

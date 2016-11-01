@@ -4,5 +4,8 @@
 
 namespace UPO
 {
-
+	void ASD()
+	{
+		
+	}
 };

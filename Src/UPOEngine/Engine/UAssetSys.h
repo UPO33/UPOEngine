@@ -15,7 +15,9 @@ namespace UPO
 	class World;
 	class AssetSys;
 
-	//////////////////////////////////////////////////////////////////////////
+	/************************************************************************
+	an AssetEntry actually keeps the information about an asst file in Engine's directory/Content/ or Project's directory/Content/
+	************************************************************************/
 	class UAPI AssetEntry
 	{
 		friend AssetSys;
@@ -25,10 +27,12 @@ namespace UPO
 		Name				mClassName;
 		TObjectPtr<Asset>	mInstance; //null if not loaded
 		Stream*				mStream = nullptr;
+		String				mAbsFilename;
 
 	public:
 		Name GetName() const { return mName; }
 		Name GetClassName() const { return mClassName; }
+		ClassInfo* GetClassInfo() const;
 		AssetID GetID() const { return mID; }
 		Asset* GetInstance() const { return mInstance.Get(); }
 		Stream* OpenStreamForLoading();
@@ -42,7 +46,10 @@ namespace UPO
 	{
 		char	mTag[32];
 	};
-	//////////////////////////////////////////////////////////////////////////
+
+	/************************************************************************
+	manages loading, creating and releasing assets
+	************************************************************************/
 	class UAPI AssetSys
 	{
 		TArray<AssetEntry*>	mAssets;
@@ -61,7 +68,11 @@ namespace UPO
 		AssetEntry* FindAsset(Name name);
 		AssetEntry* FindAsset(AssetID id);
 
-		void CollectAssetsInContent();
+		//collect assets from directories
+		void CollectAssetEntries();
+
+		String GetEngineContentPath();
+		String GetProjectContentPath();
 		//return true if a file is asset
 		bool CheckFile(const String& filename, AssetID* outAssetID = nullptr, Name* outClassName = nullptr) const;
 

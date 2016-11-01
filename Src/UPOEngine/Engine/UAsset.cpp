@@ -35,7 +35,7 @@ namespace UPO
 		return mEntry->GetID();
 	}
 	//////////////////////////////////////////////////////////////////////////
-	void Asset::Save()
+	bool Asset::Save()
 	{
 		FlagClear(EAssetFlag::EAF_Dirty);
 
@@ -44,11 +44,11 @@ namespace UPO
 			ObjectArchive::Save(this, stream);
 			mEntry->CloseStream();
 			ULOG_SUCCESS("asset [%s] saved", GetName().CStr());
+			return true;
 		}
-		else
-		{
-			ULOG_ERROR("failed to save asset [%s]", GetName().CStr());
-		}
+		
+		ULOG_ERROR("failed to open stream for saving asset [%s]", GetName().CStr());
+		return false;
 	}
 
 	//////////////////////////////////////////////////////////////////////////

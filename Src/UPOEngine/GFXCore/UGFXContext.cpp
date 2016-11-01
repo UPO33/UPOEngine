@@ -4,7 +4,7 @@
 
 namespace UPO
 {
-
+	//////////////////////////////////////////////////////////////////////////
 	class UAPI GFXContextDX : public GFXContext
 	{
 		HWND mHWND = nullptr;
@@ -267,6 +267,7 @@ namespace UPO
 
 			return true;
 		}
+		//////////////////////////////////////////////////////////////////////////
 		bool Release() override
 		{
 				if (mSwapchain)

@@ -5,13 +5,14 @@
 
 namespace UPO
 {
+	UDECL_GLOBAL_SHADER(gVShaderTest, GFXVertexShader);
+	UDECL_GLOBAL_SHADER(gPShaderTest, GFXPixelShader);
+
 	class TestQuadRE : public RendererElement
 	{
-		GFXShaderRef mVShader;
-		GFXShaderRef mPShader;
 		GFXVertexBufferRef mVBuffer;
 		GFXInputLayoutRef mInputLayout;
-
+		GFXRasterizerStateRef mRSDisable;
 public:
 		TestQuadRE(Renderer* rdr);
 		~TestQuadRE();
