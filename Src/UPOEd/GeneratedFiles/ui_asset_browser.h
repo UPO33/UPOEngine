@@ -60,6 +60,8 @@ public:
         __qtreewidgetitem->setText(0, QStringLiteral("1"));
         assetsTree->setHeaderItem(__qtreewidgetitem);
         assetsTree->setObjectName(QStringLiteral("assetsTree"));
+        assetsTree->setContextMenuPolicy(Qt::CustomContextMenu);
+        assetsTree->setEditTriggers(QAbstractItemView::EditKeyPressed);
         assetsTree->setAlternatingRowColors(true);
         assetsTree->setIndentation(18);
         assetsTree->header()->setVisible(false);
@@ -76,6 +78,9 @@ public:
     {
         AssetBrowser->setWindowTitle(QApplication::translate("AssetBrowser", "Form", 0));
         filterLineEdit->setPlaceholderText(QApplication::translate("AssetBrowser", "Filter", 0));
+#ifndef QT_NO_TOOLTIP
+        btnSave->setToolTip(QApplication::translate("AssetBrowser", "save all assets", 0));
+#endif // QT_NO_TOOLTIP
         btnSave->setText(QApplication::translate("AssetBrowser", "Save", 0));
     } // retranslateUi
 

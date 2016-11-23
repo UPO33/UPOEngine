@@ -39,7 +39,7 @@ namespace UPO
 
 
 
-	UCLASS_BEGIN_IMPL(ATest, UATTR_Instanceable())
+	UCLASS_BEGIN_IMPL(ATest, UATTR_Instanceable(), UATTR_Icon("AssetBrowserAsset.png"))
 		UPROPERTY(mVec3)
 		UPROPERTY(mVec2)
 		UPROPERTY(mFloat)

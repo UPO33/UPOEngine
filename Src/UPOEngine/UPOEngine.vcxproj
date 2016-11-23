@@ -80,6 +80,7 @@
     <ClInclude Include="Meta\UMeta.h" />
     <ClInclude Include="Meta\UMetaSys.h" />
     <ClInclude Include="Meta\UTypeInfo.h" />
+    <ClInclude Include="Misc\UEditorInterface.h" />
     <ClInclude Include="Misc\UApp.h" />
     <ClInclude Include="Misc\UMisc.h" />
     <ClInclude Include="Object\UObject.h" />
@@ -143,6 +144,7 @@
     <ClCompile Include="Meta\UMeta.cpp" />
     <ClCompile Include="Meta\UMetaSys.cpp" />
     <ClCompile Include="Meta\UTypeInfo.cpp" />
+    <ClCompile Include="Misc\UEditorInterface.cpp" />
     <ClCompile Include="Misc\UApp.cpp" />
     <ClCompile Include="Misc\UMisc.cpp" />
     <ClCompile Include="Object\UObject.cpp" />
@@ -218,6 +220,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>UEXPORT_ENGINE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BufferSecurityCheck>true</BufferSecurityCheck>
+      <ShowIncludes>false</ShowIncludes>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>

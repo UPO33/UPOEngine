@@ -4,6 +4,10 @@
 #include "UObjectSys.h"
 #include "UObjectArchive.h"
 
+#ifdef GetClassInfo
+#undef  GetClassInfo
+#endif
+
 namespace UPO
 {
 	//////////////////////////////////////////////////////////////////////////

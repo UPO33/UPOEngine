@@ -322,6 +322,8 @@ namespace UPO
 		void RegProperty(ZZ_PropertyRegParam* regParam, ClassInfo* owner, PropertyInfo* prp);
 		bool RebakeTypes();
 	};
+
+	inline MetaSys* GMetaSys() { return MetaSys::Get(); }
 };
 
 // template <typename T> X::TypeInfo* GetTypeInfo()

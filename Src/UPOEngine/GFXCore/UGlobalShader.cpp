@@ -12,7 +12,7 @@ namespace UPO
 	}
 
 	//////////////////////////////////////////////////////////////////////////
-	void UAPI UGlobalShader_CompileAll()
+	void UAPI UGlobalShader_CompileAll(TFP<void, const ShaderUniqueParam&> compileSuccessProc /*= nullptr*/)
 	{
 		UASSERT(gGFX);
 
@@ -45,8 +45,16 @@ namespace UPO
 			case EShaderType::ECompute: *(reinterpret_cast<GFXComputeShader**>(ppShader)) = (GFXComputeShader*)pShader;
 				break;
 			}
+
+			if (compileSuccessProc)
+			{
+				compileSuccessProc(param);
+			}
 		}
 	}
+
+
+
 	//////////////////////////////////////////////////////////////////////////
 	void UAPI UGlobalShader_ReleaseAll()
 	{

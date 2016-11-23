@@ -36,9 +36,8 @@ namespace UPO
 
 
 	void UAPI UGlobalShader_Reg(const GlobalShaderRegParam&);
-	void UAPI UGlobalShader_CompileAll();
+	void UAPI UGlobalShader_CompileAll(TFP<void, const ShaderUniqueParam&> compileSuccessProc = nullptr);
 	void UAPI UGlobalShader_ReleaseAll();
-
 
 
 };

@@ -1,6 +1,6 @@
 #include "UAssetBrowser.h"
 #include "UAssetViewer.h"
-
+#include "UAssetConverter.h"
 #include "ui_asset_browser.h"
 
 #include <QDirIterator>
@@ -14,7 +14,7 @@ namespace UPOEd
 	{
 		this->setWindowTitle("Asset Browser");
 		this->setMinimumSize(QSize(300, 300));
-		this->setWidget(new AssetBrowserWidget2);
+		this->setWidget(new AssetBrowserWidget);
 	}
 	//////////////////////////////////////////////////////////////////////////
 	void AssetBrowserDW::Tick()
@@ -22,6 +22,7 @@ namespace UPOEd
 		//((AssetBrowserWidget*)this->widget())->Tick();
 	}
 	//////////////////////////////////////////////////////////////////////////
+#if 0 
 	void AssetBrowserWidget::EVItemEditingFinished(const QString& newText)
 	{
 		if (mEditingIntetAssetCreation) // we were setting the name of new asset?
@@ -287,11 +288,42 @@ namespace UPOEd
 			setText("Asset");
 		}
 	}
+#endif // 
 
-	AssetBrowserWidget2::AssetBrowserWidget2(QWidget* parent /*= nullptr*/) : QWidget(parent)
+	AssetBrowserWidget::AssetBrowserWidget(QWidget* parent /*= nullptr*/) : QWidget(parent)
 	{
 		ui = new Ui_AssetBrowser;
 		ui->setupUi(this);
+
+		setAcceptDrops(true);
+
+		connect(ui->assetsTree, &QTreeWidget::itemDoubleClicked, this, [&](QTreeWidgetItem* _item, int) {
+			AssetBrowserItem* item = (AssetBrowserItem*)_item;
+			if (item->mAssetEntry && !item->mAssetEntry->IsFolder())
+			{
+				OpenAsset(item->mAssetEntry);
+			}
+		});
+
+
+		connect(ui->assetsTree, &QTreeWidget::customContextMenuRequested, this, &Self::EVContextMenuRequested);
+		connect(ui->assetsTree->itemDelegate(), &QAbstractItemDelegate::commitData, this, [&](QWidget* widget) {
+
+			QString strNewText = reinterpret_cast<QLineEdit*>(widget)->text();
+			EVItemEditingFinished(strNewText);
+		});
+
+		connect(ui->filterLineEdit, &QLineEdit::textChanged, this, &Self::EVFilterTextChanged);
+
+		ReFillTree();
+		ReInitActions();
+
+		mActionSaveAll = new QAction("Save All", this);
+		connect(mActionSaveAll, &QAction::triggered, this, &Self::EVSaveAll);
+
+		connect(ui->btnSave, &QPushButton::clicked, this, &Self::EVSaveAll);
+
+		mActionShowAssetInExplorer = new QAction("Show In Explorer", this);
 
 // 		auto itemProj = new QTreeWidgetItem(ui->foldersTree);
 // 		itemProj->setText(0, "Project");
@@ -301,79 +333,388 @@ namespace UPOEd
 // 		ui->foldersTree->addTopLevelItem(itemProj);
 // 		ui->foldersTree->addTopLevelItem(itemEngine);
 
-		InitFolders();
+		{
+// 			AssetBrowserItem2* itemEngine = new AssetBrowserItem2(nullptr, nullptr);
+// 			itemEngine->setText(0, "Engine");
+// 			ui->assetsTree->addTopLevelItem(itemEngine);
+			
+
+// 			auto itemParent = itemEngine;
+// 			AssetEntry* iter = 
+// 			for (size_t i = 0; i < iter->mChildren.Length(); i++)
+// 			{
+// 				auto item = new AssetBrowserItem2(iter->mChildren[i], itemParent);
+// 				ui->assetsTree->addTopLevelItem(item);
+// 				itemParent = item;
+// 			}
+		}
+
+
+// 		{
+// 
+// 
+// 			AssetBrowserItem2* itemProject = new AssetBrowserItem2(nullptr, nullptr);
+// 			itemProject->setText(0, "Project");
+// 			ui->assetsTree->addTopLevelItem(itemProject);
+// 			auto itemParent = itemProject;
+// 			AssetEntry* iter = GAssetSys()->EngineEntry();
+// 			for (size_t i = 0; i < iter->mChildren.Length(); i++)
+// 			{
+// 				auto item = new AssetBrowserItem2(iter->mChildren[i], itemParent);
+// 				ui->assetsTree->addTopLevelItem(item);
+// 				itemParent = item;
+// 			}
+// 
+// 			
+// 		}
+
+
+		//InitFolders();
 	}
-	QDir GetEngineContentDir()
+
+	void AssetBrowserWidget::ReInitActions()
 	{
-		QDir dir = "../Content/";
-		return dir;
+		mAssetCreationActions.clear();
+
+		auto& assetsClass = Asset::GetClassInfoStatic()->GetSubClasses();
+		for (auto assetClass : assetsClass)
+		{
+			if(assetClass == nullptr) continue;
+
+			if (assetClass->HasAttrib(EAtrribID::EAT_Instanceable)) //is instanceable?
+			{
+
+				QAction* actCreate = new QAction(ToQString(assetClass->GetName()), this);
+				
+				if (QIcon* icon = GetIcon(assetClass))
+					actCreate->setIcon(*icon);
+
+				connect(actCreate, &QAction::triggered, this, &Self::EVCreateAsset);
+				mAssetCreationActions << actCreate;
+			}
+		}
 	}
-	void AssetBrowserWidget2::InitFolders()
+
+	void AssetBrowserWidget::AddEntiryToTree(AssetEntry* entry, AssetBrowserItem* parentItem)
+	{
+		AssetBrowserItem* item = parentItem;
+		if (!entry->mFilename.IsEmpty())
+		{
+			if(FilterCheck(ToQString(entry->GetName())))
+			{
+				item = new AssetBrowserItem(entry, parentItem);
+				ui->assetsTree->addTopLevelItem(item);
+			}
+		}
+		for (size_t i = 0; i < entry->mChildren.Length(); i++)
+		{
+			AddEntiryToTree(entry->mChildren[i], item);
+		}
+	
+	}
+
+
+
+
+//deprecated
+// 	void AssetBrowserWidget2::AddDirContents(const QString& path, AssetBrowserItem2* parentItem, const QString& prefix)
+// 	{
+// 		QDirIterator iter(path, QDir::Dirs | QDir::Files | QDir::NoSymLinks | QDir::NoDotAndDotDot);
+// 		
+// 		while (iter.hasNext()) 
+// 		{
+// 			//eg: ../content/file.txt
+// 			auto filepath = iter.next();
+// 			QFileInfo fileInfo = iter.fileInfo();
+// 
+// 			QString filename = fileInfo.fileName();		//eg file.txt
+// 			QString assetName = prefix.isEmpty() ? filename : prefix + '/' + filename;
+// 			QString absFilePath = fileInfo.absoluteFilePath();
+// 
+// 			if (fileInfo.isFile())
+// 			{
+// 				if (FilterCheck(assetName))
+// 				{
+// 					if (GAssetSys()->CheckFile(ToString(absFilePath))) // is asset file ?
+// 					{
+// 						AssetBrowserItem2* newItem = new AssetBrowserItem2(assetName, absFilePath, filename, false, parentItem);
+// 						ui->assetsTree->addTopLevelItem(newItem);
+// 					}
+// 				}
+// 			}
+// 			else
+// 			{
+// 				AssetBrowserItem2* newItem = new AssetBrowserItem2(assetName, absFilePath, filename, true, parentItem);
+// 				ui->assetsTree->addTopLevelItem(newItem);
+// 				AddDirContents(filepath, newItem, assetName);
+// 			}
+// 		}
+// 	}
+
+	bool AssetBrowserWidget::FilterCheck(const QString& str)
+	{
+		return UPOEd::FilterCheck(ui->filterLineEdit->text(), str);
+	}
+
+	void AssetBrowserWidget::ReFillTree()
 	{
 		ui->assetsTree->clear();
 
-
-		AddDirContents("../Content/", nullptr, QString());
+		AddEntiryToTree(GAssetSys()->EngineEntry(), nullptr);
+		AddEntiryToTree(GAssetSys()->ProjectEntry(), nullptr);
+		
+		ui->assetsTree->expandAll();
 	}
 
-	void AssetBrowserWidget2::AddDirContents(const QString& path, AssetBrowserItem2* parentItem, const QString& prefix)
+	void AssetBrowserWidget::EVFilterTextChanged(const QString&)
 	{
-		QDirIterator iter(path, QDir::Dirs | QDir::Files | QDir::NoSymLinks | QDir::NoDotAndDotDot);
-		
-		while (iter.hasNext()) 
+		ReFillTree();
+		ui->assetsTree->expandAll();
+	}
+
+	void AssetBrowserWidget::EVSaveAll(bool)
+	{
+		GAssetSys()->SaveAllDirtyAssets();
+	}
+	//////////////////////////////////////////////////////////////////////////
+	void AssetBrowserWidget::EVContextMenuRequested(const QPoint& point)
+	{
+		QMenu menu;
+		QMenu menu_Create;
+
+		QAction* actionRename = nullptr;
+		QAction* actionDelete = nullptr;
+
+		QPoint globalPoint = ui->assetsTree->mapToGlobal(point);
+
 		{
-			//eg: ../content/file.txt
-			auto filepath = iter.next();
-			QFileInfo fileInfo = iter.fileInfo();
+			menu.addAction(mActionSaveAll);
+		}
 
-			QString filename = fileInfo.fileName();		//eg file.txt
-			QString assetName = prefix.isEmpty() ? filename : prefix + '/' + filename;
-			QString absFilePath = fileInfo.absoluteFilePath();
-
-			if (fileInfo.isFile())
+		AssetBrowserItem* selectedItem = (AssetBrowserItem*)ui->assetsTree->itemAt(point);
+		if (selectedItem) // r we on item?
+		{
+			if(selectedItem->mAssetEntry->IsFolder()) //item is folder?
 			{
-				if (FilterCheck(assetName))
-				{
-					if (AssetSys::Get()->CheckFile(ToString(absFilePath))) // is asset file ?
-					{
-						AssetBrowserItem2* newItem = new AssetBrowserItem2(assetName, absFilePath, filename, false, parentItem);
-						ui->assetsTree->addTopLevelItem(newItem);
-					}
-				}
+				menu_Create.setTitle("Create");
+				menu_Create.addActions(mAssetCreationActions);
+				menu.addMenu(&menu_Create);
+
+				
+			}
+
+			menu.addAction(mActionShowAssetInExplorer);
+			actionRename = menu.addAction("Rename");
+			actionDelete = menu.addAction("Delete");
+		}
+		else
+		{
+			
+		}
+
+		/////////////////////executing and handling selected menu
+		QAction* chosenAction = menu.exec(globalPoint);
+		if (mAssetCreationActions.contains(chosenAction)) // asset creation selected?
+		{
+			Name assetClassName = ToName(chosenAction->text());
+			auto assetClass = GMetaSys()->FindClass(assetClassName);
+			if (assetClass)
+			{
+				CreateDefaulAssetFile(assetClass, selectedItem);
+			}
+			
+		}
+		else if (chosenAction == mActionShowAssetInExplorer) // show in explorer?
+		{
+			UShowInExplorer(selectedItem->mAssetEntry->GetFullFileName());
+		}
+		else if (chosenAction == actionRename) // rename ?
+		{
+			ui->assetsTree->editItem(selectedItem);
+		}
+		else if (chosenAction == actionDelete) //delete ?
+		{
+			if (!selectedItem->mAssetEntry->IsFolder())
+			{
+			
+			}
+		}
+	}
+	//////////////////////////////////////////////////////////////////////////
+	void AssetBrowserWidget::EVCreateAsset(bool)
+	{
+// 		//note: sender type is QAtion and its text is class's name
+// 
+// 		QAction* theSender = (QAction*)sender();
+// 		Name assetClassName = ToName(((QAction*)sender())->text()); 
+// 		auto assetClass = GMetaSys()->FindClass(assetClassName);
+// 		if (assetClass)
+// 		{
+// 			mPendingCreationAssetClass = assetClass;
+// 			mEditingIntetAssetCreation = true;
+// 
+// 			AssetBrowserItem* newAssetItem = new AssetBrowserItem(nullptr,);
+// 			mPendingCreationAssetItem = newAssetItem;
+// 
+// 			mAssets->addItem(newAssetItem);
+// 			newAssetItem->setSelected(true);
+// 			mAssets->editItem(newAssetItem);
+// 		}
+	}
+
+	void AssetBrowserWidget::EVItemEditingFinished(const QString& newText)
+	{
+		if (mEditingIntetAssetCreation) // we were setting the name of new asset?
+		{
+			mEditingIntetAssetCreation = false;
+
+			UASSERT(mPendingCreationAssetClass && mPendingCreationAssetItem);
+
+			AssetBrowserItem* folder = (AssetBrowserItem*)mPendingCreationAssetItem->parent();
+
+
+			if (AssetEntry* newAsset = GAssetSys()->CreateDefaulAssetFile(folder->mAssetEntry, ToString(newText), mPendingCreationAssetClass))
+			{
+					mPendingCreationAssetItem->SetAsset(newAsset);
+					mPendingCreationAssetItem = nullptr;
+					mPendingCreationAssetClass = nullptr;
+					return;
 			}
 			else
 			{
-				AssetBrowserItem2* newItem = new AssetBrowserItem2(assetName, absFilePath, filename, true, parentItem);
-				ui->assetsTree->addTopLevelItem(newItem);
-				AddDirContents(filepath, newItem, assetName);
+				delete mPendingCreationAssetItem;
+				mPendingCreationAssetItem = nullptr;
+				mPendingCreationAssetClass = nullptr;
 			}
+
+
 		}
-	}
-
-	bool AssetBrowserWidget2::FilterCheck(const QString& str)
-	{
-		return SearchCheck(ui->filterLineEdit->text(), str);
-	}
-
-	void AssetBrowserItem2::InitIcon()
-	{
-		static QIcon FolderIcon = QIcon("../Icons/AssetBrowserFolder.png");
-		static QIcon AssetIcon = QIcon("../Icon/AssetBrowserAsset.png");
-
-		QIcon* icon = nullptr;
-		if (mAsset)
+		else
 		{
-			if (ClassInfo* assetClass = mAsset->GetClassInfo())
+			AssetBrowserItem* item = (AssetBrowserItem*)ui->assetsTree->currentItem();
+			item->mAssetEntry->Rename(ToString(newText));
+			//RenameAsset(mRenamingItem, newText);
+		}
+		ULOG_ERROR("");
+	}
+	//////////////////////////////////////////////////////////////////////////
+	void AssetBrowserWidget::dragEnterEvent(QDragEnterEvent *e)
+	{
+		if (e->mimeData()->hasUrls())
+		{
+			auto urls = e->mimeData()->urls();
+			if (urls.size() == 1)
 			{
-				Attrib attribIcon;
-				if (assetClass->GetAttrib(EAT_Icon, attribIcon))
+				QString filename = urls[0].toLocalFile();
+				if (!QDir(filename).exists()) // is not folder?
 				{
-					icon = GetIcon(ToQString(attribIcon.GetString()));
+					String ext = PathGetExt(ToString(filename));
+					if(AssetConverter::ExtIsSupported(ext))
+						e->acceptProposedAction();
 				}
 			}
 		}
+	}
+	//////////////////////////////////////////////////////////////////////////
+	void AssetBrowserWidget::dropEvent(QDropEvent *ev)
+	{
+// 		foreach(const QUrl &url, e->mimeData()->urls()) {
+// 			QString fileName = url.toLocalFile();
+// 			qDebug() << "Dropped file:" << fileName;
+// 			ULOG_MESSAGE("dropped file %s", fileName.toStdString().c_str());
+// 
+// 		}
+		QPoint reletivePos = ui->assetsTree->mapFromGlobal(mapToGlobal(ev->pos()));	//(event->pos() is relative to widget
+		AssetBrowserItem* item = (AssetBrowserItem*)ui->assetsTree->itemAt(reletivePos);
+		if (item && item->mAssetEntry && item->mAssetEntry->IsFolder()) //r we dropping on folder ?
+		{
+			String fullfilename = ToString(ev->mimeData()->urls()[0].toLocalFile());
+			AssetConverter::Convert(fullfilename, item->mAssetEntry);
+			ReFillTree();
+		}
 
-		setIcon(0, icon ? *icon : mIsFolder ? FolderIcon : AssetIcon);
+
+
+	}
+
+	void AssetBrowserWidget::dragMoveEvent(QDragMoveEvent *event)
+	{	
+		QPoint reletivePos = ui->assetsTree->mapFromGlobal(mapToGlobal(event->pos()));	//(event->pos() is relative to widget
+		AssetBrowserItem* item = (AssetBrowserItem*) ui->assetsTree->itemAt(reletivePos);
+		if(item && item->mAssetEntry && item->mAssetEntry->IsFolder()) //dropping on folder ?
+		{
+			event->setDropAction(Qt::DropAction::CopyAction);
+			ui->assetsTree->expandItem(item);
+			ui->assetsTree->setCurrentItem(item);
+			//item->setTextColor(0, QColor(255, 0, 0));
+			//item->setBackgroundColor(0, QColor(1,0,0));
+			//ULOG_MESSAGE("%s", item->text(0).toStdString().c_str());
+			
+			event->accept();
+		}
+		else
+		{
+			event->ignore();
+		}
+	}
+
+	void AssetBrowserWidget::OpenAsset(AssetEntry* asset)
+	{
+		AssetViewer::OpenAsset(asset);
+	}
+
+	bool AssetBrowserWidget::CreateDefaulAssetFile(ClassInfo* assetClass, AssetBrowserItem* folder)
+	{
+		mPendingCreationAssetClass = assetClass;
+		mEditingIntetAssetCreation = true;
+
+		AssetBrowserItem* newAssetItem = new AssetBrowserItem(nullptr, folder);
+		newAssetItem->setText(0, "new asset");
+		mPendingCreationAssetItem = newAssetItem;
+		
+		ui->assetsTree->addTopLevelItem(newAssetItem);
+		//newAssetItem->setSelected(true);
+		ui->assetsTree->setCurrentItem(newAssetItem);
+		ui->assetsTree->expandItem(folder);
+		ui->assetsTree->editItem(newAssetItem);
+
+		return false;
+	}
+
+	bool AssetBrowserWidget::RenameAsset(AssetBrowserItem* item)
+	{
+		return false;
+	}
+
+	AssetBrowserItem::AssetBrowserItem(AssetEntry* entry, AssetBrowserItem* parent) : QTreeWidgetItem(parent)
+	{
+		mAssetEntry = entry;
+		if (mAssetEntry)
+		{
+			setText(0, ToQString(mAssetEntry->GetFileName()));
+			if (auto ci = mAssetEntry->GetClassInfo())
+			{
+				setToolTip(0, ToQString(ci->GetName()));
+			}
+		}
+
+		setFlags(flags() | Qt::ItemFlag::ItemIsEditable);
+
+		InitIcon();
+	}
+
+	void AssetBrowserItem::InitIcon()
+	{
+		static QIcon FolderIcon = QIcon("../Icons/AssetBrowserFolder.png");
+		static QIcon AssetIcon = QIcon("../Icons/AssetBrowserAsset.png");
+
+		if (mAssetEntry)
+		{
+			QIcon* icon = GetIcon(mAssetEntry->GetClassInfo());
+			setIcon(0, icon ? *icon : mAssetEntry->mIsFolder ? FolderIcon : AssetIcon);
+		}
+
+		
 	}
 
 };

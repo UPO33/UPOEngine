@@ -96,6 +96,7 @@ namespace UPO
 
 		virtual void OnParentChanged();
 
+
 		void Destroy();
 
 	private:

@@ -46,6 +46,34 @@ namespace UPO
 	{
 		friend class HelperArray;
 		friend class String;
+
+	public:
+		class Iter
+		{
+		public:
+			T* ptr;
+			Iter(T* p) : ptr(p) {}
+			bool operator !=(Iter rhs) const { return ptr != rhs.ptr; }
+			T& operator*() { return *ptr; }
+			void operator++() { ptr++; }
+		};
+		class ConstIter
+		{
+		public:
+			T* ptr;
+			ConstIter(T* p) : ptr(p) {}
+			bool operator !=(ConstIter rhs) const { return ptr != rhs.ptr; }
+			const T& operator*() const { return *ptr; }
+			void operator++() { ptr++; }
+		};
+
+		Iter begin() { return Iter(mElements); }
+		Iter end() { return Iter(mElements + mLength); }
+		ConstIter begin() const { return ConstIter(mElements); }
+		ConstIter end() const { return ConstIter(mElements + mLength); }
+		ConstIter cbegin() const { return begin(); }
+		ConstIter cend() const { return cend(); }
+
 	private:
 		T*			mElements;
 		size_t		mLength;

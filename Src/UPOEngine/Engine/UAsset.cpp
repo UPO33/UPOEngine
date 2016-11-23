@@ -51,6 +51,13 @@ namespace UPO
 		return false;
 	}
 
+	bool Asset::SaveTo(Stream& stream)
+	{
+		AssetSys::WriteAssetHeader(stream, mEntry->mID, mEntry->mClassName);
+		ObjectArchive::Save(this, &stream);
+		return true;
+	}
+
 	//////////////////////////////////////////////////////////////////////////
 	AssetID AssetID::GetNewID()
 	{

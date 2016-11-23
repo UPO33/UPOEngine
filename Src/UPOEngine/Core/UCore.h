@@ -8,6 +8,7 @@
 #include "UHash.h"
 #include "UName.h"
 #include "UVector.h"
+#include "UMatrix.h"
 #include "UTimer.h"
 #include "UStream.h"
 #include "UModule.h"

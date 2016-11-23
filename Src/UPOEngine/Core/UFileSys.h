@@ -68,4 +68,6 @@ namespace UPO
 
 	UAPI void PathGetFiles(const String& path, TArray<String>& outFileNames, bool includingSubFiles = false);
 	UAPI void PathGetFolders(const String& path, TArray<String>& outFolderNames, bool includingSubFolders = false);
+	UAPI String PathGetExt(const String& path);
+	UAPI String PathGetFileName(const String& path, bool includingExt = false);
 }

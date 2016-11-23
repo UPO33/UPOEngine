@@ -19,6 +19,7 @@ namespace UPO
 	{
 		out.SetFormatted("..//Content//%s", assetName.CStr());
 	}
+
 	//////////////////////////////////////////////////////////////////////////
 	bool ReadAssetHeader(Stream& assetFile, AssetID* outID = nullptr, Name* outClassName = nullptr)
 	{
@@ -63,16 +64,28 @@ namespace UPO
 		static TInstance<AssetSys> Ins;
 		return Ins;
 	}
-
+	//////////////////////////////////////////////////////////////////////////
 	AssetSys::AssetSys()
 	{
-		mAssets.SetCapacity(1024);
+		mAssetEntries.SetCapacity(1024);
 		CollectAssetEntries();
 	}
-
+	//////////////////////////////////////////////////////////////////////////
+	void DeleteAssetEntry(AssetEntry* entry)
+	{
+		for (size_t i = 0; i < entry->mChildren.Length(); i++)
+		{
+			DeleteAssetEntry(entry->mChildren[i]);
+		}
+		delete entry;
+	}
+	//////////////////////////////////////////////////////////////////////////
 	AssetSys::~AssetSys()
 	{
+		if (mEngineFolder) DeleteAssetEntry(mEngineFolder);
+		if (mProjectFolder) DeleteAssetEntry(mProjectFolder);
 
+		mEngineFolder = mProjectFolder = nullptr;
 	}
 	//////////////////////////////////////////////////////////////////////////
 	AssetEntry* AssetSys::CreateAsset(const ClassInfo* assetClass, Name assetName)
@@ -94,7 +107,7 @@ namespace UPO
 			Asset* newAsset = NewObject<Asset>(assetClass);
 
 			AssetEntry* newEntry = new AssetEntry;
-			newEntry->mName = assetName;
+			newEntry->mAssetName = assetName;
 			newEntry->mClassName = assetClass->GetName();
 			newEntry->mID = AssetID::GetNewID();
 			newEntry->mInstance = newAsset;
@@ -121,6 +134,50 @@ namespace UPO
 		}
 		return nullptr;
 	}
+
+	AssetEntry* AssetSys::CreateDefaulAssetFile(AssetEntry* folderToCreateIn, const String& assetFilename, ClassInfo* assetClass)
+	{
+		String strAssetName = String(folderToCreateIn->mAssetName) + '/' + assetFilename;
+		Name nameAssetName = strAssetName;
+		if (FindAsset(nameAssetName))
+		{
+			ULOG_ERROR("failed to create asset file [%s], currently exist", strAssetName.CStr());
+			return nullptr;
+		}
+		AssetEntry* newAssetEntry = new AssetEntry;
+		newAssetEntry->mIsFolder = false;
+		newAssetEntry->mAssetName = strAssetName;
+		newAssetEntry->mID = AssetID::GetNewID();
+		newAssetEntry->mClassName = assetClass->GetName();
+		newAssetEntry->mFilename = assetFilename;
+		newAssetEntry->mFullFilename = folderToCreateIn->mFullFilename + '/' + assetFilename;
+
+		Asset* newAssetInstance = NewObject<Asset>(assetClass);
+		newAssetEntry->mInstance = newAssetInstance;
+		newAssetInstance->mEntry = newAssetEntry;
+
+		newAssetInstance->MarkDirty();
+		bool bSaved = newAssetInstance->Save();
+
+		newAssetEntry->mInstance = nullptr;
+		DeleteObject(newAssetInstance);
+		newAssetInstance = nullptr;
+
+		if (bSaved)
+		{
+			folderToCreateIn->mChildren.Add(newAssetEntry);
+			AddEntryToList(newAssetEntry);
+
+			return newAssetEntry;
+		}
+		else
+		{
+			delete newAssetEntry;
+			newAssetEntry = nullptr;
+			return nullptr;
+		}
+	}
+
 	//////////////////////////////////////////////////////////////////////////
 	Asset* AssetSys::LoadAsset(Name nanme, World* owner)
 	{
@@ -146,88 +203,168 @@ namespace UPO
 	//////////////////////////////////////////////////////////////////////////
 	AssetEntry* AssetSys::FindAsset(Name name)
 	{
-		for (size_t i = 0; i < mAssets.Length(); i++)
+		for (size_t i = 0; i < mAssetEntries.Length(); i++)
 		{
-			if (mAssets[i]->GetName() == name) return mAssets[i];
+			if (mAssetEntries[i]->GetName() == name) return mAssetEntries[i];
 		}
 		return nullptr;
 	}
 	//////////////////////////////////////////////////////////////////////////
 	AssetEntry* AssetSys::FindAsset(AssetID id)
 	{
-		for (size_t i = 0; i < mAssets.Length(); i++)
+		for (size_t i = 0; i < mAssetEntries.Length(); i++)
 		{
-			if (mAssets[i]->GetID() == id) return mAssets[i];
+			if (mAssetEntries[i]->GetID() == id) return mAssetEntries[i];
 		}
 		return nullptr;
 	}
 	
 
+// 	struct FileInfo
+// 	{
+// 		String mName;
+// 		bool mIsDirectory;
+// 	};
+// 	void PathGetEntries(const String& str, TArray<FileInfo>& out)
+// 	{
+// 	}
 
-	//////////////////////////////////////////////////////////////////////////
-	void AssetSys::CollectAssetEntries()
+	void AssetSys::CollectAssetEntries(AssetEntry* parent)
 	{
-		mAssets.RemoveAll();
-// 
-// 		auto func = [&](const String& path){
-// 			TArray<String> assetNamesString;
-// 			PathGetFiles(path, assetNamesString, true);
-// 			for (size_t i = 0; i < assetNamesString.Length(); i++)
-// 			{
-// 				String assetFileName;
-// 				AssetNameToRelativePath(Name(assetNamesString[i]), assetFileName);
-// 
-// 				AssetID assetID;
-// 				Name assetClassName;
-// 
-// 				if (CheckFile(assetFileName, &assetID, &assetClassName))
-// 				{
-// 					AssetEntry* newAsset = new AssetEntry;
-// 					newAsset->mID = assetID;
-// 					newAsset->mClassName = assetClassName;
-// 					newAsset->mName = assetNamesString[i];
-// 
-// 					mAssets.Add(newAsset);
-// 				}
-// 			}
-// 		};
-// 
-// 		func(GetEngineContentPath());
-// 		func(GetProjectContentPath());
-
-
-		TArray<String> assetNamesString;
-		String engineContentPath = GetEngineContentPath();
-		PathGetFiles(engineContentPath, assetNamesString, true);
-		for (size_t i = 0; i < assetNamesString.Length(); i++)
 		{
-			String assetFileName = engineContentPath + assetNamesString[i];
-			//AssetNameToRelativePath(Name(assetNamesString[i]), assetFileName);
-
-			AssetID assetID;
-			Name assetClassName;
-
-			if (CheckFile(assetFileName, &assetID, &assetClassName))
+			TArray<String> files;
+			PathGetFiles(parent->mFullFilename, files);
+			for (size_t i = 0; i < files.Length(); i++)
 			{
-				ULOG_MESSAGE("assest found [%s]", assetFileName);
-				AssetEntry* newAsset = new AssetEntry;
-				newAsset->mID = assetID;
-				newAsset->mClassName = assetClassName;
-				newAsset->mName = assetNamesString[i];
+				String fullFileName = parent->mFullFilename + '/' + files[i];
+				AssetID assetID;
+				Name className;
+				if (CheckFile(fullFileName, &assetID, &className))
+				{
+					AssetEntry* newEntry = new AssetEntry;
+					newEntry->mIsFolder = false;
+					newEntry->mParent = parent;
+					newEntry->mClassName = className;
+					newEntry->mID = assetID;
+					newEntry->mFilename = files[i];
+					newEntry->mFullFilename = fullFileName;
+					newEntry->mAssetName = parent->mAssetName.IsEmpty() ? files[i] : (String(parent->mAssetName) + '/' + files[i]);
 
-				mAssets.Add(newAsset);
+					parent->mChildren.Add(newEntry);
+
+					mAssetEntries.Add(newEntry);
+
+				}
+			}
+		}
+
+		{
+			TArray<String> dirs;
+			PathGetFolders(parent->mFullFilename, dirs);
+			for (size_t i = 0; i < dirs.Length(); i++)
+			{
+				AssetEntry* entryDir = new AssetEntry;
+				parent->mChildren.Add(entryDir);
+
+				entryDir->mIsFolder = true;
+				entryDir->mParent = parent;
+				entryDir->mFilename = dirs[i];
+				entryDir->mFullFilename = parent->mFullFilename + '/' + dirs[i];
+				entryDir->mAssetName = parent->mAssetName.IsEmpty() ? dirs[i] : (String(parent->mAssetName) + '/' + dirs[i]);
+
+				
+
+				mAssetEntries.Add(entryDir);
+
+				CollectAssetEntries(entryDir);
 			}
 		}
 	}
 
-	String AssetSys::GetEngineContentPath()
-	{
-		return gEnginePath + "/Content/";
-	}
 
-	String AssetSys::GetProjectContentPath()
+	//////////////////////////////////////////////////////////////////////////
+	void AssetSys::CollectAssetEntries()
 	{
-		return gProjectPath + "/Content/";
+#if 0
+		mAssets.RemoveAll();
+
+		auto collectAssets = [&](const String& path){
+			TArray<String> assetNamesString;
+			PathGetFiles(path, assetNamesString, true);
+			for (size_t i = 0; i < assetNamesString.Length(); i++)
+			{
+				String assetFileName = path + assetNamesString[i];
+			
+
+				AssetID assetID;
+				Name assetClassName;
+
+				if (CheckFile(assetFileName, &assetID, &assetClassName))
+				{
+					AssetEntry* newAsset = new AssetEntry;
+					newAsset->mID = assetID;
+					newAsset->mClassName = assetClassName;
+					newAsset->mAssetName = assetNamesString[i];
+					//newAsset->mAbsFilename = assetFileName;
+
+					AddEntryToList(newAsset);
+				}
+			}
+		};
+
+		collectAssets(GetEngineContentPath());
+		if(String projContent = GetProjectContentPath())
+			collectAssets(projContent);
+#endif // 0
+
+		mEngineFolder = new AssetEntry;
+		mEngineFolder->mIsFolder = nullptr;
+		mEngineFolder->mFullFilename = GetEngineAssetsPath();
+		
+		mProjectFolder = new AssetEntry;
+		mProjectFolder->mIsFolder = true;
+		mProjectFolder->mFullFilename = GetProjectAssetsPath();
+
+		CollectAssetEntries(mEngineFolder);
+		CollectAssetEntries(mProjectFolder);
+
+		//log asset entries
+		{
+			
+		}
+// 		TArray<String> assetNamesString;
+// 		String engineContentPath = GetEngineContentPath();
+// 		PathGetFiles(engineContentPath, assetNamesString, true);
+// 		for (size_t i = 0; i < assetNamesString.Length(); i++)
+// 		{
+// 			String assetFileName = engineContentPath + assetNamesString[i];
+// 			//AssetNameToRelativePath(Name(assetNamesString[i]), assetFileName);
+// 
+// 			AssetID assetID;
+// 			Name assetClassName;
+// 
+// 			if (CheckFile(assetFileName, &assetID, &assetClassName))
+// 			{
+// 				ULOG_MESSAGE("assest found [%s]", assetFileName);
+// 				AssetEntry* newAsset = new AssetEntry;
+// 				newAsset->mID = assetID;
+// 				newAsset->mClassName = assetClassName;
+// 				newAsset->mName = assetNamesString[i];
+// 
+// 				mAssets.Add(newAsset);
+// 			}
+// 		}
+	}
+	//get absolute engine's assets directory
+	String AssetSys::GetEngineAssetsPath()
+	{
+		UASSERT(GApp()->mEngineAssetsPath);
+		return  GApp()->mEngineAssetsPath;
+	}
+	//get absolute project's assets directory, returns empty if no project
+	String AssetSys::GetProjectAssetsPath()
+	{
+		return  GApp()->mProjectAssetsPath;
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -239,7 +376,56 @@ namespace UPO
 		
 		return ReadAssetHeader(fStream, outAssetID, outClassName);
 	}
-	
+	//////////////////////////////////////////////////////////////////////////
+	void AssetSys::SaveAllDirtyAssets()
+	{
+		for (AssetEntry* item : mAssetEntries)
+		{
+			if (Asset* instance = item->GetInstance())
+			{
+				if (instance->IsDirty()) instance->Save();
+			}
+		}
+	}
+
+	bool AssetSys::ReadAssetHeader(Stream& assetFile, AssetID* outID /*= nullptr*/, Name* outClassName /*= nullptr*/)
+	{
+		UASSERT(!assetFile.IsReader());
+
+		char header[64];
+		size_t len = UARRAYLEN(UASSET_FILE_HEADER);
+		assetFile.Bytes(header, len);
+
+		if (assetFile.HasError()) return false;
+
+		if (MemEqual(header, UASSET_FILE_HEADER, len))
+		{
+			AssetID assetID;
+			Name className;
+
+			assetID.MetaSerialize(assetFile);
+			className.MetaSerialize(assetFile);
+
+			if (outID) *outID = assetID;
+			if (outClassName) *outClassName = className;
+
+			return !assetFile.HasError();
+		}
+		return false;
+	}
+
+	bool AssetSys::WriteAssetHeader(Stream& assetFile, AssetID id, Name className)
+	{
+		UASSERT(assetFile.IsReader());
+
+		size_t len = UARRAYLEN(UASSET_FILE_HEADER);
+		assetFile.Bytes((void*)UASSET_FILE_HEADER, len);
+
+		id.MetaSerialize(assetFile);
+		className.MetaSerialize(assetFile);
+		return !assetFile.HasError();
+	}
+
 	ClassInfo* AssetEntry::GetClassInfo() const
 	{
 		return MetaSys::Get()->FindClass(mClassName);
@@ -251,9 +437,7 @@ namespace UPO
 		//currently is reading or writing
 		if (mStream) return nullptr;
 
-		String assetPath;
-		AssetNameToRelativePath(GetName().CStr(), assetPath);
-		mStream = new StreamWriterFile(assetPath);
+		mStream = new StreamWriterFile(mFullFilename);
 
 		if (ReadAssetHeader(*mStream))
 			return mStream;
@@ -267,9 +451,8 @@ namespace UPO
 	{
 		if (mStream) return nullptr;
 
-		String assetPath;
-		AssetNameToRelativePath(mName.CStr(), assetPath);
-		mStream = new StreamReaderFile(assetPath);
+
+		mStream = new StreamReaderFile(mFullFilename);
 
 		if (WriteAssetHeader(*mStream, mID, mClassName))
 			return mStream;
@@ -299,7 +482,7 @@ namespace UPO
 
 		if (const ClassInfo* assetClass = MetaSys::Get()->FindClass(mClassName))
 		{
-			ULOG_MESSAGE("start loading asset [%s] ...", mName.CStr());
+			ULOG_MESSAGE("start loading asset [%s] ...", mAssetName.CStr());
 
 			Object* assetObject = ObjectArchive::Load(OpenStreamForLoading());
 			CloseStream();
@@ -326,11 +509,53 @@ namespace UPO
 		}
 		else
 		{
-			ULOG_ERROR("failed to load asset [%s], class [%s] is unknown", mName.CStr(), mClassName.CStr());
+			ULOG_ERROR("failed to load asset [%s], class [%s] is unknown", mAssetName.CStr(), mClassName.CStr());
 			return false;
 		}
 
 		return false;
+	}
+	//////////////////////////////////////////////////////////////////////////
+	bool AssetEntry::Rename(const String& newName)
+	{
+		if (newName == mFilename) return true;
+
+		String newFullFilename = mParent->mFullFilename + '/' + newName;
+
+		if (File::Rename(mFullFilename, newFullFilename))
+		{
+			mFilename = newName;
+			Renamed();
+		}
+		else
+		{
+			ULOG_ERROR("failed to rename asset [%s]", mFullFilename.CStr());
+			return false;
+		}
+	}
+	//////////////////////////////////////////////////////////////////////////
+	void AssetEntry::Renamed()
+	{
+		mAssetName = String(mParent->mAssetName) + '/' + mFilename;
+		mFullFilename = mParent->mFullFilename + '/' + mFilename;
+
+		for (auto child : mChildren)
+			child->Renamed();
+	}
+
+	AssetEntry* AssetEntry::CreateChild(const String& name, bool isFolder, AssetID id /*= AssetID()*/, Name className /*= Name()*/)
+	{
+		AssetEntry* newEntry = new AssetEntry;
+		newEntry->mFilename = name;
+		newEntry->mAssetName = String(mAssetName) + '/' + name;
+		newEntry->mFullFilename = mFullFilename + '/' + name;
+		newEntry->mID = id;
+		newEntry->mClassName = className;
+		newEntry->mIsFolder = isFolder;
+		newEntry->mParent = this;
+		mChildren.Add(newEntry);
+		GAssetSys()->AddEntryToList(newEntry);
+		return newEntry;
 	}
 
 };

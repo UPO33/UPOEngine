@@ -6,7 +6,7 @@
 #include <type_traits>
 #include <functional>
 #include <memory.h>
-#include <assert.h>
+#include <cstdint>
 
 #pragma region platforms compilers and api
 
@@ -35,6 +35,14 @@
 #endif
 
 
+
+#if INTPTR_MAX == INT64_MAX
+#define U64BIT
+#elif INTPTR_MAX == INT32_MAX
+#define U32BIT
+#else
+#error Unknown pointer size or missing size macros!
+#endif
 
 
 #if defined(UEXPORT_ENGINE)

@@ -169,6 +169,11 @@ namespace UPO
 			mParent = parent;
 			mParent->AddChildToList(this);
 		}
+		else
+		{
+			mWorld->mRootEntities.Add(this);
+		}
+		mWorld->mEntities.Add(this);
 	}
 
 	void Entity::RegisterToWorld(World* world)
@@ -181,6 +186,8 @@ namespace UPO
 	{
 		ULOG_MESSAGE("");
 	}
+
+
 
 	//////////////////////////////////////////////////////////////////////////
 	void Entity::Destroy()

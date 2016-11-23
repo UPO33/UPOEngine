@@ -18,6 +18,8 @@ namespace UPOEd
 		static AssetViewer* Current;
 
 		static void OpenAsset(AssetEntry* asset);
+		static void Close();
+
 		static AssetViewer* MakeCorrespondingView(Asset* asset, QWidget* parentWidget = nullptr);
 	};
 

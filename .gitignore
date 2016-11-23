@@ -14,6 +14,7 @@
 *.opensdf
 *.suo
 *.sdf
+
 /Libs
 /Bin
 
@@ -22,5 +23,4 @@
 *.fbx
 *.png
 *.opendb
-*.db
 *.db

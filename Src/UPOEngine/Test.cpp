@@ -76,7 +76,7 @@ namespace UPO
 
 		virtual bool OnInit() override
 		{
-			AssetSys::Get();
+			AssetSys::Get()->CollectAssetEntries();
 
 			return true;
 		}
@@ -126,7 +126,9 @@ namespace UPO
 	{
 		{
 			String strExePath = argv[0];
-			gEnginePath = strExePath.SubStr(0, strExePath.FindRN(PATH_SEPARATOR_CHAR, 1));
+			GApp()->mEnginePath = strExePath.SubStr(0, strExePath.FindRN(PATH_SEPARATOR_CHAR, 1));
+			GApp()->mEngineAssetsPath = GApp()->mEnginePath + PATH_SEPARATOR_CHAR + "Assets";
+
 			ULOG_MESSAGE("engine path %s", gEnginePath.CStr());
 		}
 
@@ -151,9 +153,16 @@ namespace UPO
 		ParseCommandLine(argc, argv);
 
 		gIsEditor = false;
+		
+		auto m1 = ModuleSys::Get()->LoadModule("testmodule1.dll");
+		auto m2 = ModuleSys::Get()->LoadModule("testmodule2.dll");
+
+		ModuleSys::Get()->UnloadModule(m1);
+		ModuleSys::Get()->UnloadModule(m2);
 
 		LaunchEngine(new EngineLauncher);
 	}
 	
 
+	UAPI GlobaLCTorDTorLog gGlobaLCTorDTorLog;
 };

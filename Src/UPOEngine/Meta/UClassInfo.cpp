@@ -17,7 +17,12 @@ namespace UPO
 	//////////////////////////////////////////////////////////////////////////
 	String PropertyInfo::GetLegibleName() const
 	{
-		return String(mPropertyName.CStr(), mPropertyName.Length());
+		String str = String(mPropertyName.CStr(), mPropertyName.Length());
+		if (str.Length() > 1 && str[0u] == 'm' && isupper(str[1u]))
+		{
+			return str.SubStr(1);
+		}
+		return str;
 	}
 
 	size_t PropertyInfo::GetTypeSize() const

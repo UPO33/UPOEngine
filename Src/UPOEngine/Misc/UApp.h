@@ -8,13 +8,10 @@ namespace UPO
 	struct App
 	{
 		String mEnginePath;
-		String mEngineContentPath;
+		String mEngineAssetsPath;
 		String mProjectPath;
-		String mProjectContentPath;
+		String mProjectAssetsPath;
 		bool mIsEditor;
-
-		static String EngineContentPath();
-		static String ProjectContentPath();
 	};
 
 	extern UAPI App* GApp();

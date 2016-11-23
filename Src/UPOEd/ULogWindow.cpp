@@ -45,6 +45,11 @@ namespace UPOEd
 		gLogWindow = nullptr;
 	}
 
+	void LogDW::Clean()
+	{
+		((LogWidget*)this->widget())->Clean();
+	}
+
 	void LogDW::Tick()
 	{
 
@@ -96,8 +101,7 @@ namespace UPOEd
 			////////////clear action
 			mActionClear = new QAction("Clear", this);
 			connect(mActionClear, &QAction::triggered, this, [&](bool) {
-				mLogsQueue.clear();
-				FillHTML();
+				Clean();
 			});
 
 			//adding clear to context menu
@@ -183,7 +187,7 @@ namespace UPOEd
 			QString line = QString::asprintf("<p  style=\"%s\"> [%s] [%s] [%d] [%s] \t\t    %s</p>",
 				 strSyle, strFilename, iter->mFunctionName, iter->mLineNumber, strThreadID, iter->mText);
 			
-			if(SearchCheck(mFiltter->text(), line))
+			if(FilterCheck(mFiltter->text(), line))
 				htmlResult += line;
 
 			iter++;
@@ -192,6 +196,12 @@ namespace UPOEd
 		htmlResult += gLogHTMLEnd;
 
 		mTextEdit->setHtml(htmlResult);
+	}
+
+	void LogWidget::Clean()
+	{
+		mLogsQueue.clear();
+		FillHTML();
 	}
 
 };

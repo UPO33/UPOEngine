@@ -19,6 +19,7 @@ namespace UPOEd
 		void  FillterTextChanged(const QString&);
 		void LogReceived(const LogEntry& entry);
 		void FillHTML();
+		void Clean();
 	};
 
 	//////////////////////////////////////////////////////////////////////////
@@ -27,6 +28,8 @@ namespace UPOEd
 	public:
 		LogDW(QWidget* parent);
 		~LogDW();
+
+		void Clean();
 
 		void Tick();
 

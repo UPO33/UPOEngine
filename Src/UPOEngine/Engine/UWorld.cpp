@@ -15,8 +15,6 @@ namespace UPO
 			Entity* newEntity = NewObject<Entity>(param.mClass);
 			newEntity->Init(param.mParent, this);
 
-			AddEntityToList(newEntity);
-			
 			newEntity->OnConstruct();
 
 			if (mIsPlaying)

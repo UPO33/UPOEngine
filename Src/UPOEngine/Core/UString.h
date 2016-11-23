@@ -152,11 +152,16 @@ namespace UPO
 		String operator + (char chr) const;
 		String& operator += (char chr);
 
+		//any x will be replaced by y
+		String& Replace(char x, char y, bool caseSensitive = true);
+
 		String SubStr(unsigned index, unsigned count = ~0) const;
 		String& Append(const String& str);
 		bool ToFloat(float& out) const;
 		void SetFormatted(const char* format, ...);
 		void MetaSerialize(Stream&);
+
+		static String MakeFrom(int i);
 	};
 
 #if 0

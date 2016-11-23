@@ -266,6 +266,27 @@ namespace UPO
 		mChars.mElements[mChars.mLength++] = chr;
 		return *this;
 	}
+
+
+	String& String::Replace(char x, char y, bool caseSensitive)
+	{
+		if (caseSensitive)
+		{
+			for (size_t i = 0; i < Length(); i++)
+			{
+				if (CStr()[i] == x) CStr()[i] = y;
+			}
+		}
+		else
+		{
+			for (size_t i = 0; i < Length(); i++)
+			{
+				if (tolower(CStr()[i]) == x) CStr()[i] = y;
+			}
+		}
+		return *this;
+	}
+
 	//////////////////////////////////////////////////////////////////////////
 	String String::SubStr(unsigned index, unsigned count /*= ~0*/) const
 	{
@@ -332,6 +353,13 @@ namespace UPO
 				mChars.mElements[len] = '\0';
 			}
 		}
+	}
+
+	String String::MakeFrom(int n)
+	{
+		char buffer[128] = { '\0' };
+		_itoa_s(n, buffer, 10);
+		return String(buffer);
 	}
 
 	//////////////////////////////////////////////////////////////////////////

@@ -33,6 +33,8 @@ namespace UPO
 	{
 		UCLASS(World, Asset)
 
+		friend Entity;
+
 	private:
 		TArray<Entity*>			mEntities;
 		bool					mIsPlaying = false;
@@ -50,6 +52,9 @@ namespace UPO
 		bool mDoBeginPlay = false;
 		bool mDoEndPlay = false;
 		
+		Entity*		mRootEntity;
+		TArray<Entity*>		mRootEntities;
+
 		unsigned MAX_DESTROYED_ENTITY = 16;
 
 	public:
@@ -70,6 +75,9 @@ namespace UPO
 		//children of the entity considered dead
 		//void GoToCemetery(Entity* entity);
 		void IncCemetery() { mNumDestroyedEntity++; }
+
+		Entity* GetRootEntity();
+		const TArray<Entity*>& GetRootEntities() const { return mRootEntities; }
 	};
 	//////////////////////////////////////////////////////////////////////////
 // 	class Renderer;

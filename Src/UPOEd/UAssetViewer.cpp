@@ -46,6 +46,11 @@ namespace UPOEd
 		}
 	}
 
+	void AssetViewer::Close()
+	{
+
+	}
+
 	AssetViewer* AssetViewer::MakeCorrespondingView(Asset* asset, QWidget* parentWidget)
 	{
 		return new AssetViewer_Default(parentWidget);

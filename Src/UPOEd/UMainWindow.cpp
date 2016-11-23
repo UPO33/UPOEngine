@@ -2,13 +2,12 @@
 
 #include "../UPOEngine/UPOEngine.h"
 
+#include "UNewProjectDialog.h"
+
 namespace UPOEd
 {
 
-
-
-
-
+	static const char* UPO_PROJECT_FILE_EXT = ".uproj";
 
 
 
@@ -67,6 +66,166 @@ namespace UPOEd
 	{
 		ULOG_MESSAGE("%s", prp->GetName().CStr());
 	}
+	//////////////////////////////////////////////////////////////////////////
+	void MainWindow::EVOpenProject(bool)
+	{
+		if (mProject && mProject->NeedsSave())
+		{
+			auto result = QMessageBox::warning(this, "saving", "do you want to save current project ?", QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+			if (result == QMessageBox::Yes)
+			{
+				EVSaveProject(true);
+			}
+		}
+		QString selsectedFile = QFileDialog::getOpenFileName(this, "Open Project", QString(), QString("*") + UPO_PROJECT_FILE_EXT);
+		if (!selsectedFile.isEmpty())
+		{
+			OpenProject(selsectedFile);
+		}
+	}
+	//////////////////////////////////////////////////////////////////////////
+	void MainWindow::EVNewProject(bool)
+	{
+		if (mProject && mProject->NeedsSave())
+		{
+			auto result = QMessageBox::warning(this, "saving", "do you want to save current project ?", QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+			if (result == QMessageBox::Yes)
+			{
+				EVSaveProject(true);
+			}
+		}
+		NewProjectDialog* npd = new NewProjectDialog();
+		if (npd->exec() == QDialog::Accepted)
+		{	
+			QString projFilePath = CreateDefaultProjectIn(npd->GetLocation(), npd->GetProjName());
+			if (!projFilePath.isEmpty())
+			{
+				OpenProject(projFilePath);
+			}
+			else
+			{
+				ULOG_ERROR("creating new project failed");
+			}
+		}
+		delete npd;
+	}
+
+	void MainWindow::EVSaveProject(bool)
+	{
+		//TODO saving all assets and settings
+	}
+
+	void MainWindow::InitWidgets()
+	{
+
+	}
+
+	void MainWindow::InitActions()
+	{
+		//file menu
+		{
+			mActionNewProject = new QAction("&New Project", this);
+			connect(mActionNewProject, &QAction::triggered, this, &MainWindow::EVNewProject);
+			mActionOpenProject = new QAction("&Open Project", this);
+			connect(mActionOpenProject, &QAction::triggered, this, &MainWindow::EVOpenProject);
+			mActionSaveProject = new QAction("&Save Project", this);
+			connect(mActionSaveProject, &QAction::triggered, this, &MainWindow::EVSaveProject);
+
+			QMenu* fileMenu = menuBar()->addMenu("File");
+			fileMenu->addAction(mActionNewProject);
+			fileMenu->addAction(mActionOpenProject);
+			fileMenu->addAction(mActionSaveProject);
+		}
+
+		//view menu
+		{
+			QMenu* viewMenu = menuBar()->addMenu("View");
+
+
+			mActionClassViewer = new QAction("Class Viewer", this);
+			mActionClassViewer->setStatusTip("show class viewer window");
+			connect(mActionClassViewer, &QAction::triggered, this, [&](bool) {
+				mClassViewer = new ClassViewerWindow(this);
+				mClassViewer->show();
+			});
+
+			viewMenu->addAction(mActionClassViewer);
+		}
+
+		// 			mMenuBar = new QMenuBar(this);
+		// 			setMenuBar(mMenuBar);
+	}
+
+	QString GetTempalteProjectPath()
+	{
+		QDir dir = QDir::current();
+		dir.cdUp();
+		return dir.absoluteFilePath("TemplateProject");
+	}
+	void WriteProjectFileContent(QFile& file, const QString& projectName)
+	{
+		file.write("UPOProject");
+		//we can write required properties to project's file
+	}
+	//////////////////////////////////////////////////////////////////////////
+	QString MainWindow::CreateDefaultProjectIn(const QString& path, const QString& projectName)
+	{
+// 		{
+// 			QDir(path).mkdir(projectName);
+// 			QString projRoot = path + QDir::separator() + projectName;
+// 			CopyPath(GetTempalteProjectPath(), projRoot);
+// 			QFile::rename(projRoot + QDir::separator() + "TemplateProject.uproj", );
+// 
+// 		}
+
+		QDir(path).mkdir(projectName);
+		QDir dirProject = QDir(path);
+		dirProject.mkdir(projectName);
+		dirProject.cd(projectName);
+		dirProject.mkdir("Bin");
+		dirProject.mkdir("Content");
+		dirProject.mkdir("Src");
+
+		//creating project file
+		{
+			QString projectFilePath = dirProject.absoluteFilePath(projectName + UPO_PROJECT_FILE_EXT);
+			QFile projectFile(projectFilePath);
+
+			projectFile.open(QIODevice::OpenModeFlag::WriteOnly);
+			UASSERT(projectFile.isOpen());
+			WriteProjectFileContent(projectFile, projectName);
+			projectFile.close();
+
+			return projectFilePath;
+		}
+	}
+
+	bool MainWindow::OpenProject(const QString& projectFilePath)
+	{
+		if (mProject)
+		{
+			CloseCurrentProject();
+		}
+		else
+		{
+
+		}
+		return true;
+	}
+
+	void MainWindow::CloseCurrentProject()
+	{
+		if (mProject)
+		{
+			if (mPropertyBrowser) mPropertyBrowser->AttachObject(nullptr);
+			if (mEntityBrowser) mEntityBrowser->AttachWorld(nullptr);
+
+			
+
+			if (mLog) mLog->Clean();
+
+		}
+	}
 
 	MainWindow::MainWindow(QWidget *parent /*= nullptr*/, Qt::WindowFlags flags /*= Qt::WindowFlags()*/) : QMainWindow(parent, flags)
 	{	
@@ -92,28 +251,15 @@ namespace UPOEd
 
 		//////////////asset browser
 		mAssetBrowser = new AssetBrowserDW(this);
-		this->addDockWidget(Qt::DockWidgetArea::BottomDockWidgetArea, mAssetBrowser);
+		this->addDockWidget(Qt::DockWidgetArea::RightDockWidgetArea, mAssetBrowser);
 		
 		//////////entity browser
 		mEntityBrowser = new EntityBrowserDW(this);
 		this->addDockWidget(Qt::DockWidgetArea::RightDockWidgetArea, mEntityBrowser);
 
-		
-		menuBar()->addMenu("File");
-		QMenu* menuView = menuBar()->addMenu("View");
-
-
-		mActionClassViewer = new QAction("Class Viewer", this);
-		mActionClassViewer->setStatusTip("show class viewer window");
-		connect(mActionClassViewer, &QAction::triggered, this, [&](bool) {
-			mClassViewer = new ClassViewerWindow(this);
-			mClassViewer->show();
-		});
-
-		menuView->addAction(mActionClassViewer);
-
-		// 			mMenuBar = new QMenuBar(this);
-		// 			setMenuBar(mMenuBar);
+		this->tabifyDockWidget(mAssetBrowser, mEntityBrowser);
+		this->setCorner(Qt::Corner::BottomLeftCorner, Qt::LeftDockWidgetArea);
+		InitActions();
 	}
 
 	void MainWindow::Tick()

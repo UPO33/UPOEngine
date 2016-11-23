@@ -3,6 +3,11 @@
 #include "../Core/UCore.h"
 #include "../Object/UObject.h"
 
+namespace UPOEd
+{
+	class AssetConverter;
+};
+
 namespace UPO
 {
 	//////////////////////////////////////////////////////////////////////////
@@ -44,16 +49,21 @@ namespace UPO
 
 		friend AssetSys;
 		friend AssetEntry;
+		friend UPOEd::AssetConverter;
 
 	private:
 		Flag				mAssetFlag = EAssetFlag::EAF_Defaul;
 		AssetEntry*			mEntry = nullptr;
 		TArray<World*>		mWorldOwners;	//the worlds that r using this asset
 		Name				mTag;
-		
+	public:
+		void*				mEdData = nullptr;
+		void*				mUserData = nullptr;
 
+
+	private:
 		void PostLoad();
-
+		
 	public:
 		bool FlagTest(unsigned flag) const { return mAssetFlag.Test(flag); }
 		bool FlagTestAndClear(unsigned flag) { return mAssetFlag.TestAndClear(flag); }
@@ -66,8 +76,12 @@ namespace UPO
 
 
 		bool Save();
+		//save asset to
+		bool SaveTo(Stream&);
+
 		bool IsDirty() const { return FlagTest(EAssetFlag::EAF_Dirty); }
-		
+		void MarkDirty() { FlagSet(EAssetFlag::EAF_Dirty); }
+
 		void IsOwnedBy(World*) {}
 		void AddOwner(World*) {}
 		void RemoveOwner(World*) {}

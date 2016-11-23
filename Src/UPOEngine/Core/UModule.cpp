@@ -3,9 +3,42 @@
 #ifdef UPLATFORM_WIN
 #include <windows.h>
 #endif
+#ifdef UPLATFORM_LINUX
+#include <dlfcn.h>
+#endif
 
 namespace UPO
 {
+#ifdef UPLATFORM_WIN
+	void* ULoadModule(const char* filename)
+	{
+		return reinterpret_cast<HMODULE>(::LoadLibraryA(filename));
+	}
+	bool UFreeModule(void* handle)
+	{
+		return ::FreeLibrary(reinterpret_cast<HMODULE>(handle)) != 0;
+	}
+	void* UGetProcAddress(void* handle, const char* name)
+	{
+		return (void*)::GetProcAddress(reinterpret_cast<HMODULE>(handle), name);
+	}
+#endif
+
+#ifdef UPLATFORM_LINUX
+	void* ULoadModule(const char* filename)
+	{
+		return dlopen(filename, RTLD_GLOBAL);
+	}
+	bool UFreeModule(void* handle)
+	{
+		//On success, dlclose() returns 0; on error, it returns a nonzerovalue.
+		return dlclose(handle) == 0;
+	}
+	void* UGetProcAddress(void* handle, const char* name)
+	{
+		return (void*)dlsym(handle, name);
+	}
+#endif
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -39,12 +72,11 @@ namespace UPO
 
 		ULOG_MESSAGE("loading module [%s] started...", moduleName);
 
-#ifdef UPLATFORM_WIN
-		HMODULE hModuleHandle = ::LoadLibraryA(moduleName);
-		if (hModuleHandle != NULL)
+
+		if (void* handle = ULoadModule(moduleName))
 		{
-			mCurrentLoadingModule->mHandle = (void*)hModuleHandle;
-			Proc_OnModuleLoaded loadProc = (Proc_OnModuleLoaded)::GetProcAddress(hModuleHandle, MODULE_LOADED_FUNCTION_NAME);
+			mCurrentLoadingModule->mHandle = handle;
+			Proc_OnModuleLoaded loadProc = (Proc_OnModuleLoaded) UGetProcAddress(handle, MODULE_LOADED_FUNCTION_NAME);
 			if (loadProc)
 				loadProc();
 
@@ -62,7 +94,7 @@ namespace UPO
 			ULOG_ERROR("Failed to load modue [%s]", moduleName);
 			return nullptr;
 		}
-#endif
+
 		
 
 	}
@@ -76,12 +108,11 @@ namespace UPO
 
 		mCurrentUnloadingModule = module;
 
-#ifdef UPLATFORM_WIN
-		HMODULE handle = (HMODULE)module->mHandle;
-		Proc_OnModuleUnoaded unloadProc = (Proc_OnModuleUnoaded) ::GetProcAddress(handle, MODULE_UNLOADED_FUNCTION_NAME);
-		if (unloadProc) unloadProc();
+		Proc_OnModuleUnoaded unloadProc = (Proc_OnModuleUnoaded) UGetProcAddress(module->mHandle, MODULE_UNLOADED_FUNCTION_NAME);
+		if (unloadProc) 
+			unloadProc();
 
-		if (::FreeLibrary(handle))
+		if (UFreeModule(module->mHandle))
 		{
 			mLoadedModules.RemoveAtSwap(findIndex);
 			ULOG_SUCCESS("Module %s unloaded successfully", module->mName.CStr());
@@ -95,7 +126,6 @@ namespace UPO
 			mCurrentUnloadingModule = nullptr;
 			return false;
 		}
-#endif
 	}
 
 	//////////////////////////////////////////////////////////////////////////

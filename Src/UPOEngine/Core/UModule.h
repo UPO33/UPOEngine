@@ -42,14 +42,16 @@ namespace UPO
 		ModuleSys();
 		~ModuleSys();
 
-		Module* LoadModule(const char* moduleName);
+		Module* LoadModule(const char* filename);
 		bool UnloadModule(Module* module);
 		void UnloadAll();
-		bool IsLoaded(const char* moduleName);
+		bool IsLoaded(const char* filename);
 		Module* FindByName(const char* moduleName);
 
 		const TArray<Module*>& GetLoadedModules() const { return mLoadedModules; }
 		Module* GetCurrentLoadingModule() const { return mCurrentLoadingModule; }
 		Module* GetCurrentUnloadingModule() const { return mCurrentUnloadingModule; }
 	};
+
+	inline ModuleSys* GModuleSys() { return ModuleSys::Get(); }
 };

@@ -7,6 +7,7 @@
 #include "UAssetViewer.h"
 #include "UMainViewport.h"
 #include "UEntityBrowser.h"
+#include "UProject.h"
 
 namespace UPOEd
 {
@@ -61,7 +62,26 @@ namespace UPOEd
 		EntityBrowserDW* mEntityBrowser = nullptr;
 
 		World*	mActiveWorld = nullptr;
-		
+		World*  mPlayingWorld = nullptr;
+
+		QAction* mActionOpenProject = nullptr;
+		QAction* mActionNewProject = nullptr;
+		QAction* mActionSaveProject = nullptr;
+
+		ProjectInfo* mProject = nullptr;
+
+		void EVOpenProject(bool);
+		void EVNewProject(bool);
+		void EVSaveProject(bool);
+
+		void InitWidgets();
+		void InitActions();
+
+		//create a default project in 'path' with specified 'projectName' and return the absolute path of the project file
+		QString CreateDefaultProjectIn(const QString& path, const QString& projectName);
+
+		bool OpenProject(const QString& projectFilePath);
+		void CloseCurrentProject();
 	public:
 		MainWindow(QWidget *parent = nullptr, Qt::WindowFlags flags = Qt::WindowFlags());
 		float mTickCounter = 0;

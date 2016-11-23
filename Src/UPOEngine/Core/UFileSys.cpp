@@ -139,7 +139,32 @@ namespace UPO
 		return std::remove(filename) == 0;
 	}
 
+	String PathGetExt(const String& path)
+	{
+		unsigned index = path.FindRN('.');
+		if (index == ~0) return String::Empty;
+		if (index + 1 == path.Length()) return String::Empty;
+		return path.SubStr(index + 1);
 
-	
+	}
+	//////////////////////////////////////////////////////////////////////////
+	String PathGetFileName(const String& path, bool includingExt)
+	{
+		unsigned index = path.FindRN('/');
+		if (index == ~0)
+			index = path.FindRN('\\');
+		if (index == ~0) return String::Empty;
+		index++;
+		if (includingExt)
+		{
+			return path.SubStr(index);
+		}
+		else
+		{
+			unsigned dotIndex = path.FindRN('.');
+			if (dotIndex == ~0) return path.SubStr(index);
+			else return path.SubStr(index, dotIndex - index);
+		}
+	}
 
 };

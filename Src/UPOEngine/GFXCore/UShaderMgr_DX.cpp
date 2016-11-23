@@ -16,7 +16,7 @@ namespace UPO
 
 		static D3D_SHADER_MACRO* GetDefinesDX(const ShaderMacroDefinition* defs)
 		{
-
+			
 		}
 		static void FixShaderPath(const char* shaderFilename, char outFullFilename[256])
 		{
