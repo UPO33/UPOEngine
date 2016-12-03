@@ -55,6 +55,8 @@ namespace UPO
 		Entity*		mRootEntity;
 		TArray<Entity*>		mRootEntities;
 
+		TArray<Entity*>		mStaticEntities;
+
 		unsigned MAX_DESTROYED_ENTITY = 16;
 
 	public:

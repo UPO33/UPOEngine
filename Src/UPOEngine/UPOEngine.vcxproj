@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClInclude Include="Core\UArray.h" />
     <ClInclude Include="Core\UBasic.h" />
+    <ClInclude Include="Core\UBitArray.h" />
     <ClInclude Include="Core\UBuffer.h" />
     <ClInclude Include="Core\UCore.h" />
     <ClInclude Include="Core\UDelegate.h" />
@@ -30,11 +31,13 @@
     <ClInclude Include="Core\UConfig.h" />
     <ClInclude Include="Core\ULog.h" />
     <ClInclude Include="Core\UMap.h" />
+    <ClInclude Include="Core\UMatrix.h" />
     <ClInclude Include="Core\UMemory.h" />
     <ClInclude Include="Core\UModule.h" />
     <ClInclude Include="Core\UName.h" />
     <ClInclude Include="Core\UQueue.h" />
     <ClInclude Include="Core\URefCount.h" />
+    <ClInclude Include="Core\USparseArray.h" />
     <ClInclude Include="Core\UStream.h" />
     <ClInclude Include="Core\UString.h" />
     <ClInclude Include="Core\UThreading.h" />
@@ -93,6 +96,7 @@
   <ItemGroup>
     <ClCompile Include="Core\UArray.cpp" />
     <ClCompile Include="Core\UBasic.cpp" />
+    <ClCompile Include="Core\UBitArray.cpp" />
     <ClCompile Include="Core\UBuffer.cpp" />
     <ClCompile Include="Core\UEngineConfig.cpp" />
     <ClCompile Include="Core\UFileSys.cpp" />
@@ -101,6 +105,7 @@
     <ClCompile Include="Core\UConfig.cpp" />
     <ClCompile Include="Core\ULog.cpp" />
     <ClCompile Include="Core\UMap.cpp" />
+    <ClCompile Include="Core\UMatrix.cpp" />
     <ClCompile Include="Core\UModule.cpp" />
     <ClCompile Include="Core\UName.cpp" />
     <ClCompile Include="Core\UStream.cpp" />

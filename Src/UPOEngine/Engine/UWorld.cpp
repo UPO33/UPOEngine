@@ -122,6 +122,14 @@ namespace UPO
 					return true;
 				}
 			});
+			
+			mRootEntities.RemoveIf([&](Entity* ent) {
+				return !(ent->FlagTest(EEF_Alive));
+			});
+			
+
+			mNumDestroyedEntity = 0;
+			mNumTickSinceLastDestroy = 0;
 		}
 	}
 

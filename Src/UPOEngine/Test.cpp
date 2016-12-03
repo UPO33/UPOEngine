@@ -150,6 +150,21 @@ namespace UPO
 	//////////////////////////////////////////////////////////////////////////
 	UAPI void TestMain(int argc, const char** argv)
 	{
+		BitArray ba;
+		ba.Add(true);
+		ba.Add(false);
+		ba.Add(false);
+		if (ba[0])
+		{
+			ba[1] = true;
+		}
+		ba.RemoveAtSwap(0);
+		ba.ForEach([](bool b)
+		{
+			ULOG_MESSAGE("%i", b ? 1 : 0);
+		});
+		//////
+
 		ParseCommandLine(argc, argv);
 
 		gIsEditor = false;
