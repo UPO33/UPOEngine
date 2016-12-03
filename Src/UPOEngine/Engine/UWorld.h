@@ -2,6 +2,8 @@
 
 #include "UEntity.h"
 #include "UAsset.h"
+#include "UWorldTimer.h"
+#include "UWorldTicking.h"
 
 namespace UPO
 {
@@ -59,7 +61,13 @@ namespace UPO
 
 		unsigned MAX_DESTROYED_ENTITY = 16;
 
+		WorldTicking		mTicking;
+		WorldTimer			mTimer;
+
 	public:
+		WorldTicking& GetTicking() { return mTicking; }
+		WorldTimer& GetTimer() { return mTimer; }
+
 		void SetPlaying(bool playing);
 
 		void AddEntityToList(Entity* ent);

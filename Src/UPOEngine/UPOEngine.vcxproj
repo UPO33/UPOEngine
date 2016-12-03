@@ -56,6 +56,8 @@
     <ClInclude Include="Engine\UInput.h" />
     <ClInclude Include="Engine\UTestAsset.h" />
     <ClInclude Include="Engine\UTexture2D.h" />
+    <ClInclude Include="Engine\UWorldTicking.h" />
+    <ClInclude Include="Engine\UWorldTimer.h" />
     <ClInclude Include="Engine\UWorld.h" />
     <ClInclude Include="Engine\UBehavior.h" />
     <ClInclude Include="Engine\UWorldSetting.h" />
@@ -125,6 +127,8 @@
     <ClCompile Include="Engine\UInput.cpp" />
     <ClCompile Include="Engine\UTestAsset.cpp" />
     <ClCompile Include="Engine\UTexture2D.cpp" />
+    <ClCompile Include="Engine\UWorldTicking.cpp" />
+    <ClCompile Include="Engine\UWorldTimer.cpp" />
     <ClCompile Include="Engine\UWorld.cpp" />
     <ClCompile Include="Engine\UBehavior.cpp" />
     <ClCompile Include="Engine\UWorldSetting.cpp" />

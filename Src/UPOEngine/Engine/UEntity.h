@@ -21,6 +21,9 @@ namespace UPO
 		EEF_Registered,
 		EEF_OnDestroyWasCalled,
 		EEF_InHell,
+// 		EEF_Tick0Enable,
+// 		EEF_Tick1Enable,
+// 		EEF_Tick2Enable,
 		EEF_Default = EEF_Alive | EEF_Initilized
 	};
 	enum EEndPlayReason
@@ -75,7 +78,7 @@ namespace UPO
 		{
 			mEntityFlag.Clear(flag);
 		}
-		bool FlagTest(unsigned flag)
+		bool FlagTest(unsigned flag) const
 		{
 			return mEntityFlag.Test(flag);
 		}
@@ -90,13 +93,32 @@ namespace UPO
 		virtual void OnTick() {};
 		virtual void OnDestroy() {};
 
+
+
 		virtual void OnRegisterToWorld() {};
 
 		virtual void RegisterToWorld(World* world);
 
 		virtual void OnParentChanged();
 
+		bool IsTickEnable() const
+		{ 
+			return FlagTest(EEF_Tickable); 
+		}
+		void SetTickEnable(bool enable) 
+		{
+			if (!IsAlive() || IsTickEnable() == enable) return;
 
+			if (enable)
+			{
+				FlagSet(EEF_Tickable);
+				mWorld->GetTicking()->RegTick(this);
+			}
+			else
+			{
+				FlagClear(EEF_Tickable);
+			}
+		}
 		void Destroy();
 
 	private:

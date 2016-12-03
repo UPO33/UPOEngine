@@ -16,7 +16,7 @@ namespace UPO
 		TArray<Element>		mElements;
 		BitArray			mFreeBits;
 		unsigned			mFirstFreeIndex;
-		
+		unsigned			mNumElement;
 
 	public:
 		TSparseArray()
@@ -42,10 +42,6 @@ namespace UPO
 				return tmp;
 			}
 		}
-		size_t AddDefault()
-		{
-
-		}
 		void RemoveAt(size_t index)
 		{
 			UASSERT(IsIndexValid(index));
@@ -66,8 +62,8 @@ namespace UPO
 			mElements.Empty();
 			mFreeBits.Empty();
 		}
-		unsigned NumElement() const {}
-		unsigned Capacity() const {}
+		unsigned NumElement() const { return mNumElement; }
+		unsigned Capacity() const { return mElements.Capacity(); }
 
 		bool IsIndexValid(size_t index) const
 		{
@@ -75,12 +71,11 @@ namespace UPO
 		}
 		template<typename Lambda> void ForEach(Lambda proc)
 		{
-			for (size_t i = 0; i < mFreeBits.Length(); i++)
+			const size_t numBits = mFreeBits.Length();
+			for (size_t i = 0; i < numBits; i++)
 			{
-				if (!mFreeBits[i])
-				{
+				if (!mFreeBits.GetBit(i))
 					proc(mElements[i].mData);
-				}
 			}
 		}
 	};
