@@ -35,6 +35,7 @@
     <ClInclude Include="Core\UMemory.h" />
     <ClInclude Include="Core\UModule.h" />
     <ClInclude Include="Core\UName.h" />
+    <ClInclude Include="Core\UFreeListAllocator.h" />
     <ClInclude Include="Core\UQueue.h" />
     <ClInclude Include="Core\URefCount.h" />
     <ClInclude Include="Core\USparseArray.h" />
@@ -110,6 +111,7 @@
     <ClCompile Include="Core\UMatrix.cpp" />
     <ClCompile Include="Core\UModule.cpp" />
     <ClCompile Include="Core\UName.cpp" />
+    <ClCompile Include="Core\UFreeListAllocator.cpp" />
     <ClCompile Include="Core\UStream.cpp" />
     <ClCompile Include="Core\UString.cpp" />
     <ClCompile Include="Core\UThreading.cpp" />

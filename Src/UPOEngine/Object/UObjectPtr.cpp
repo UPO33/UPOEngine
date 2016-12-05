@@ -1,9 +1,10 @@
 #include "UObjectPtr.h"
 #include "UObject.h"
+#include "../Core/UFreeListAllocator.h"
 
 namespace UPO
 {
-
+#if 0
 	//////////////////////////////////////////////////////////////////////////
 	struct ObjectPtrDataPack
 	{
@@ -81,22 +82,27 @@ namespace UPO
 	};
 
 	ObjectPtrContext gObjectPtrContext;
+#endif
 
 	//////////////////////////////////////////////////////////////////////////
-	ObjectRefData ObjectRefData::NullRef = { nullptr, 0xFFff };
+	ObjectRefData ObjectRefData::NullRef = { ~0U, nullptr };
+
+	FreeListAllocator gObjPtrAllocator { sizeof(ObjectRefData), 256 };
 
 	//////////////////////////////////////////////////////////////////////////
 	ObjectRefData* ObjectRefData::GetNew(Object* owner)
 	{
-		ObjectRefData* ret = gObjectPtrContext.GetFreeInstance();
-		ret->mObject = owner;
-		ret->mRefCount = 0;
-		return ret;
+		return new (gObjPtrAllocator.Alloc()) ObjectRefData;
+// 		ObjectRefData* ret = gObjectPtrContext.GetFreeInstance();
+// 		ret->mObject = owner;
+// 		ret->mRefCount = 0;
+// 		return ret;
 	}
 	//////////////////////////////////////////////////////////////////////////
 	void ObjectRefData::Free(ObjectRefData* ptrData)
 	{
-		gObjectPtrContext.FreeInstance(ptrData);
+		gObjPtrAllocator.Free(ptrData);
+// 		gObjectPtrContext.FreeInstance(ptrData);
 	}
 
 };

@@ -11,6 +11,8 @@
 #define ULOGVAR_VEC3(v3) ULOG_WARN("%s %f  %f  %f", #v3, v3.mX, v3.mY, v3.mZ)
 #define ULOGVAR_STR(str) ULOG_WARN("%s %s", #str, str.CStr() ? str.CStr() : "")
 
+#include "Engine/UWorldTimer.h"
+#include "Core/USparseArray.h"
 
 namespace UPO
 {
@@ -146,23 +148,47 @@ namespace UPO
 		}
 
 	}
+	struct TestStrcu
+	{
+		void Func()
+		{
 
+		}
+	};
+	void Func4()
+	{}
+	void DebugTest()
+	{
+		using Pattern = void(Void::*)();
+		Pattern ff = (Pattern)DebugTest;
+		TMFP<void> asd;
+		asd = &TestStrcu::Func;
+		auto sss = &TestStrcu::Func;
+		asd = sss;
+		int x;
+		WorldTimer timer;
+		timer.StartTimer(0, 0, nullptr, [x]() {});
+		timer.StartTimer(0, 0, nullptr, &TestStrcu::Func);
+	}
 	//////////////////////////////////////////////////////////////////////////
 	UAPI void TestMain(int argc, const char** argv)
 	{
-		BitArray ba;
-		ba.Add(true);
-		ba.Add(false);
-		ba.Add(false);
-		if (ba[0])
-		{
-			ba[1] = true;
-		}
-		ba.RemoveAtSwap(0);
-		ba.ForEach([](bool b)
-		{
-			ULOG_MESSAGE("%i", b ? 1 : 0);
-		});
+
+		DebugTest();
+
+// 		BitArray ba;
+// 		ba.Add(true);
+// 		ba.Add(false);
+// 		ba.Add(false);
+// 		if (ba[0])
+// 		{
+// 			ba[1] = true;
+// 		}
+// 		ba.RemoveAtSwap(0);
+// 		ba.ForEach([](bool b)
+// 		{
+// 			ULOG_MESSAGE("%i", b ? 1 : 0);
+// 		});
 		//////
 
 		ParseCommandLine(argc, argv);

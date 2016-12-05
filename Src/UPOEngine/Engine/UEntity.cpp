@@ -188,6 +188,21 @@ namespace UPO
 	}
 
 
+	//////////////////////////////////////////////////////////////////////////
+	void Entity::SetTickEnable(bool enable)
+	{
+		if (!IsAlive() || IsTickEnable() == enable) return;
+
+		if (enable)
+		{
+			FlagSet(EEF_Tickable);
+			if(mWorld) mWorld->GetTicking().RegTick(this);
+		}
+		else
+		{
+			FlagClear(EEF_Tickable);
+		}
+	}
 
 	//////////////////////////////////////////////////////////////////////////
 	void Entity::Destroy()

@@ -27,7 +27,7 @@ namespace UPO
 
 	private:
 		static size_t const NUM_BITS = sizeof(size_t) * 8;
-		static size_t const NUM_BYTE = sizeof(size_t);
+		static size_t const NUM_BYTES = sizeof(size_t);
 
 		size_t*				mBits;
 		size_t				mNumBit;

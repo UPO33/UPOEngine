@@ -15,8 +15,11 @@ namespace UPO
 			Entity* newEntity = NewObject<Entity>(param.mClass);
 			newEntity->Init(param.mParent, this);
 
-			newEntity->OnConstruct();
+			if (newEntity->FlagTest(EEF_Tickable))
+				GetTicking().RegTick(newEntity);
 
+			newEntity->OnConstruct();
+			
 			if (mIsPlaying)
 			{
 				newEntity->FlagSet(EEF_BeginPlayWasCalled);

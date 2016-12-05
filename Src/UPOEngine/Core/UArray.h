@@ -465,12 +465,18 @@ namespace UPO
 		}
 		bool HasElement(const T& element) const { return Find(element) != ~0; }
 
+		template<typename Lambda> bool HasElementLambda(Lambda compareLambda) const
+		{
+			for (size_t i = 0; i < mLength; i++)
+				if (compareLambda(mElements[i])) return true;
+			return false;
+		}
 		template < typename Lambda> void ForEach(Lambda proc)
 		{
 			for (size_t i = 0; i < mLength; i++)
 				proc(mElements[i]);
 		}
-		//POD only
+		//[](T&){ return bool remove or not; }
 		template<typename Lambda> void RemoveIf(Lambda proc)
 		{
 			size_t j = 0;
@@ -478,6 +484,7 @@ namespace UPO
 			{
 				if (proc(mElements[i]))
 				{
+					mElements[i].~T();
 					continue;
 				}
 				else

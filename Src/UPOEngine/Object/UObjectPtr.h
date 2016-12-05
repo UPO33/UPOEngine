@@ -15,8 +15,8 @@ namespace UPO
 		{
 			struct
 			{
-				Object*		mObject;
-				unsigned	mRefCount;
+				size_t	mRefCount;
+				Object*	mObject;
 			};
 			ObjectRefData* mNextFree;
 		};

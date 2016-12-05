@@ -18,5 +18,6 @@
 #include "UConfig.h"
 #include "UEngineConfig.h"
 #include "URefCount.h"
-#include "USparseArray.h"
+// #include "USparseArray.h"
 #include "UBitArray.h"
+#include "UFreeListAllocator.h"

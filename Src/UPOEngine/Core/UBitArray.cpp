@@ -27,7 +27,7 @@ namespace UPO
 
 		if (mBits)
 		{
-			mBits = (size_t*)MemRealloc(mBits, newCapacity / 8 + NUM_BYTE);
+			mBits = (size_t*)MemRealloc(mBits, newCapacity / 8 + NUM_BYTES);
 			UASSERT(mBits);
 			mCapacity = newCapacity;
 			mNumBit = Min(mNumBit, mCapacity * NUM_BITS);
@@ -35,7 +35,7 @@ namespace UPO
 		else
 		{
 			UASSERT(mNumBit == 0);
-			mBits = (size_t*)MemAlloc(newCapacity / 8 + NUM_BYTE);
+			mBits = (size_t*)MemAlloc(newCapacity / 8 + NUM_BYTES);
 			UASSERT(mBits);
 			mCapacity = newCapacity;
 		}

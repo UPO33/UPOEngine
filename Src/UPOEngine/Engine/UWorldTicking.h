@@ -9,10 +9,10 @@ namespace UPO
 	{
 		TArray<Entity*>		mTickEnableEntities;
 		TArray<Entity*>		mPendingAddEntities;
-		int					mCurTicking = -1;
-		
-		bool				mNeedsCleanup = false;
+		int					mCurTickingIndex = -1;
+		unsigned			mTickCounterReintegrate = 0;
 
+	public:
 		WorldTicking()
 		{
 			mTickEnableEntities.SetCapacity(1024);
@@ -24,7 +24,7 @@ namespace UPO
 		}
 		bool IsTicking()
 		{
-			return mCurTicking != -1;
+			return mCurTickingIndex != -1;
 		}
 		void RegTick(Entity* entity)
 		{
@@ -42,32 +42,47 @@ namespace UPO
 				mTickEnableEntities.Add(entity);
 			}
 		}
+		void UnregTick(Entity* entity)
+		{
+			UASSERT(entity);
+			if (IsTicking())
+			{
 
+			}
+			else
+			{
+				Reintegrate();
+			}
+		}
 
 		void Tick()
 		{
-			const size_t numTick = mTickEnableEntities.Length();
-			for (mCurTicking = 0; mCurTicking < numTick; mCurTicking++)
+			const int numTick = mTickEnableEntities.Length();
+			for (mCurTickingIndex = 0; mCurTickingIndex < numTick; mCurTickingIndex++)
 			{
-				Entity* ent = mTickEnableEntities[mCurTicking];
+				Entity* ent = mTickEnableEntities[mCurTickingIndex];
 				if (ent->FlagTest(EEF_Alive | EEF_Tickable))
 				{
 					ent->OnTick();
 				}
 			}
-
-			Cleanup();
-		}
-		void Cleanup()
-		{
-			bool bClean = mNeedsCleanup;
-
-			if (mPendingAddEntities.Length())
-				bClean = true;
 			
-			if (!bClean) return;
+			mCurTickingIndex = -1;
+			mTickCounterReintegrate++;
 
+			if (NeedsReintegrate())
+				Reintegrate();
+		}
+		//////////////////////////////////////////////////////////////////////////
+		bool NeedsReintegrate()
+		{
+			const unsigned CLEAN_PER_FRAME = 50;
 
+			return mTickCounterReintegrate > CLEAN_PER_FRAME || mPendingAddEntities.Length();
+		}
+		//////////////////////////////////////////////////////////////////////////
+		void Reintegrate()
+		{
 			mTickEnableEntities.RemoveIf([](Entity* ent)
 			{
 				if (ent->FlagTest(EEF_Alive | EEF_Tickable)) return false;
@@ -75,7 +90,10 @@ namespace UPO
 			});
 
 			FetchPendingEntities();
+
+			mTickCounterReintegrate = 0;
 		}
+		//////////////////////////////////////////////////////////////////////////
 		void FetchPendingEntities()
 		{
 			for (Entity* ent : mPendingAddEntities)

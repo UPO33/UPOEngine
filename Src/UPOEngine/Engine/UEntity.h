@@ -105,20 +105,7 @@ namespace UPO
 		{ 
 			return FlagTest(EEF_Tickable); 
 		}
-		void SetTickEnable(bool enable) 
-		{
-			if (!IsAlive() || IsTickEnable() == enable) return;
-
-			if (enable)
-			{
-				FlagSet(EEF_Tickable);
-				mWorld->GetTicking()->RegTick(this);
-			}
-			else
-			{
-				FlagClear(EEF_Tickable);
-			}
-		}
+		void SetTickEnable(bool enable);
 		void Destroy();
 
 	private:
