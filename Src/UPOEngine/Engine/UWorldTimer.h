@@ -9,7 +9,7 @@ namespace UPO
 	class WorldTimer;
 	class TimerEntry;
 	class TimerHandle;
-
+	class World;
 
 	//////////////////////////////////////////////////////////////////////////
 	class TimerEntry
@@ -72,7 +72,7 @@ namespace UPO
 	{
 		friend TimerEntry;
 		friend TimerHandle;
-
+		friend World;
 
 		float					mSeconds = 0;
 		TArray<TimerEntry*>		mTimers;

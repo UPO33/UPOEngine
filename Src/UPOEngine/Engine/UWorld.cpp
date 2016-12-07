@@ -15,9 +15,6 @@ namespace UPO
 			Entity* newEntity = NewObject<Entity>(param.mClass);
 			newEntity->Init(param.mParent, this);
 
-			if (newEntity->FlagTest(EEF_Tickable))
-				GetTicking().RegTick(newEntity);
-
 			newEntity->OnConstruct();
 			
 			if (mIsPlaying)
@@ -101,13 +98,8 @@ namespace UPO
 
 	void World::PerformTick()
 	{
-		size_t len = mEntities.Length();
-		for (size_t i = 0; i < len; i++)
-		{
-			Entity* ent = mEntities[i];
-			if (ent->FlagTest(EEF_Alive | EEF_Initilized | EEF_BeginPlayWasCalled | EEF_Tickable))
-				ent->OnTick();
-		}
+		mTimer.Tick(mDeltaTime);
+		mTicking.Tick(mDeltaTime);
 	}
 
 	void World::KillDestroyedEntities()
@@ -159,6 +151,38 @@ namespace UPO
 			mDoEndPlay = true;
 			ULOG_MESSAGE("world stop");
 		}
+	}
+
+	void World::SetPlaying()
+	{
+		if (mIsPlaying) return;
+
+		mIsPlaying = true;
+		mDoBeginPlay = true;
+	}
+
+	void World::Pause()
+	{
+		if (mIsPlaying && !mIsPaused)
+		{
+			mIsPaused = true;
+		}
+	}
+
+	void World::Resume()
+	{
+		if (mIsPlaying && mIsPaused)
+		{
+			mIsPaused = false;
+		}
+	}
+
+	void World::StopPlaying()
+	{
+		if (!mIsPlaying) return;
+
+		mIsPlaying = false;
+		mDoEndPlay = true;
 	}
 
 	void World::AddEntityToList(Entity* ent)

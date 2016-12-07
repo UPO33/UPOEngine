@@ -40,6 +40,7 @@ namespace UPO
 	private:
 		TArray<Entity*>			mEntities;
 		bool					mIsPlaying = false;
+		bool					mIsPaused = false;
 		bool					mIsFirstTick = false;
 		WorldTickResult			mCurTickResult;
 		float					mSecondsSincePlay = 0;
@@ -64,11 +65,17 @@ namespace UPO
 		WorldTicking		mTicking;
 		WorldTimer			mTimer;
 
-	public:
-		WorldTicking& GetTicking() { return mTicking; }
-		WorldTimer& GetTimer() { return mTimer; }
+		float	mDeltaTime = 0;
 
-		void SetPlaying(bool playing);
+	public:
+		WorldTicking* GetTicking() { return &mTicking; }
+		WorldTimer* GetTimer() { return &mTimer; }
+
+
+		void SetPlaying();
+		void Pause();
+		void Resume();
+		void StopPlaying();
 
 		void AddEntityToList(Entity* ent);
 		//////////////////////////////////////////////////////////////////////////

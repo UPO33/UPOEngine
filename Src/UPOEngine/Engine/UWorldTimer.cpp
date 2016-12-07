@@ -20,7 +20,6 @@ namespace UPO
 		newEntry->mStdFunc = nullptr;
 		newEntry->mMemFunc = nullptr;
 		newEntry->mFunc = nullptr;
-		newEntry->mFireTime = mSeconds;
 		newEntry->mIsPaused = false;
 		newEntry->mPauseTime = 0;
 		newEntry->mID = GetNewTimerID();
@@ -50,6 +49,7 @@ namespace UPO
 		newEntry->mInterval = intervalSeconds;
 		newEntry->mNumRepeat = numRepeat;
 		newEntry->mFunc = proc;
+		newEntry->mFireTime = mSeconds + intervalSeconds;
 		return TimerHandle(newEntry);
 	}
 
@@ -62,6 +62,7 @@ namespace UPO
 		newEntry->mNumRepeat = numRepeat;
 		newEntry->mObject = object;
 		newEntry->mMemFunc = proc;
+		newEntry->mFireTime = mSeconds + intervalSeconds;
 		return TimerHandle(newEntry);
 	}
 
@@ -74,7 +75,7 @@ namespace UPO
 		newEntry->mNumRepeat = numRepeat;
 		newEntry->mObject = object;
 		newEntry->mStdFunc = proc;
-
+		newEntry->mFireTime = mSeconds + intervalSeconds;
 		return TimerHandle(newEntry);
 	}
 

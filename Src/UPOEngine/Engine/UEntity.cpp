@@ -16,6 +16,9 @@ namespace UPO
 
 		mName = NameEntity;
 
+		mTickRegistered = false;
+		mTickPendingAdd = false;
+
 	}
 	//////////////////////////////////////////////////////////////////////////
 	Entity* Entity::GetParent() const
@@ -176,6 +179,14 @@ namespace UPO
 		mWorld->mEntities.Add(this);
 	}
 
+	void Entity::OnConstruct()
+	{
+
+	}
+	void Entity::OnBeginPlay()
+	{
+		mWorld->GetTicking()->AdjustEntityTick(this);
+	}
 	void Entity::RegisterToWorld(World* world)
 	{
 		UASSERT(mWorld == nullptr);
@@ -192,15 +203,11 @@ namespace UPO
 	void Entity::SetTickEnable(bool enable)
 	{
 		if (!IsAlive() || IsTickEnable() == enable) return;
+		enable ? FlagSet(EEF_Tickable) : FlagClear(EEF_Tickable);
 
-		if (enable)
+		if (FlagTest(EEF_BeginPlayWasCalled))
 		{
-			FlagSet(EEF_Tickable);
-			if(mWorld) mWorld->GetTicking().RegTick(this);
-		}
-		else
-		{
-			FlagClear(EEF_Tickable);
+			mWorld->GetTicking()->AdjustEntityTick(this);
 		}
 	}
 
@@ -263,4 +270,7 @@ namespace UPO
 
 	UCLASS_BEGIN_IMPL(Entity)
 	UCLASS_END_IMPL(Entity)
+
+
+
 };

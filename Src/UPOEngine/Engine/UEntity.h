@@ -9,6 +9,7 @@ namespace UPO
 {
 	//////////////////////////////////////////////////////////////////////////
 	class World;
+	class WorldTicking;
 
 	//////////////////////////////////////////////////////////////////////////
 	enum EEntityFlag
@@ -39,6 +40,7 @@ namespace UPO
 
 
 		friend World;
+		friend WorldTicking;
 
 		World*			mWorld;
 		Flag			mEntityFlag;
@@ -54,7 +56,8 @@ namespace UPO
 		Name		mName;
 		unsigned	mNumChild;
 		unsigned	mIndexInWorld;
-
+		unsigned	mTickRegistered : 1;
+		unsigned	mTickPendingAdd : 1;
 	public:
 		Entity();
 
@@ -87,8 +90,8 @@ namespace UPO
 			return mEntityFlag.TestAndClear(flag);
 		}
 		//is called right after constructor, world is valid in this function
-		virtual void OnConstruct() {};
-		virtual void OnBeginPlay() {};
+		virtual void OnConstruct();
+		virtual void OnBeginPlay();
 		virtual void OnEndPlay(EEndPlayReason) {};
 		virtual void OnTick() {};
 		virtual void OnDestroy() {};

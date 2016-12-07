@@ -5,8 +5,9 @@
 
 namespace UPO
 {
-
-
+	unsigned	gGameTickCounter = 0;
+	unsigned	gRenderTickCounter = 0;
+	
 	struct 
 	{
 		World* mCurrentWorld;
@@ -76,11 +77,14 @@ namespace UPO
 				mCurrentWorld->SingleTick(WorldTickResult());
 			}
 
+			gGameTickCounter++;
+
 			return result;
 		}
 		bool RTick()
 		{
 			return mRenderer->RenderFrame();
+			gRenderTickCounter++;
 		}
 
 	} gEngine;
