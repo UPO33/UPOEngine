@@ -5,10 +5,19 @@
 namespace UPO
 {
 	//////////////////////////////////////////////////////////////////////////
-	class UAPI Material : public Asset
+	class UAPI AMaterialRS
+	{
+
+	};
+
+	//////////////////////////////////////////////////////////////////////////
+	class UAPI AMaterial : public Asset
 	{
 		/*
 		USMesh*		mPreviewMesh;
 		*/
+		AMaterialRS*	mRS = nullptr;
+	public:
+		AMaterialRS* GetRS() const { return mRS; }
 	};
 };

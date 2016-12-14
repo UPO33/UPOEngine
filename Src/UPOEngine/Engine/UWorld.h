@@ -9,6 +9,8 @@ namespace UPO
 {
 	//////////////////////////////////////////////////////////////////////////
 	class AWorldSetting;
+	class IWorldRS;
+	class WorldRS;
 
 	//////////////////////////////////////////////////////////////////////////
 	struct WorldTickResult
@@ -36,6 +38,7 @@ namespace UPO
 		UCLASS(World, Asset)
 
 		friend Entity;
+		friend WorldRS;
 
 	private:
 		TArray<Entity*>			mEntities;
@@ -44,19 +47,19 @@ namespace UPO
 		bool					mIsFirstTick = false;
 		WorldTickResult			mCurTickResult;
 		float					mSecondsSincePlay = 0;
-		TimeCounterHigh			mTimerSincePlay;
+		ChronometerAccurate		mTimerSincePlay;
 		bool					mIsInTick = false;
 		bool					mDoExitPlay = false;
 		AWorldSetting*			mWorldSetting = nullptr;
 
 		unsigned				mNumDestroyedEntity = 0;
 		unsigned				mNumTickSinceLastDestroy = 0;
+		
 
 		bool mDoBeginPlay = false;
 		bool mDoEndPlay = false;
 		
 		Entity*		mRootEntity;
-		TArray<Entity*>		mRootEntities;
 
 		TArray<Entity*>		mStaticEntities;
 
@@ -66,18 +69,42 @@ namespace UPO
 		WorldTimer			mTimer;
 
 		float	mDeltaTime = 0;
+		float	mDeltaScale = 1;
 
+		bool	mIsGamePaused = false;
+
+		TArray<Entity*>		mEntitiesPendingKill;
+		TArray<Entity*>		mEntitiesRenderDataDirty;
+		IWorldRS*			mRS = nullptr;
+		TArray<Entity*>		mEntitiesPendingAddToRS;
+		TArray<EntityRS*>	mEntitiesPendingDestroyFromRS;
+		Event				mFetchCompleted;
+		Event				mTickEndEvent;
+		CriticalSection		mIntersection;
+
+		void Intersection();
+
+		void KillEntity(Entity*);
+		void CheckPendingKills();
 	public:
 		WorldTicking* GetTicking() { return &mTicking; }
 		WorldTimer* GetTimer() { return &mTimer; }
 
+		World();
+		~World();
 
 		void SetPlaying();
-		void Pause();
-		void Resume();
+		void PausePlaying();
+		void ResumePlaying();
 		void StopPlaying();
 
-		void AddEntityToList(Entity* ent);
+		void PauseGame();
+		void ResumeGame();
+
+		void SetDeltaScale(float scale) { mDeltaScale = scale; }
+		float GetDeltaScale() const { return mDeltaScale; }
+		float GetDeltaTime() const { return mDeltaScale; }
+
 		//////////////////////////////////////////////////////////////////////////
 		Entity* CreateEntity(EntityCreationParam& param);
 		//////////////////////////////////////////////////////////////////////////
@@ -94,12 +121,23 @@ namespace UPO
 		void IncCemetery() { mNumDestroyedEntity++; }
 
 		Entity* GetRootEntity();
-		const TArray<Entity*>& GetRootEntities() const { return mRootEntities; }
+
+		void Release();
 	};
 	//////////////////////////////////////////////////////////////////////////
 // 	class Renderer;
 
+	class IWorldRS
+	{
+	public:
+		World* mGS;
 
+		IWorldRS(World* gs) : mGS(gs) {}
+
+		//get Destroyed entities in this frame
+		virtual void FetchDestroyedEntities(TArray<Entity*>& entities) {}
+		virtual void PerformFetch() {}
+	};
 	//////////////////////////////////////////////////////////////////////////
 // 	class EntityCamera
 // 	{

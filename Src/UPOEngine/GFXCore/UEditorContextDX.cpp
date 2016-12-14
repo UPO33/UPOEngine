@@ -4,6 +4,7 @@
 
 namespace UPO
 {
+#if 0
 	bool GFXEditorContextDX::Init(InitParam param)
 	{
 		mVSyncEnable = GEngineConfig()->AsBool("GFX.VSync");
@@ -178,7 +179,7 @@ namespace UPO
 	}
 
 
-	bool GFXEditorContextDX::Resize(unsigned newW, unsigned newH)
+	bool GFXEditorContextDX::Resize(const Vec2I& newsize)
 	{
 		mDXDeviceContext->OMSetRenderTargets(0, 0, 0);
 
@@ -266,5 +267,5 @@ namespace UPO
 	{
 		return mBackBufferTexture2D;
 	}
-
+#endif
 };

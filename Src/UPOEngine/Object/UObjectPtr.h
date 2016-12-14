@@ -109,4 +109,6 @@ namespace UPO
 		T* operator -> () const { return (T*)mRefData->mObject; }
 		T* Get() const { return (T*)mRefData->mObject; }
 	};
+
+	typedef TObjectPtr<Object> ObjectPtr;
 };

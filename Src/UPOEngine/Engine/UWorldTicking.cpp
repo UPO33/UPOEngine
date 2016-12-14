@@ -11,7 +11,7 @@ namespace UPO
 
 	WorldTicking::~WorldTicking()
 	{
-
+		RemoveAll();
 	}
 
 	void WorldTicking::SetTickEnable(Entity* entity, bool enable)
@@ -38,6 +38,20 @@ namespace UPO
 				mPendingAddEntities.Add(entity);
 			}
 		}
+	}
+
+	void WorldTicking::RemoveAll()
+	{
+		UASSERT(!IsTicking());
+
+		for(Entity* ent : mTickEnableEntities)
+			ent->mTickRegistered = false;
+
+		for (Entity* ent : mPendingAddEntities)
+			ent->mTickPendingAdd = false;
+
+		mTickEnableEntities.RemoveAll();
+		mPendingAddEntities.RemoveAll();
 	}
 
 	void WorldTicking::Tick(float delta)
@@ -76,6 +90,8 @@ namespace UPO
 
 	void WorldTicking::Reintegrate()
 	{
+		UASSERT(!IsTicking());
+
 		mTickEnableEntities.RemoveIf([](Entity* ent)
 		{
 			if (ent->FlagTest(EEF_Alive | EEF_Tickable)) return false;
@@ -86,6 +102,8 @@ namespace UPO
 			}
 
 		});
+
+		mTickCounterReintegrate = 0;
 	}
 
 	void WorldTicking::FetchPendingEntities()

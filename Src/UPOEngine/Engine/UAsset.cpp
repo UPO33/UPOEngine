@@ -24,6 +24,26 @@ namespace UPO
 		OnInit();
 		OnInitRS();
 	}
+
+	void Asset::Release()
+	{
+		if (mAssetFlag.TestAndClear(EAF_Alive))
+		{
+
+		}
+	}
+	void OnContruction()
+	{
+		Enqueue([]()
+		{
+
+		});
+	}
+	void OnDestruction()
+	{
+
+	}
+
 	//////////////////////////////////////////////////////////////////////////
 	Name Asset::GetName() const
 	{
@@ -56,6 +76,43 @@ namespace UPO
 		AssetSys::WriteAssetHeader(stream, mEntry->mID, mEntry->mClassName);
 		ObjectArchive::Save(this, &stream);
 		return true;
+	}
+
+	void Asset::MetaPropertyChanged(PropertyInfo*)
+	{
+	}
+
+	void Asset::AddRef(Object* obj)
+	{
+		ObjectPtr objPtr = obj;
+		if (objPtr)
+		{
+			mRefs.AddUnique(objPtr);
+		}
+	}
+
+	void Asset::RemoveRef(Object* obj)
+	{
+		ObjectPtr objPtr = obj;
+		if (objPtr)
+		{
+			mRefs.RemoveSwap(objPtr);
+		}
+
+
+		//check remove
+		for (size_t i = 0; i < mRefs.Length(); i++)
+		{
+		}
+
+		mRefs.RemoveIf([](ObjectPtr& pobj) { 
+			return pobj.Get() == nullptr;
+		});
+
+		if (mRefs.Length() == 0) // there is no ref
+		{
+
+		}
 	}
 
 	//////////////////////////////////////////////////////////////////////////

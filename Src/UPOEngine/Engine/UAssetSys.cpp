@@ -179,11 +179,11 @@ namespace UPO
 	}
 
 	//////////////////////////////////////////////////////////////////////////
-	Asset* AssetSys::LoadAsset(Name nanme, World* owner)
+	Asset* AssetSys::LoadAsset(Name nanme, Object* ref)
 	{
 		if (AssetEntry* assetItem = FindAsset(nanme))
 		{
-			assetItem->LoadNow(owner);
+			assetItem->LoadNow(ref);
 			return assetItem->GetInstance();
 		}
 		return nullptr;
@@ -426,6 +426,17 @@ namespace UPO
 		return !assetFile.HasError();
 	}
 
+
+	void AssetSys::Tick(float delta)
+	{
+
+	}
+
+	void AssetSys::Frame(float delta)
+	{
+
+	}
+
 	ClassInfo* AssetEntry::GetClassInfo() const
 	{
 		return MetaSys::Get()->FindClass(mClassName);
@@ -472,11 +483,11 @@ namespace UPO
 	}
 
 	//////////////////////////////////////////////////////////////////////////
-	bool AssetEntry::LoadNow(World* owner)
+	bool AssetEntry::LoadNow(Object* ref)
 	{
 		if (Asset* asset = GetInstance()) // is loaded?
 		{
-			asset->AddOwner(owner);
+			asset->AddRef(ref);
 			return true;
 		}
 
@@ -491,7 +502,7 @@ namespace UPO
 				Asset* asset = assetObject->Cast<Asset>();
 				UASSERT(asset);
 				
-				asset->AddOwner(owner);
+				asset->AddRef(ref);
 				asset->mEntry = this;
 
 				mInstance = asset;

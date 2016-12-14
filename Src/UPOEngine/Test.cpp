@@ -13,6 +13,7 @@
 
 #include "Engine/UWorldTimer.h"
 #include "Core/USparseArray.h"
+#include "Core/UMatrix.h"
 
 namespace UPO
 {
@@ -71,6 +72,10 @@ namespace UPO
 	UCLASS_END_IMPL(TestObject)
 
 	//////////////////////////////////////////////////////////////////////////
+
+	//////////////////////////////////////////////////////////////////////////
+
+	//////////////////////////////////////////////////////////////////////////
 	class EngineLauncher : public IEngineInterface
 	{
 		GameWindow* mGameWnd = nullptr;
@@ -109,12 +114,12 @@ namespace UPO
 
 		virtual void OnAfterDeviceCreation() override
 		{
-			UGlobalShader_CompileAll();
+// 			UGlobalShader_CompileAll();
 		}
 
 		virtual void OnBeforeRendererRelease() override
 		{
-			UGlobalShader_ReleaseAll();
+// 			UGlobalShader_ReleaseAll();
 		}
 
 	};
@@ -148,33 +153,36 @@ namespace UPO
 		}
 
 	}
-	struct TestStrcu
-	{
-		void Func()
-		{
 
-		}
-	};
-	void Func4()
-	{}
+#define VECPRINT(v) ULOG_WARN(#v "  %f  %f  %f", v.mX, v.mY, v.mZ)
+
 	void DebugTest()
 	{
-		using Pattern = void(Void::*)();
-		Pattern ff = (Pattern)DebugTest;
-		TMFP<void> asd;
-		asd = &TestStrcu::Func;
-		auto sss = &TestStrcu::Func;
-		asd = sss;
-		int x;
-		WorldTimer timer;
-		timer.StartTimer(0, 0, nullptr, [x]() {});
-		timer.StartTimer(0, 0, nullptr, &TestStrcu::Func);
+		//Matrix
+		//A * B * C 
+		//applying order first C then B then A
+		Matrix4 mt;
+		mt.MakeTranslation(Vec3(10, 0, 0));
+		Matrix4 mr;
+		mr.MakeRotationY(180);
+		Matrix4 mr2;
+		mr2.MakeRotationY(180);
+		Matrix4 mat2 = mr*mt; //mt * mr * mr2;
+		mat2.MakeTranslationRotationScale(Vec3(10, 0, 0), Vec3(0), Vec3(2));
+		Vec3 vt = mat2.TransformVec3W1(Vec3(0));
+		VECPRINT(vt);
+
+
+		int tmp = 0;
+		std::cin >> tmp;
 	}
+
+
 	//////////////////////////////////////////////////////////////////////////
 	UAPI void TestMain(int argc, const char** argv)
 	{
 
-		DebugTest();
+// 		DebugTest();
 
 // 		BitArray ba;
 // 		ba.Add(true);
@@ -195,15 +203,13 @@ namespace UPO
 
 		gIsEditor = false;
 		
-		auto m1 = ModuleSys::Get()->LoadModule("testmodule1.dll");
-		auto m2 = ModuleSys::Get()->LoadModule("testmodule2.dll");
-
-		ModuleSys::Get()->UnloadModule(m1);
-		ModuleSys::Get()->UnloadModule(m2);
+// 		auto m1 = ModuleSys::Get()->LoadModule("testmodule1.dll");
+// 		auto m2 = ModuleSys::Get()->LoadModule("testmodule2.dll");
+// 
+// 		ModuleSys::Get()->UnloadModule(m1);
+// 		ModuleSys::Get()->UnloadModule(m2);
 
 		LaunchEngine(new EngineLauncher);
 	}
 	
-
-	UAPI GlobaLCTorDTorLog gGlobaLCTorDTorLog;
 };

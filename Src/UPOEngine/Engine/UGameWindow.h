@@ -11,9 +11,7 @@ namespace UPO
 		virtual void Init() {}
 		virtual void Release() {}
 		virtual bool Tick() { return false; }
-		virtual unsigned GetWidth() { return 0; }
-		virtual unsigned GetHeight() { return 0; }
-
+		virtual void GetSize(Vec2I& out) {}
 		virtual void* GetWinHandle() { return nullptr; }
 
 		static GameWindow* New();

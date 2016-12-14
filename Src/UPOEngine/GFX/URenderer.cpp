@@ -17,6 +17,7 @@ namespace UPO
 		//////////////////////////////////////////////////////////////////////////
 		bool Init(GFXContext* context) override
 		{
+			ULOG_MESSAGE("");
 			mContext = context;
 
 			mTestQuad = new TestQuadRE(this);
@@ -26,6 +27,7 @@ namespace UPO
 		//////////////////////////////////////////////////////////////////////////
 		bool Release() override
 		{
+			ULOG_MESSAGE("");
 			delete mTestQuad;
 			return true;
 		}
@@ -48,16 +50,15 @@ namespace UPO
 		//////////////////////////////////////////////////////////////////////////
 		void ChekingResize()
 		{
-			auto window = mContext->GetGameWindow();
-			unsigned newWidth = window->GetWidth();
-			unsigned newHeight = window->GetHeight();
+			Vec2I newSize, curSize;
+			mContext->GetGameWindow()->GetSize(newSize);
+			mContext->GetBackBufferSize(curSize);
 
-
-			if (mContext->BackBufferWidth() != newWidth || mContext->BackBufferHeight() != newHeight)
+			if (curSize != newSize)
 			{
-				ULOG_MESSAGE("resizing render target, new size : %dx%d", newWidth, newHeight);
+				ULOG_MESSAGE("resizing render target, new size : %dx%d", newSize.mX, newSize.mY);
 
-				mContext->Resize(newWidth, newHeight);
+				mContext->Resize(newSize);
 				//resizing other render targets...
 			}
 		}

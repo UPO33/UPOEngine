@@ -8,6 +8,9 @@
 #undef  GetClassInfo
 #endif
 
+// #define USEOBJREF
+// #define USEOBJLUT
+
 namespace UPO
 {
 	//////////////////////////////////////////////////////////////////////////
@@ -25,20 +28,22 @@ namespace UPO
 		template<typename T> friend class TObjectPtr;
 		friend ObjectSys;
 		friend MetaSys;
-
+#ifdef USEOBJLUT
+		friend class ObjectPtr;
+		friend class ObjectContext;
+		unsigned	mObjectIndex;
+		unsigned	mObjectID;
+#endif
 	private:
 		ClassInfo*			mClassInfo;
 		ObjectRefData*		mRefData;
-
 		
-
 	public:
 		Object() {}
 		virtual ~Object();
 
 		ClassInfo* GetClassInfo() const { return mClassInfo; }
 		ObjectRefData* GetRefData();
-
 		template<typename T> T* Cast() const
 		{
 			if (GetClassInfo()->IsBaseOf(T::GetClassInfoStatic())) return (T*) this;
@@ -48,6 +53,5 @@ namespace UPO
 		bool IsAsset() const;
 		bool IsEntity() const;
 	};
-
 
 };

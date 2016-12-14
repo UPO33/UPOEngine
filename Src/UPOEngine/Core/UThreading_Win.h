@@ -1,34 +1,12 @@
 #pragma once
 
 #include "UBasic.h"
-
 #include <windows.h>
+
+
 
 namespace UPO
 {
-	class TinyLock
-	{
-	public:
-
-		TinyLock() : m_lock(0) {}
-		~TinyLock() {}
-
-		void Enter()
-		{
-			while (InterlockedExchange(&m_lock, 1) == 1)
-			{
-				_mm_pause();
-			}
-		}
-
-		void Leave()
-		{
-			InterlockedExchange(&m_lock, 0);
-		}
-
-	private:
-		volatile unsigned long m_lock;
-	};
 
 	//////////////////////////////////////////////////////////////////////////
 	class CriticalSection
@@ -46,15 +24,15 @@ namespace UPO
 		}
 		//If the critical section is successfully entered or the current thread already owns the critical section, 
 		//the return value is nonzero. If another thread already owns the critical section, the return value is zero.
-		bool TryLock()
+		bool TryEnter()
 		{
 			return ::TryEnterCriticalSection(&mCriticleSection);
 		}
-		void Lock()
+		void Enter()
 		{
 			::EnterCriticalSection(&mCriticleSection);
 		}
-		void Unlock()
+		void Leave()
 		{
 			::LeaveCriticalSection(&mCriticleSection);
 		}
@@ -79,7 +57,7 @@ namespace UPO
 			mHandle = CreateEventA(nullptr, manualRest, initSignaled, nullptr);
 			UASSERT(mHandle != nullptr);
 		}
-		Event()
+		~Event()
 		{
 			if (mHandle)
 			{
@@ -122,40 +100,40 @@ namespace UPO
 		}
 	};
 
+	typedef HANDLE ThreadHandle;
+#if 0
 	//////////////////////////////////////////////////////////////////////////
 	class UAPI Thread
 	{
 		HANDLE		mHandle = nullptr;
-		ThreadID	mThreadID = 0;
-		ThreadID	mRunnerThreadID = 0;
-		const char*	mDebugName = nullptr;
-		unsigned	mExitCode = 0;
+		// 		ThreadID	mThreadID = 0;
+		// 		unsigned	mExitCode = 0;
 
 	public:
-		/////////////////////////////parent class should implement this
-		virtual void OnInit() abstract;
-		virtual void OnRun() abstract;
-		
+		/*
+		/////////////////////////////parent class should implement these
+		virtual void OnInit() {};
+		virtual void OnRun() {};
 
-		//@runImmedialely 
+
+		//@runImmedialely
 		//	runs thread immediately after creation or The thread is created in a suspended state, and does not run until the Resume() is called.
 		void Run(bool runImmedialely = true, const char* debugName = nullptr)
 		{
-			UASSERT(mHandle == nullptr);
+		UASSERT(mHandle == nullptr);
 
-			mDebugName = debugName;
-			mRunnerThreadID = GetCurrentThreadId();
-			mHandle = CreateThread(
-				NULL,       // default security attributes
-				0,          // default stack size
-				(LPTHREAD_START_ROUTINE)ThreadProc,
-				(void*)this,       // no thread function arguments
-				runImmedialely ? 0 : CREATE_SUSPENDED,          //creation flags
-				(LPDWORD)&mThreadID); // receive thread identifier
+		mHandle = CreateThread(
+		NULL,       // default security attributes
+		0,          // default stack size
+		(LPTHREAD_START_ROUTINE)ThreadProc,
+		(void*)this,       // no thread function arguments
+		runImmedialely ? 0 : CREATE_SUSPENDED,          //creation flags
+		(LPDWORD)&mThreadID); // receive thread identifier
 
-			UASSERT(mHandle);
-			ULOG_SUCCESS("Thread %s Created", mDebugName ? mDebugName : "");
+		UASSERT(mHandle);
+		ULOG_SUCCESS("Thread %s Created", mDebugName ? mDebugName : "");
 		}
+		*/
 		//If the function succeeds, execution of the specified thread is suspended and the thread's suspend count is incremented.
 		void Suspend()
 		{
@@ -174,30 +152,64 @@ namespace UPO
 			if (mHandle == nullptr) return false;
 			if (::TerminateThread(mHandle, (DWORD)exitCode))
 			{
-				mExitCode = exitCode;
+				// 				mExitCode = exitCode;
 				return true;
 			}
 			return false;
 		}
 	private:
-		static DWORD WINAPI ThreadProc(void* param)
+		// 		static DWORD WINAPI ThreadProc(void* param)
+		// 		{
+		// 			Thread* thread = (Thread*)param;
+		// 			ULOG_MESSAGE("Thread Started %s ", thread->mDebugName ? thread->mDebugName : "");
+		// 			thread->OnInit();
+		// 			thread->OnRun();
+		// 			return 0;
+		// 		}
+
+#endif
+
+	namespace Private
+	{
+		struct ThreadExec
 		{
-			Thread* thread = (Thread*)param;
-			ULOG_MESSAGE("Thread Started %s ", thread->mDebugName ? thread->mDebugName : "");
-			thread->OnInit();
-			thread->OnRun();
+			virtual void Exec() {};
+		};
+
+		static DWORD WINAPI ProcLambda(void* param)
+		{
+			ThreadExec* ins = reinterpret_cast<ThreadExec*>(param);
+			ins->Exec();
+			delete ins;
 			return 0;
 		}
-
-	public:
-		static void Sleep(unsigned milliseconds);
-		static ThreadID ID();
 	};
 
-	
-	
+	namespace Thread
+	{
+		inline void Sleep(unsigned milliseconds) { ::Sleep(milliseconds); }
+		inline ThreadID ID() { return (ThreadID)::GetCurrentThreadId(); }
 
-	
 
-	
+		template<typename Lambda> ThreadHandle CreateLambda(Lambda proc, bool runImmedialely = true)
+		{
+			struct Impl : Private::ThreadExec
+			{
+				Lambda mProc;
+				Impl(Lambda& p) : mProc(p) {}
+				void Exec() override { mProc(); }
+			};
+
+			ThreadHandle handle = (ThreadHandle)CreateThread(
+				NULL,       // default security attributes
+				0,          // default stack size
+				(LPTHREAD_START_ROUTINE)Private::ProcLambda,
+				(void*)(new Impl(proc)),
+				runImmedialely ? 0 : CREATE_SUSPENDED,          //creation flags
+				nullptr);
+			return handle;
+		};
+
+
+	};	
 };

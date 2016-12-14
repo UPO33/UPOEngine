@@ -20,15 +20,18 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\UArray.h" />
+    <ClInclude Include="Core\UAtomic.h" />
     <ClInclude Include="Core\UBasic.h" />
     <ClInclude Include="Core\UBitArray.h" />
     <ClInclude Include="Core\UBuffer.h" />
+    <ClInclude Include="Core\UCommandQueue.h" />
     <ClInclude Include="Core\UCore.h" />
     <ClInclude Include="Core\UDelegate.h" />
     <ClInclude Include="Core\UEngineConfig.h" />
     <ClInclude Include="Core\UFileSys.h" />
     <ClInclude Include="Core\UHash.h" />
     <ClInclude Include="Core\UConfig.h" />
+    <ClInclude Include="Core\UInstruction.h" />
     <ClInclude Include="Core\ULog.h" />
     <ClInclude Include="Core\UMap.h" />
     <ClInclude Include="Core\UMatrix.h" />
@@ -51,12 +54,16 @@
     <ClInclude Include="Engine\UComponent.h" />
     <ClInclude Include="Engine\UEngine.h" />
     <ClInclude Include="Engine\UEntity.h" />
+    <ClInclude Include="Engine\UEntityGFX.h" />
+    <ClInclude Include="Engine\UEntityStaticMesh.h" />
+    <ClInclude Include="Engine\UGameInstance.h" />
     <ClInclude Include="Engine\UGameWindow.h" />
     <ClInclude Include="Engine\UMaterial.h" />
-    <ClInclude Include="Engine\USMesh.h" />
+    <ClInclude Include="Engine\UStaticMesh.h" />
     <ClInclude Include="Engine\UInput.h" />
     <ClInclude Include="Engine\UTestAsset.h" />
     <ClInclude Include="Engine\UTexture2D.h" />
+    <ClInclude Include="Engine\UWorldRS.h" />
     <ClInclude Include="Engine\UWorldTicking.h" />
     <ClInclude Include="Engine\UWorldTimer.h" />
     <ClInclude Include="Engine\UWorld.h" />
@@ -123,12 +130,16 @@
     <ClCompile Include="Engine\UComponent.cpp" />
     <ClCompile Include="Engine\UEngine.cpp" />
     <ClCompile Include="Engine\UEntity.cpp" />
+    <ClCompile Include="Engine\UEntityGFX.cpp" />
+    <ClCompile Include="Engine\UEntityStaticMesh.cpp" />
+    <ClCompile Include="Engine\UGameInstance.cpp" />
     <ClCompile Include="Engine\UGameWindow.cpp" />
     <ClCompile Include="Engine\UMaterial.cpp" />
-    <ClCompile Include="Engine\USMesh.cpp" />
+    <ClCompile Include="Engine\UStaticMesh.cpp" />
     <ClCompile Include="Engine\UInput.cpp" />
     <ClCompile Include="Engine\UTestAsset.cpp" />
     <ClCompile Include="Engine\UTexture2D.cpp" />
+    <ClCompile Include="Engine\UWorldRS.cpp" />
     <ClCompile Include="Engine\UWorldTicking.cpp" />
     <ClCompile Include="Engine\UWorldTimer.cpp" />
     <ClCompile Include="Engine\UWorld.cpp" />

@@ -40,6 +40,8 @@ namespace UPO
 	enum EAssetFlag
 	{
 		EAF_Dirty,
+		EAF_ReceiveTick,
+		EAF_RecieveFrame,
 		EAF_Defaul,
 	};
 	//////////////////////////////////////////////////////////////////////////
@@ -54,7 +56,7 @@ namespace UPO
 	private:
 		Flag				mAssetFlag = EAssetFlag::EAF_Defaul;
 		AssetEntry*			mEntry = nullptr;
-		TArray<World*>		mWorldOwners;	//the worlds that r using this asset
+		TArray<ObjectPtr>	mRefs;
 		Name				mTag;
 	public:
 		void*				mEdData = nullptr;
@@ -64,6 +66,9 @@ namespace UPO
 	private:
 		void PostLoad();
 		
+		void CheckRelease();
+		void Release();
+
 	public:
 		bool FlagTest(unsigned flag) const { return mAssetFlag.Test(flag); }
 		bool FlagTestAndClear(unsigned flag) { return mAssetFlag.TestAndClear(flag); }
@@ -82,9 +87,10 @@ namespace UPO
 		bool IsDirty() const { return FlagTest(EAssetFlag::EAF_Dirty); }
 		void MarkDirty() { FlagSet(EAssetFlag::EAF_Dirty); }
 
-		void IsOwnedBy(World*) {}
-		void AddOwner(World*) {}
-		void RemoveOwner(World*) {}
+		void MetaPropertyChanged(PropertyInfo*);
+
+		void AddRef(Object*);
+		void RemoveRef(Object*);
 		
 		virtual void OnConstruct() {};
 
@@ -92,6 +98,14 @@ namespace UPO
 		virtual void OnInitRS() {};
 		virtual void OnRelease() {};
 		virtual void OnReleaseRS() {};
+
+		virtual void OnTick(float delta) {}
+		virtual void OnFrame(float delta) {}
+
+		template<typename Lambda> void EnqueueRenderCommend(Lambda proc)
+		{
+
+		}
 	};
 
 

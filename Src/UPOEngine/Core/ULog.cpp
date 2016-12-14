@@ -178,7 +178,7 @@ namespace UPO
 			StrCopy(newEntry.mFunctionName, funcName, LogEntry::MAX_FUNCTION_NAME);
 			StrCopy(newEntry.mText, text, LogEntry::MAX_LOG_LENGTH);
 
-			mLock.Lock();
+			mLock.Enter();
 			WriteLog(newEntry);
 			CallListeners(newEntry);
 // 			if (type == ELT_Fatal || type == ELT_Assert)
@@ -186,7 +186,7 @@ namespace UPO
 // 				CloseLogFile();
 // 				AppCrash();
 // 			}
-			mLock.Unlock();
+			mLock.Leave();
 		}
 		
 	};

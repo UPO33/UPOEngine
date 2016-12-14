@@ -44,7 +44,7 @@ namespace UPO
 		Stream* OpenStreamForLoading();
 		Stream* OpenStreamForSaving();
 		void CloseStream();
-		bool LoadNow(World* owner);
+		bool LoadNow(Object* ref);
 		String GetFileName() const { return mFilename; }
 		String GetFullFileName() const { return mFullFilename; }
 		bool IsFolder() const { return mIsFolder; }
@@ -66,6 +66,7 @@ namespace UPO
 		AssetEntry* mEngineFolder = nullptr;
 		AssetEntry* mProjectFolder = nullptr;
 
+
 	public:
 		static AssetSys* Get();
 
@@ -76,7 +77,7 @@ namespace UPO
 		AssetEntry* CreateAsset(const ClassInfo* assetClass, Name assetName);
 		AssetEntry* CreateDefaulAssetFile(AssetEntry* folderToCreateIn, const String& assetFilename, ClassInfo* assetClass);
 
-		Asset* LoadAsset(Name nanme, World* owner);
+		Asset* LoadAsset(Name nanme, Object* ref);
 		Asset* FindLoadedAsset(Name assetName);
 		Asset* FindLoadedAsset(AssetID id);
 		AssetEntry* FindAsset(Name name);
@@ -104,6 +105,9 @@ namespace UPO
 
 		static bool ReadAssetHeader(Stream& assetFile, AssetID* outID = nullptr, Name* outClassName = nullptr);
 		static bool WriteAssetHeader(Stream& assetFile, AssetID id, Name className);
+
+		void Tick(float delta);
+		void Frame(float delta);
 	};
 	inline AssetSys* GAssetSys() { return AssetSys::Get(); }
 

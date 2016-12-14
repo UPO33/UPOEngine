@@ -13,7 +13,7 @@ namespace UPO
 	inline unsigned AppTickCount() { return ::GetTickCount(); }
 
 	//////////////////////////////////////////////////////////////////////////
-	struct TimeCounter
+	struct Chronometer
 	{
 		unsigned mStart = 0;
 
@@ -28,9 +28,9 @@ namespace UPO
 		}
 	};
 	//////////////////////////////////////////////////////////////////////////
-	struct TimeCounterHigh
+	struct ChronometerAccurate
 	{
-		LARGE_INTEGER mFreq, mStart, mEnd;
+		LARGE_INTEGER mFreq, mStart;
 
 	public:
 		void Start()
@@ -38,20 +38,23 @@ namespace UPO
 			QueryPerformanceFrequency(&mFreq);
 			QueryPerformanceCounter(&mStart);
 		}
-		float SinceSeconds()
+		double SinceSeconds()
 		{
-			QueryPerformanceCounter(&mEnd);
-			return (float)((mEnd.QuadPart - mStart.QuadPart) / (double)mFreq.QuadPart);
+			LARGE_INTEGER end;
+			QueryPerformanceCounter(&end);
+			return ((end.QuadPart - mStart.QuadPart) / (double)mFreq.QuadPart);
 		}
-		float SinceMiliseconds()
+		double SinceMiliseconds()
 		{
-			QueryPerformanceCounter(&mEnd);
-			return (float)((mEnd.QuadPart - mStart.QuadPart) * 1000.0 / (double)mFreq.QuadPart);
+			LARGE_INTEGER end;
+			QueryPerformanceCounter(&end);
+			return ((end.QuadPart - mStart.QuadPart) * 1000.0 / (double)mFreq.QuadPart);
 		}
 		unsigned long long SinceMicroseconds()
 		{
-			QueryPerformanceCounter(&mEnd);
-			return (mEnd.QuadPart - mStart.QuadPart) * 1000000 / (mFreq.QuadPart);
+			LARGE_INTEGER end;
+			QueryPerformanceCounter(&end);
+			return (end.QuadPart - mStart.QuadPart) * 1000000 / (mFreq.QuadPart);
 		}
 	};
 
@@ -66,7 +69,7 @@ namespace UPO
 		unsigned mCounter = 0;
 		bool mInited = false;
 
-		TimeCounter mTimer;
+		Chronometer mTimer;
 
 	public:
 		unsigned GetFPS() const { return mFPS; }

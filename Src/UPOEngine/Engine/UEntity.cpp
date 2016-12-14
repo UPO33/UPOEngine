@@ -4,6 +4,26 @@
 
 namespace UPO
 {
+
+	void Entity::UpdateChildrenTransform()
+	{
+		mWorldTransform = mParent->mWorldTransform * mLocalTransform;
+		mIsWorldTransformInvDirty = true;
+		TagRenderDataDirty(ERD_Transform);
+	}
+
+	void Entity::CalcLocalTrsFromWorldAndParent()
+	{
+		if (IsRoot())
+		{
+			mLocalTransform = mWorldTransform;
+		}
+		else
+		{
+			mLocalTransform = mParent->GetInvWorldTransform() * mWorldTransform;
+		}
+	}
+
 	//////////////////////////////////////////////////////////////////////////
 	Entity::Entity()
 	{
@@ -12,64 +32,82 @@ namespace UPO
 		mParent = nullptr;
 		mNumChild = 0;
 
-		mChildHead = mDownEntity = mUpEntity = nullptr;
+// 		mChildHead = mDownEntity = mUpEntity = nullptr;
 
 		mName = NameEntity;
 
 		mTickRegistered = false;
 		mTickPendingAdd = false;
+		mIsWorldTransformInvDirty = false;
+	}
 
+	void Entity::TagRenderDataDirty(unsigned flag)
+	{
+		UASSERT(flag == EEF_RenderDataDirty || flag == EEF_RenderDataTransformDirty);
+
+		if (!FlagTest(EEF_RenderDataDirty))
+			mWorld->mEntitiesRenderDataDirty.Add(this);
+		FlagSet(flag);
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	bool Entity::IsRoot() const
+	{
+		return mParent == mWorld->mRootEntity;
 	}
 	//////////////////////////////////////////////////////////////////////////
 	Entity* Entity::GetParent() const
 	{
+		if (mParent == mWorld->mRootEntity) return nullptr;
 		return mParent;
 	}
 	//////////////////////////////////////////////////////////////////////////
 	Entity* Entity::GetChild(unsigned index) const
 	{
-		Entity* iter = mChildHead;
-		while (iter)
-		{
-			if (index == 0) break;
-
-			iter = iter->mDownEntity;
-		}
-		return iter;
+		return mChildren[index];
+// 		Entity* iter = mChildHead;
+// 		while (iter)
+// 		{
+// 			if (index == 0) break;
+// 
+// 			iter = iter->mDownEntity;
+// 		}
+// 		return iter;
 	}
 	//////////////////////////////////////////////////////////////////////////
 	void Entity::AttachTo(Entity* newParent)
 	{
+		if (this == mWorld->mRootEntity) return;
 		if (mParent == newParent) return;
 
-		if (FlagTest(EEF_Alive | EEF_Registered | EEF_Initilized))
+		if (FlagTest(EEF_Alive | EEF_Registered))
 		{
+			UASSERT(mParent);
+
 			if (newParent == nullptr) // detach?
 			{
-				if (mParent)
-				{
-					mParent->RemoveChildFromList(this);
-					
-					OnParentChanged();
-				}
+				if (IsRoot()) return;	//currently is detached
+
+				newParent = mWorld->mRootEntity;
 			}
-			else
+
+
+			if (newParent->FlagTest(EEF_Alive | EEF_Registered) && GetWorld() == newParent->GetWorld())
 			{
-				if(newParent->FlagTest(EEF_Alive | EEF_Registered | EEF_Initilized) && GetWorld() == newParent->GetWorld())
+				if (newParent->IsSubsetOf(this))
 				{
-					if (newParent->IsSubsetOf(this))
-					{
-						ULOG_ERROR("a Entity cant be attachet to its child");
-						return;
-					}
-
-					if (mParent) // already has parent ?
-						mParent->RemoveChildFromList(this);
-
-					mParent = newParent;
-					mParent->AddChildToList(this);
-					OnParentChanged();
+					ULOG_ERROR("Entity [%s] cant be attachet to its child", mName.CStr());
+					return;
 				}
+
+				
+				mParent->RemoveChildFromList(this);
+				mParent = newParent;
+				mParent->AddChildToList(this);
+
+				CalcLocalTrsFromWorldAndParent();
+
+				OnParentChanged();
 			}
 		}
 	}
@@ -86,6 +124,42 @@ namespace UPO
 		}
 		return false;
 	}
+	//////////////////////////////////////////////////////////////////////////
+	const Matrix4& Entity::GetInvWorldTransform()
+	{
+		if (mIsWorldTransformInvDirty)
+		{
+			mWorldTransformInv = mWorldTransform;
+			mWorldTransformInv.InvertAffine();
+		}
+		return mWorldTransformInv;
+	}
+	//////////////////////////////////////////////////////////////////////////
+	void Entity::SetLocalTransform(const Transform& localTrs)
+	{
+		mLocalTransform = localTrs;
+		if (IsRoot())
+		{
+			mWorldTransform = localTrs;
+		}
+		else
+		{
+			mWorldTransform = mParent->mWorldTransform * localTrs;
+		}
+		mIsWorldTransformInvDirty = true;
+		TagRenderDataDirty(ERD_Transform);
+		UpdateChildrenTransform();
+	}
+	//////////////////////////////////////////////////////////////////////////
+	void Entity::SetWorldTransform(const Transform& worldTrs)
+	{
+		mWorldTransform = worldTrs;
+		mIsWorldTransformInvDirty = true;
+		CalcLocalTrsFromWorldAndParent();
+		TagRenderDataDirty(ERD_Transform);
+		UpdateChildrenTransform();
+	}
+
 	//////////////////////////////////////////////////////////////////////////
 	//remove a child from list, child should be exist
 	void Entity::RemoveChildFromList(Entity* child)
@@ -167,16 +241,10 @@ namespace UPO
 
 		FlagSet(EEF_Alive | EEF_Initilized);
 
-		if (parent)
-		{
-			mParent = parent;
-			mParent->AddChildToList(this);
-		}
-		else
-		{
-			mWorld->mRootEntities.Add(this);
-		}
-		mWorld->mEntities.Add(this);
+		mParent = parent ? parent : world->mRootEntity;
+		mParent->AddChildToList(this);
+
+		mIndexInWorld = (unsigned)mWorld->mEntities.Add(this);
 	}
 
 	void Entity::OnConstruct()
@@ -214,15 +282,24 @@ namespace UPO
 	//////////////////////////////////////////////////////////////////////////
 	void Entity::Destroy()
 	{
+		UASSERT(mWorld->mRootEntity == this);
+
 		if (FlagTestAnClear(EEF_Alive))
 		{
+			//for this entity and its children
+			//		clear EEF_Alive flag, add to pending kill array
+			//for this entity and its children
+			//		call OnDestroy and...
+
 			//detaching from parent
 			{
 				if (mParent) mParent->RemoveChildFromList(this);
 				mParent = nullptr;
 			}
 
-			GetWorld()->PushToLimbo(this);
+			mWorld->mEntitiesPendingKill.Add(this);
+
+			//GetWorld()->PushToLimbo(this);
 			//this pass sets children flag and adds them to limbo
 			Destroy_Pass0();
 			//this pass calls related destroy functions
@@ -235,21 +312,23 @@ namespace UPO
 		DoOnChilChild([](Entity* child) {
 			if (child->FlagTestAnClear(EEF_Alive))
 			{
-				child->GetWorld()->PushToLimbo(child);
+				child->mWorld->mEntitiesPendingKill.Add(child);
+
+				//child->GetWorld()->PushToLimbo(child);
 				child->Destroy_Pass0();
 			}
 		});
 	}
 	//////////////////////////////////////////////////////////////////////////
+	//call OnDestroyed and OnEndPlay if required
 	void Entity::Destroy_Pass1()
 	{
 		if (!FlagTest(EEF_OnDestroyWasCalled))
 		{
-			FlagSet(EEF_OnDestroyWasCalled);
-
 			if (FlagTest(EEF_BeginPlayWasCalled))
 				OnEndPlay(EPR_Destroy);
 
+			FlagSet(EEF_OnDestroyWasCalled);
 			OnDestroy();
 
 			DoOnChilChild([](Entity* child) {

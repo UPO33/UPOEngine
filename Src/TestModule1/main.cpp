@@ -20,6 +20,8 @@ extern "C"
 {
 	MODULE1API void OnModuleLoaded()
 	{
+		return;
+
 		ULOG_WARN("m2 num types %d", UPO::MetaSys::Get()->GetAllTypes().Length());
 		auto types = UPO::MetaSys::Get()->GetAllTypes();
 		for (size_t i = 0; i < types.Length(); i++)

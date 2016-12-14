@@ -19,7 +19,7 @@ namespace UPO
 
 		GFXTexture2DDX* mBackBufferTexture2D = nullptr;
 
-		unsigned mWidth, mHeight;
+		Vec2I mBackBufferSize;
 
 		bool mVSyncEnable;
 
@@ -33,11 +33,9 @@ namespace UPO
 			mGameWindow = win;
 
 			mHWND = (HWND)win->GetWinHandle();
-			mWidth = win->GetWidth();
-			mHeight = win->GetHeight();
+			win->GetSize(mBackBufferSize);
 
-
-			ULOG_MESSAGE("creating render target w: %d h: %d ...", mWidth, mHeight);
+			ULOG_MESSAGE("creating render target w: %d h: %d ...", mBackBufferSize.mX, mBackBufferSize.mY);
 
 			HRESULT result;
 			IDXGIFactory* factory;
@@ -94,9 +92,9 @@ namespace UPO
 			// When a match is found store the numerator and denominator of the refresh rate for that monitor.
 			for (i = 0; i < numModes; i++)
 			{
-				if (displayModeList[i].Width == mWidth)
+				if (displayModeList[i].Width == mBackBufferSize.mX)
 				{
-					if (displayModeList[i].Height == mHeight)
+					if (displayModeList[i].Height == mBackBufferSize.mY)
 					{
 						numerator = displayModeList[i].RefreshRate.Numerator;
 						denominator = displayModeList[i].RefreshRate.Denominator;
@@ -114,8 +112,8 @@ namespace UPO
 			// Set to a single back buffer.
 			swapChainDesc.BufferCount = 1;
 			// Set the width and height of the back buffer.
-			swapChainDesc.BufferDesc.Width = mWidth;
-			swapChainDesc.BufferDesc.Height = mHeight;
+			swapChainDesc.BufferDesc.Width = mBackBufferSize.mX;
+			swapChainDesc.BufferDesc.Height = mBackBufferSize.mY;
 			// Set regular 32-bit surface for the back buffer.
 			swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 			// Set the refresh rate of the back buffer.
@@ -186,8 +184,8 @@ namespace UPO
 			D3D11_VIEWPORT viewport;
 			viewport.TopLeftX = 0;
 			viewport.TopLeftY = 0;
-			viewport.Width = mWidth;
-			viewport.Height = mHeight;
+			viewport.Width = mBackBufferSize.mX;
+			viewport.Height = mBackBufferSize.mY;
 			viewport.MaxDepth = 1;
 			viewport.MinDepth = 0;
 
@@ -202,10 +200,9 @@ namespace UPO
 			return true;
 		}
 		//////////////////////////////////////////////////////////////////////////
-		bool Resize(unsigned newW, unsigned newH) override
+		bool Resize(const Vec2I& newSize) override
 		{
-			mWidth = newW;
-			mHeight = newH;
+			mBackBufferSize = newSize;
 
 			mDXDeviceContext->OMSetRenderTargets(0, 0, 0);
 
@@ -257,8 +254,8 @@ namespace UPO
 
 			// Set up the viewport.
 			D3D11_VIEWPORT vp;
-			vp.Width = newW;
-			vp.Height = newH;
+			vp.Width = newSize.mX;
+			vp.Height = newSize.mY;
 			vp.MinDepth = 0.0f;
 			vp.MaxDepth = 1.0f;
 			vp.TopLeftX = 0;
@@ -335,8 +332,7 @@ namespace UPO
 		}
 		GFXTexture2D* GetBackBuffer() override { return mBackBufferTexture2D; }
 		GameWindow* GetGameWindow() override { return mGameWindow; }
-		unsigned BackBufferWidth() override { return mWidth; }
-		unsigned BackBufferHeight() override { return mHeight; }
+		void GetBackBufferSize(Vec2I& out) override { out = mBackBufferSize; }
 	};
 
 	GFXContext* GFXContext::New()

@@ -19,6 +19,14 @@ namespace UPO
 	};
 
 	//////////////////////////////////////////////////////////////////////////
+	class ATexture2DRS
+	{
+	public:
+		class GFXSamplerState*	mSampler;
+		class GFXTexture2D*		mTexture;
+	};
+
+	//////////////////////////////////////////////////////////////////////////
 	class UAPI ATexture2D : public Asset
 	{
 		friend UPOEd::AssetConverter;
@@ -30,5 +38,13 @@ namespace UPO
 		unsigned	mWidth;
 		unsigned	mHeight;
 		Texture2DSamplerInfo mSampler;
+		ATexture2DRS*	mRS;
+		TinyLock		mEditingLock;
+
+		void OnInit() override;
+		void OnRelease() override;
+
+	public:
+		void MetaPropertyChanged(PropertyInfo*);
 	};
 };

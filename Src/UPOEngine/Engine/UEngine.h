@@ -6,7 +6,7 @@
 
 //#include "UInput.h"
 #include "UComponent.h"
-#include "USMesh.h"
+#include "UStaticMesh.h"
 #include "UTexture2D.h"
 #include "UWorld.h"
 #include "UGameWindow.h"
@@ -29,6 +29,10 @@ namespace UPO
 
 		virtual void OnAfterDeviceCreation() {};
 		virtual void OnBeforeRendererRelease() {};
+
+		void Quit();
+		void LoadWorld(Name assetName);
+		void LoadWorldAsync(Name assetName);
 	};
 
 	UAPI void LaunchEngine(IEngineInterface* itf);

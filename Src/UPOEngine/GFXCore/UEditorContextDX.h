@@ -6,6 +6,7 @@
 
 namespace UPO
 { 
+#if 0
 	class UAPI GFXEditorContextDX : public GFXContext
 	{
 		HWND mHWND = nullptr;
@@ -26,9 +27,10 @@ namespace UPO
 
 	public:
 		 bool Init(InitParam param) override;
-		 bool Resize(unsigned newW, unsigned newH) override;
+		 bool Resize(const Vec2I& newSize) override;
 		 bool Release() override;
 		 bool PresentSwapChain() override;
 		 GFXTexture2D* GetBackBuffer() override;
 	};
+#endif
 };

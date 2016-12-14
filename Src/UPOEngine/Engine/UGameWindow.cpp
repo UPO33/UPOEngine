@@ -16,18 +16,21 @@ namespace UPO
 	//////////////////////////////////////////////////////////////////////////
 	class GameWindowWin : public GameWindow
 	{
+		TinyLock mSizeLock;
+		Vec2I mSize;
+
 		HINSTANCE mAppHandle = nullptr;
 		HWND mHWND = nullptr;
 		bool mFullScreen;
-		unsigned mWidth;
-		unsigned mHeight;
 		wchar_t* mWindowName;
 
 	public:
-
-		unsigned GetWidth() override { return mWidth; }
-		unsigned GetHeight() override { return mHeight; }
-		
+		//renderer read this every frame so that it must be tread safe
+		void GetSize(Vec2I& out) override
+		{
+			USCOPE_LOCK(mSizeLock);
+			out = mSize;
+		}
 		void* GetWinHandle() override { return reinterpret_cast<void*>(mHWND); }
 
 		GameWindowWin()
@@ -42,8 +45,8 @@ namespace UPO
 		{
 			ULOG_MESSAGE("");
 			mFullScreen = GEngineConfig()->AsBool("Window.FullScreen");
-			mWidth = GEngineConfig()->AsNumber("Window.Width");
-			mHeight = GEngineConfig()->AsNumber("Window.Height");
+			mSize.mX = GEngineConfig()->AsNumber("Window.Width");
+			mSize.mY = GEngineConfig()->AsNumber("Window.Height");
 
 			mWindowName = L"UPOEngine";
 
@@ -98,14 +101,14 @@ namespace UPO
 			else
 			{
 				// If windowed then set it to 800x600 resolution.
-				screenWidth = mWidth;
-				screenHeight = mHeight;
+				screenWidth = mSize.mX;
+				screenHeight = mSize.mY;
 
 				// Place the window in the middle of the screen.
 				posX = (GetSystemMetrics(SM_CXSCREEN) - screenWidth) / 2;
 				posY = (GetSystemMetrics(SM_CYSCREEN) - screenHeight) / 2;
 
-				RECT wr = { 0, 0, mWidth, mHeight };
+				RECT wr = { 0, 0, mSize.mX, mSize.mY };
 				AdjustWindowRect(&wr, dwStyleBorder /*WS_OVERLAPPEDWINDOW*/, FALSE);    // adjust the size
 				
 				screenWidth = wr.right - wr.left;
@@ -221,8 +224,9 @@ namespace UPO
 				unsigned w = LOWORD(lparam);
 				unsigned h = HIWORD(lparam);
 				ULOG_MESSAGE("window size changed %d  %d", w, h);
-				mWidth = w;
-				mHeight = h;
+				mSizeLock.Enter();
+				mSize = Vec2I(w, h);
+				mSizeLock.Leave();
 				return 0;
 			}
 	

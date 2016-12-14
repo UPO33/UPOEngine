@@ -5,11 +5,150 @@
 
 namespace UPO
 {
+#ifdef USEOBJLUT
+	static const unsigned INVALID_OBJECT_INDEX = ~0;
+	static const unsigned MAX_OBJECT = 8000;
+
+	//////////////////////////////////////////////////////////////////////////
+	class ObjectContext
+	{
+	public:
+		struct Elem
+		{
+			unsigned	mID;
+			union 
+			{
+				Object*		mInstance;
+				unsigned	mNextFreeIndex;
+			};
+		};
+
+		unsigned	mIDCounter;
+		unsigned	mFirstFreeIndex;
+		unsigned	mNumObject;
+		Elem*		mObjects;
+
+
+		ObjectContext()
+		{
+			mObjects = new Elem[MAX_OBJECT];
+			UASSERT(mObjects);
+
+			mFirstFreeIndex = 0;
+			mIDCounter = 2;
+			mNumObject = 0;
+
+			for (unsigned i = 0; i < MAX_OBJECT; i++)
+			{
+				mObjects[i].mID = mIDCounter;
+				mObjects[i].mNextFreeIndex = i + 1;
+			}
+			mObjects[MAX_OBJECT - 1].mNextFreeIndex = INVALID_OBJECT_INDEX;
+		}
+
+		~ObjectContext()
+		{
+			delete mObjects;
+			mObjects = nullptr;
+		}
+		//////////////////////////////////////////////////////////////////////////
+		Object* NewObject(const ClassInfo* classInfo)
+		{
+			UASSERT(mFirstFreeIndex != INVALID_OBJECT_INDEX);	//object system is full :(
+			UASSERT(classInfo);
+
+			Object* newObj = (Object*)MemAlloc(classInfo->GetSize());
+
+			unsigned index = mFirstFreeIndex;
+			unsigned id = mIDCounter++;
+			
+			//0 and 1 are used for invalid handle and deleted object
+			if (mIDCounter == 0) mIDCounter = 2;
+
+			mFirstFreeIndex = mObjects[mFirstFreeIndex].mNextFreeIndex;
+
+			newObj->mClassInfo = (ClassInfo*)classInfo;
+			newObj->mObjectID = id;
+			newObj->mObjectIndex = index;
+
+			mObjects[index].mInstance = newObj;
+			mObjects[index].mID = id;
+
+			classInfo->CallDefaultConstructor((void*)newObj);
+
+			return newObj;
+		}
+		//////////////////////////////////////////////////////////////////////////
+		void DeleteObject(Object* object)
+		{
+			UASSERT(object);
+
+			const ClassInfo* ci = object->GetClassInfo();
+			UASSERT(ci);
+			ci->CallDestructor(object);
+
+			unsigned index = object->mObjectIndex;
+			unsigned id = object->mObjectID;
+			UASSERT(index != INVALID_OBJECT_INDEX && id != 1);	//check if object deleted previously 
+
+			//invalidate object so that calling delete again will cause assert
+			object->mObjectIndex = INVALID_OBJECT_INDEX;
+			object->mObjectID = 1;
+
+			mObjects[index].mID = 1;
+			mObjects[index].mNextFreeIndex = mFirstFreeIndex;
+			mFirstFreeIndex = index;
+
+			MemFree(object);
+		}
+	};
+
+	ObjectContext gObjectContext;
+
+	Object* ObjectPtr::Get() const
+	{
+		if (mID == gObjectContext.mObjects[mIndex].mID)
+			return gObjectContext.mObjects[mIndex].mInstance;
+		return nullptr;
+	}
+
+	bool ObjectPtr::IsValid() const
+	{
+		return mID == gObjectContext.mObjects[mIndex].mID;
+	}
+#endif
+
+
+
+	Object* ObjectSys::AllocObject(const ClassInfo* classInfo)
+	{
+		return (Object*)MemAlloc(classInfo->GetSize());
+	}
+	void ObjectSys::FreeObject(Object* object)
+	{
+		MemFree(object);
+	}
+	ObjectSys::ObjectSys()
+	{
+
+	}
+
+	ObjectSys::~ObjectSys()
+	{
+
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	ObjectSys* ObjectSys::Get()
+	{
+		static TInstance<ObjectSys> Ins;
+		return Ins;
+	}
+
 	//////////////////////////////////////////////////////////////////////////
 	Object* ObjectSys::NewObject(const ClassInfo* classInfo)
 	{
-		UASSERT(classInfo);
-		Object* newObj = (Object*)MemAlloc(classInfo->GetSize());
+		Object* newObj = AllocObject(classInfo);
 
 		newObj->mClassInfo = (ClassInfo*)classInfo;
 		newObj->mRefData = nullptr;
@@ -22,10 +161,13 @@ namespace UPO
 	void ObjectSys::DeleteObject(Object* object)
 	{
 		UASSERT(object);
-
 		const ClassInfo* ci = object->GetClassInfo();
+		UASSERT(ci);
 		ci->CallDestructor(object);
-		MemFree(object);
+		FreeObject(object);
 	}
+
+
+
 
 };

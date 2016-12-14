@@ -1,21 +1,53 @@
 #pragma once
 
 #include "UBasic.h"
+#include "UInstruction.h"
 
 namespace UPO
 {
 	typedef unsigned ThreadID;
 };
 
-#if UPLATFORM_WIN
-#include "UThreading_Win.h"
-#else
 
-#endif
+
+#define USCOPE_LOCK(lock)	TScpoedLock<decltype(lock)>	ZZ_Lock(lock)
+
 
 namespace UPO
 {
-	
+	//////////////////////////////////////////////////////////////////////////
+	template<typename TLock> class TScpoedLock
+	{
+		TLock& mLock;
+	public:
+		TScpoedLock(TLock& lock) : mLock(lock) { mLock.Enter(); }
+		~TScpoedLock() { mLock.Leave(); }
+	};
+
+	//////////////////////////////////////////////////////////////////////////
+	class TinyLock
+	{
+		volatile long mlock;
+
+	public:
+
+		TinyLock() : mlock(0) {}
+		~TinyLock() {}
+
+		void Enter()
+		{
+			while (Atomic::Exchange(&mlock, 1) == 1)
+			{
+				UPause();
+			}
+		}
+
+		void Leave()
+		{
+			Atomic::Exchange(&mlock, 0);
+		}
+	};
+
 
 	/*
 		Moved to UBasic.h
@@ -28,3 +60,9 @@ namespace UPO
 	extern UAPI ThreadID gRenderThreadID;
 
 };
+
+#ifdef UPLATFORM_WIN
+#include "UThreading_Win.h"
+#else
+#error
+#endif

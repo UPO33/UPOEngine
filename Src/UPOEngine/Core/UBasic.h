@@ -95,13 +95,18 @@ UAPI void UOutputDebugString(const char* str);
 
 #pragma endregion
 
-//template<class T, size_t N> size_t size(T(&)[N]) { return N; }
 
 #define UARRAYLEN(Array)  (sizeof(Array) / sizeof(Array[0]))
 
 
+//UWELD(prefix, __COUNTER__) will results  prefix__COUNTER__
 #define UWELD(Prefix, Suffix) Prefix##Suffix
+//UWELDINNER(prefix, __COUNTER__) will results  prefix1
 #define UWELDINNER(Prefix, Suffix) UWELD(Prefix, Suffix)
+
+#define UUNINAME(prefix) UWELDINNER(prefix, __COUNTER__)
+
+#define UCACHE_ALIGN	64
 
 namespace UPO
 {

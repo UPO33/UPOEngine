@@ -31,7 +31,7 @@ namespace UPO
 	{
 		mIsInTick = true;
 		mCurTickResult = WorldTickResult();
-		TimeCounterHigh frameTimer;
+		ChronometerAccurate frameTimer;
 		frameTimer.Start();
 
 		if (mIsPlaying)
@@ -54,12 +54,19 @@ namespace UPO
 				mDoEndPlay = false;
 			}
 		}
-		KillDestroyedEntities();
+
 
 		mCurTickResult.mConsumedTimeMS = frameTimer.SinceMiliseconds();
 		mIsInTick = false;
 
 		mNumTickSinceLastDestroy++;
+
+		mTickEndEvent.SetSignaled();
+		//we can do anything that doesn't change entities render-related properties such as audio and ..
+		{
+		}
+		mFetchCompleted.Wait();
+		
 	}
 
 	void World::PerformBeginPlay()
@@ -100,6 +107,8 @@ namespace UPO
 	{
 		mTimer.Tick(mDeltaTime);
 		mTicking.Tick(mDeltaTime);
+
+		CheckPendingKills();
 	}
 
 	void World::KillDestroyedEntities()
@@ -118,9 +127,7 @@ namespace UPO
 				}
 			});
 			
-			mRootEntities.RemoveIf([&](Entity* ent) {
-				return !(ent->FlagTest(EEF_Alive));
-			});
+
 			
 
 			mNumDestroyedEntity = 0;
@@ -131,46 +138,103 @@ namespace UPO
 	//////////////////////////////////////////////////////////////////////////
 	void World::PushToLimbo(Entity* deadEntity)
 	{
-		mNumTickSinceLastDestroy = 0;
-		mNumDestroyedEntity++;
+// 		mNumTickSinceLastDestroy = 0;
+// 		mNumDestroyedEntity++;
+// 		mEntitiesPendingKill.Add(deadEntity->mIndexInWorld);
+// 
+// 		Entity* entity = nullptr;
+// 		if (entity->IsReadyToDie())
+// 		{
+// 			DeleteObject(entity);
+// 		}
 	}
 
 
-	void World::SetPlaying(bool playing)
+	void World::Release()
 	{
-		if (mIsPlaying == playing) return;
+		mTimer.StopAll();
+		
+	}
 
-		mIsPlaying = playing;
-		if (playing)
+	void World::Intersection()
+	{
+		USCOPE_LOCK(mIntersection);
+
+		if (IsRenderThread())
 		{
-			mDoBeginPlay = true;
-			ULOG_MESSAGE("world play");
+			mTickEndEvent.Wait();
+			mRS->PerformFetch();
+			mFetchCompleted.SetSignaled();
 		}
 		else
 		{
-			mDoEndPlay = true;
-			ULOG_MESSAGE("world stop");
+			UASSERT(IsGameThread());
+
+			mFetchCompleted.Wait();
 		}
 	}
 
+	void World::KillEntity(Entity* entity)
+	{
+		DeleteObject(entity);
+	}
+
+	void World::CheckPendingKills()
+	{
+		int	numPendingKill = (int)mEntitiesPendingKill.Length();
+		int index = 0;
+		while (index < numPendingKill)
+		{
+			Entity* entity = mEntitiesPendingKill[index];
+			if (entity && entity->IsReadyToDie())
+			{
+				//remove from entities list
+				mEntities.LastElement()->mIndexInWorld = entity->mIndexInWorld;
+				mEntities.RemoveAtSwap(entity->mIndexInWorld);
+				//remove from pending kill list
+				mEntitiesPendingKill.RemoveAtSwap(index);
+				KillEntity(entity);
+				numPendingKill--;
+			}
+			else
+			{
+				index++;
+			}
+		}
+	}
+	//////////////////////////////////////////////////////////////////////////
+	World::World() : 
+		mTickEndEvent(false, false),
+		mFetchCompleted(false, false)
+	{
+		
+	}
+	//////////////////////////////////////////////////////////////////////////
+	World::~World()
+	{
+
+	}
 	void World::SetPlaying()
 	{
+		UASSERT(!mIsInTick);
 		if (mIsPlaying) return;
 
 		mIsPlaying = true;
 		mDoBeginPlay = true;
 	}
 
-	void World::Pause()
+	void World::PausePlaying()
 	{
+		UASSERT(!mIsInTick);
 		if (mIsPlaying && !mIsPaused)
 		{
 			mIsPaused = true;
 		}
 	}
 
-	void World::Resume()
+	void World::ResumePlaying()
 	{
+		UASSERT(!mIsInTick);
 		if (mIsPlaying && mIsPaused)
 		{
 			mIsPaused = false;
@@ -179,15 +243,24 @@ namespace UPO
 
 	void World::StopPlaying()
 	{
+		UASSERT(!mIsInTick);
 		if (!mIsPlaying) return;
 
 		mIsPlaying = false;
 		mDoEndPlay = true;
 	}
 
-	void World::AddEntityToList(Entity* ent)
+	void World::PauseGame()
 	{
-		mEntities.Add(ent);
+
 	}
+
+	void World::ResumeGame()
+	{
+
+	}
+
+	
+
 
 };

@@ -23,5 +23,7 @@ namespace UPO
 		void Reintegrate();
 		void FetchPendingEntities();
 		void AdjustEntityTick(Entity* entity);
+
+		void RemoveAll();
 	};
 };
