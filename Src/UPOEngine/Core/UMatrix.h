@@ -197,8 +197,5 @@ namespace UPO
 		Matrix4& operator += (const Matrix4& m);
 	};
 
-	struct Transform : public Matrix4
-	{
-
-	};
+	typedef Matrix4 Transform;
 };

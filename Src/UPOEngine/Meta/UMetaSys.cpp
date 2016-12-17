@@ -105,6 +105,7 @@ namespace UPO
 		outClass->mIsClass = true;
 
 		////////////ClassInfo
+		outClass->mIsAbstract = crp->mTypeCheck.mIsAbstract;
 		outClass->mHasParentClass = crp->mTypeCheck.mHasParent;
 		outClass->mParentClass = nullptr;
 		outClass->mParentClassName = crp->mTypeCheck.mParentClassName;
@@ -113,7 +114,11 @@ namespace UPO
 		outClass->mDestructor = crp->mTypeCheck.mDestructor;
 
 		outClass->mMetaSerialize = crp->mTypeCheck.mMetaSerialize;
-		outClass->mMetaPropertyChanged = crp->mTypeCheck.mMetaPropertyChanged;
+		//DEPRECATED
+// 		outClass->mMetaPropertyChanged = crp->mTypeCheck.mMetaPropertyChanged;
+
+		outClass->mMetaBeforePropertyChange = crp->mTypeCheck.mMetaBeforePropertyChange;
+		outClass->mMetaAfterPropertyChange = crp->mTypeCheck.mMetaAfterPropertyChange;
 
 		/////////////^^^^^ Meta class functions here ^^^^^^
 

@@ -39,4 +39,23 @@ namespace UPO
 		EntityStaticMesh();
 		~EntityStaticMesh();
 	};
+
+	//////////////////////////////////////////////////////////////////////////
+	class EntityStaticMeshRS : public EntityRS
+	{
+	public:
+		AStaticMeshRS*	mMesh;
+		AMaterialRS*	mMaterial;
+		AABB			mBound;
+		Matrix4			mWorldTransform;
+
+		static const unsigned EEF_RenderDirtyFlags = 0;
+
+		EntityStaticMeshRS(EntityStaticMesh* gs, WorldRS* wrs);
+		EntityStaticMesh* Owner() const;
+
+		void OnFetch() override;
+		bool ShouldBeRendered(unsigned cullingmask);
+	};
+
 };

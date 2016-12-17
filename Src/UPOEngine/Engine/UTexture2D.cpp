@@ -17,13 +17,6 @@ namespace UPO
 			mEditingLock.Leave();
 		});
 	}
-	void ATexture2D::OnFrame()
-	{
-		IsDirty()
-		{
-
-		}
-	}
 	void ATexture2D::OnRelease()
 	{
 		EnqueueRenderCommend([this]() {

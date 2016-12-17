@@ -1,4 +1,5 @@
 #include "UEntityStaticMesh.h"
+#include "../Meta/UMeta.h"
 
 namespace UPO
 {
@@ -17,35 +18,6 @@ namespace UPO
 // 		virtual void OnFetch() {}
 // 	};
 
-	class EntityStaticMeshRS : public EntityRS
-	{
-		AStaticMeshRS*	mMesh;
-		AMaterialRS*	mMaterial;
-		AABB			mBound;
-		Matrix4			mWorldTransform;
-
-		EntityStaticMesh* Owner() const { return (EntityStaticMesh*)mGS; }
-
-		void OnFetch() override
-		{
-			mEntityFlag = mGS->mEntityFlag;
-
-			if (mEntityFlag.Test(EEF_RenderDataTransformDirty))
-			{
-
-			}
-			{
-				mMesh = Owner()->mMesh ? Owner()->mMesh->GetRS() : nullptr;
-				mMaterial = Owner()->mMaterial ? Owner()->mMaterial->GetRS() : nullptr;
-
-				if (mMesh && mMaterial)	mEntityFlag.Set(EEF_RenderDataValid);
-			}
-		}
-		bool ShouldBeRendered(unsigned cullingmask)
-		{
-			return mEntityFlag.Test(EEF_RenderDataValid | EEF_Visible) && (mCullingMask & cullingmask);
-		}
-	};
 
 	
 
@@ -90,4 +62,46 @@ namespace UPO
 
 	}
 
+
+	//////////////////////////////////////////////////////////////////////////
+	EntityStaticMeshRS::EntityStaticMeshRS(EntityStaticMesh* gs, WorldRS* wrs)
+	{
+		mGS = gs;
+		mEntityFlag = gs->mEntityFlag;
+		mWorldTransform = gs->GetInvWorldTransform();
+
+	}
+
+
+	EntityStaticMesh* EntityStaticMeshRS::Owner() const
+	{
+		return (EntityStaticMesh*)mGS;
+	}
+
+
+
+
+	void EntityStaticMeshRS::OnFetch()
+	{
+		if (mEntityFlag.Test(EEF_RenderDataTransformDirty))
+		{
+
+		}
+		{
+			mMesh = Owner()->mMesh ? Owner()->mMesh->GetRS() : nullptr;
+			mMaterial = Owner()->mMaterial ? Owner()->mMaterial->GetRS() : nullptr;
+
+			if (mMesh && mMaterial)	mEntityFlag.Set(EEF_RenderDataValid);
+		}
+	}
+
+	bool EntityStaticMeshRS::ShouldBeRendered(unsigned cullingmask)
+	{
+		return mEntityFlag.Test(EEF_RenderDataValid | EEF_Visible) && (mCullingMask & cullingmask);
+	}
+
+
+
+	UCLASS_BEGIN_IMPL(EntityStaticMesh)
+	UCLASS_END_IMPL(EntityStaticMesh)
 };

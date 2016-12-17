@@ -74,7 +74,7 @@ namespace UPO
 			mObjects[index].mInstance = newObj;
 			mObjects[index].mID = id;
 
-			classInfo->CallDefaultConstructor((void*)newObj);
+			classInfo->Call_DefaultConstructor((void*)newObj);
 
 			return newObj;
 		}
@@ -85,7 +85,7 @@ namespace UPO
 
 			const ClassInfo* ci = object->GetClassInfo();
 			UASSERT(ci);
-			ci->CallDestructor(object);
+			ci->Call_Destructor(object);
 
 			unsigned index = object->mObjectIndex;
 			unsigned id = object->mObjectID;
@@ -153,7 +153,7 @@ namespace UPO
 		newObj->mClassInfo = (ClassInfo*)classInfo;
 		newObj->mRefData = nullptr;
 
-		classInfo->CallDefaultConstructor((void*)newObj);
+		classInfo->Call_DefaultConstructor((void*)newObj);
 
 		return newObj;
 	}
@@ -163,7 +163,7 @@ namespace UPO
 		UASSERT(object);
 		const ClassInfo* ci = object->GetClassInfo();
 		UASSERT(ci);
-		ci->CallDestructor(object);
+		ci->Call_Destructor(object);
 		FreeObject(object);
 	}
 

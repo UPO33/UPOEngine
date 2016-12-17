@@ -2,6 +2,8 @@
 
 #include "../Core/UCore.h"
 #include "../Object/UObject.h"
+#include "../Core/UCommandQueue.h"
+
 
 namespace UPOEd
 {
@@ -15,6 +17,11 @@ namespace UPO
 	class Entity;
 	class AssetSys;
 	class AssetEntry;
+
+	//////////////////////////////////////////////////////////////////////////
+	using AssetCommendQueue = TCommandPool<100000, true>;
+	//definition in UEngine.cpp
+	UAPI AssetCommendQueue* UGetAssetCommandQueue();
 
 	//////////////////////////////////////////////////////////////////////////
 	class UAPI AssetID
@@ -39,10 +46,12 @@ namespace UPO
 	//////////////////////////////////////////////////////////////////////////
 	enum EAssetFlag
 	{
-		EAF_Dirty,
-		EAF_ReceiveTick,
-		EAF_RecieveFrame,
-		EAF_Defaul,
+		EAF_Alive = 1,
+		EAF_Dirty = 1 << 1,
+		EAF_ReceiveTick = 1 << 2,
+		EAF_RecieveFrame = 1 << 3,
+
+		EAF_Defaul = EAF_Alive,
 	};
 	//////////////////////////////////////////////////////////////////////////
 	class UAPI Asset : public Object
@@ -58,6 +67,9 @@ namespace UPO
 		AssetEntry*			mEntry = nullptr;
 		TArray<ObjectPtr>	mRefs;
 		Name				mTag;
+		unsigned			mPrivateIndex;
+		AssetSys*			mAssetSys;
+
 	public:
 		void*				mEdData = nullptr;
 		void*				mUserData = nullptr;
@@ -66,8 +78,7 @@ namespace UPO
 	private:
 		void PostLoad();
 		
-		void CheckRelease();
-		void Release();
+		bool NeedsRelease();
 
 	public:
 		bool FlagTest(unsigned flag) const { return mAssetFlag.Test(flag); }
@@ -85,27 +96,34 @@ namespace UPO
 		bool SaveTo(Stream&);
 
 		bool IsDirty() const { return FlagTest(EAssetFlag::EAF_Dirty); }
-		void MarkDirty() { FlagSet(EAssetFlag::EAF_Dirty); }
+		bool IsAlive() const { return FlagTest(EAssetFlag::EAF_Alive); }
 
-		void MetaPropertyChanged(PropertyInfo*);
+		void MarkDirty() { FlagSet(EAssetFlag::EAF_Dirty); }
+		
+
 
 		void AddRef(Object*);
 		void RemoveRef(Object*);
 		
 		virtual void OnConstruct() {};
-
+		
 		virtual void OnInit() {};
-		virtual void OnInitRS() {};
 		virtual void OnRelease() {};
+
+		virtual void OnInitRS() {};
+
 		virtual void OnReleaseRS() {};
 
 		virtual void OnTick(float delta) {}
 		virtual void OnFrame(float delta) {}
 
-		template<typename Lambda> void EnqueueRenderCommend(Lambda proc)
-		{
+		void MetaAfterPropertyChange(const PropertyInfo*);
 
+		template<typename Lambda> void EnqueueRenderCommend(const Lambda& proc)
+		{
+			UGetAssetCommandQueue()->Enqueue(proc);
 		}
+
 	};
 
 

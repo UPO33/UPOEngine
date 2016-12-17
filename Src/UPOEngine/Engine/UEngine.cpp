@@ -3,6 +3,10 @@
 #include "../GFXCore/UGFXCore.h"
 #include "../GFX/UGFX.h"
 #include "../Core/UCommandQueue.h"
+#include "../Engine/UWorldRS.h"
+#include "../Engine/UEntityStaticMesh.h"
+#include "../Engine/UEntityTest.h"
+
 
 namespace UPO
 {
@@ -27,12 +31,15 @@ namespace UPO
 		bool mLoop;
 		ThreadHandle	mRenderThreadHandle;
 
-		CommandPool<1024 * 8, true>		mCmdQueueG2R;
-		CommandPool<1024 * 8, false>	mCmdQueueR2G;
+		TCommandPool<1024 * 8, true>		mCmdQueueG2R;
+		TCommandPool<1024 * 8, false>	mCmdQueueR2G;
+		
+		AssetCommendQueue	mAssetCommands;
 
 		volatile bool mLoopGT = true;
 		volatile bool mLoopRT = true;
 		volatile float mDelta = 0;	//render writes, game only reads
+		volatile bool mCompilingGlobalShader = false;
 
 		//when render thread was released this event is signaled
 		Event	mRenderThreadReleased;
@@ -81,21 +88,37 @@ namespace UPO
 
 				//mInterface->OnAfterDeviceCreation();
 
+				UGlobalShader_CompileAll();
+				mCompilingGlobalShader = false;
+
 				mRenderer = Renderer::New();
 				UASSERT(mRenderer);
 				mRenderer->Init(mGFXContext);
 
+				
 			});
 
-// 			mCurrentWorld = new World;
+			mCurrentWorld = new World;
+			mCurrentWorld->SetPlaying();
+			
+			mCurrentWorld->GetTimer()->StartTimer(1, 1, [this]() { 
+				ULOG_MESSAGE("");
+				EntityCreationParam ecp;
+				ecp.mClass = EntityTest::GetClassInfoStatic();
+				ecp.mParent = nullptr;
+				mCurrentWorld->CreateEntity(ecp);
+			});
 		}
 		void Loop()
 		{
+			double lastTime = 0;
+			mDelta = 1 / 60.0f;
+
+			ChronometerAccurate timer;
+			timer.Start();
+
 			while (mLoopGT)
 			{
-				
-				mCmdQueueR2G.InvokeAll();
-
 				bool result;
 
 				result = GTick();
@@ -103,6 +126,9 @@ namespace UPO
 
 				Thread::Sleep(10);
 
+				double curTime = timer.SinceSeconds();
+				mDelta = (float)(curTime - lastTime);
+				lastTime = curTime;
 			}
 		}
 		void InitRT()
@@ -112,6 +138,7 @@ namespace UPO
 		void LoopRT()
 		{
 			UASSERT(IsRenderThread());
+
 
 			double lastTime = 0;
 			float dealt = 60.0f / 16;
@@ -166,7 +193,11 @@ namespace UPO
 		}
 		bool GTick()
 		{
+			mCmdQueueR2G.InvokeAll();
+
 			bool result = true;
+			
+			if (mCompilingGlobalShader) return true;
 
 			GAssetSys()->Tick(mDelta);
 
@@ -174,7 +205,7 @@ namespace UPO
 
 			if (mCurrentWorld)
 			{
-				mCurrentWorld->SingleTick(WorldTickResult());
+				mCurrentWorld->Tick(mDelta);
 			}
 
 			gGameTickCounter++;
@@ -183,19 +214,31 @@ namespace UPO
 		}
 		bool RTick()
 		{
-			gRenderTickCounter++;
+			bool result = true;
+			mCmdQueueG2R.InvokeAll();
+			mAssetCommands.InvokeAll();
 
-			//GAssetSys()->RTTick();
+			//GAssetSys()->Frame(mDelta);
 
 			if(mRenderer)
 			{
-				return mRenderer->RenderFrame();
+				result = mRenderer->RenderFrame();
 			}
-			return true;
+			if (mCurrentWorld)
+			{
+				mCurrentWorld->GetRS()->Frame();
+			}
+
+			gRenderTickCounter++;
+			return result;
 		}
 
 	} gEngine;
 
+	UAPI AssetCommendQueue* UGetAssetCommandQueue()
+	{
+		return &gEngine.mAssetCommands;
+	}
 
 	UAPI void LaunchEngine(IEngineInterface* itf)
 	{

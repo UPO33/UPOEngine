@@ -77,4 +77,27 @@ namespace UPO
 		}
 		void MetaPropertyChanged(const PropertyInfo* prp);
 	};
+	
+	/*
+	Meta class 
+
+	use macro UCLASS(Class, ParentClass) to declare a meta class, set 'ParentClass' parameter to void if there is no parent.
+	any classes that uses UCLASS macro must be default constructible and destructible
+	
+	class MyClass
+	{
+		UCLASS(MyClass, void)
+
+		//each meta class can implement a custom serializer function, if u don't define any the class will be serialized/deserialized by automatically
+		void MetaSerialize(Stream&)
+
+		//MetaBeforePropertyChange is called before editing a property
+		//MetaBePropertyChange is called after editing a property
+		//the first argument is the intended property
+		//not that the properties are called respectively toward root
+		void MetaBeforePropertyChange(const PropertyInfo* prp){}
+		void MetaBePropertyChange(const PropertyInfo* prp){}
+	}
+
+	*/
 };

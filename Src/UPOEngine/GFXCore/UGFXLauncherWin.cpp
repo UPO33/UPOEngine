@@ -281,7 +281,7 @@ namespace UPO
 	//////////////////////////////////////////////////////////////////////////
 	bool GFXLauncherWin::Tick()
 	{
-		if (Input::IsKeyDown(VK_ESCAPE)) return false;
+		if (Input::IsKeyDown(EKC_Esc)) return false;
 
 
 		mDXDeviceContext->OMSetRenderTargets(1, &mBackBufferView, nullptr);
@@ -488,10 +488,10 @@ namespace UPO
 		{
 			// Check if a key has been pressed on the keyboard.
 		case WM_KEYDOWN:
-			Input::SetKeyState(wparam, true);
+// 			Input::SetKeyState(wparam, true);
 			return 0;
 		case WM_KEYUP:
-			Input::SetKeyState(wparam, false);
+// 			Input::SetKeyState(wparam, false);
 			return 0;
 		case WM_MOUSEMOVE:
 			Input::SetMousePos(GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam));

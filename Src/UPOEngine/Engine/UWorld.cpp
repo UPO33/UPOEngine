@@ -1,6 +1,7 @@
 #include "UWorld.h"
 #include "UComponent.h"
 #include "UEntity.h"
+#include "UWorldRS.h"
 
 #include "../Meta/UMeta.h"
 
@@ -10,21 +11,27 @@ namespace UPO
 	//////////////////////////////////////////////////////////////////////////
 	Entity* World::CreateEntity(EntityCreationParam& param)
 	{
-		if (param.mClass && param.mClass->IsBaseOf(Entity::GetClassInfoStatic()))
+		ClassInfo* entityClass = param.mClass;
+		if (!entityClass->IsBaseOf(Entity::GetClassInfoStatic()) || entityClass->IsAbstract())
 		{
-			Entity* newEntity = NewObject<Entity>(param.mClass);
-			newEntity->Init(param.mParent, this);
-
-			newEntity->OnConstruct();
-			
-			if (mIsPlaying)
-			{
-				newEntity->FlagSet(EEF_BeginPlayWasCalled);
-				newEntity->OnBeginPlay();
-			}
-			return newEntity;
+			ULOG_ERROR("invalid class!");
+			return nullptr;
 		}
-		return nullptr;
+
+		Entity* newEntity = NewObject<Entity>(entityClass);
+		newEntity->Init(param.mParent, this);
+
+		newEntity->OnConstruct();
+
+		if (mIsPlaying)
+		{
+			newEntity->FlagSet(EEF_BeginPlayWasCalled);
+			newEntity->OnBeginPlay();
+		}
+
+		PushToPendingAddToRS(newEntity);
+
+		return newEntity;
 	}
 	//////////////////////////////////////////////////////////////////////////
 	void World::SingleTick(WorldTickResult& result)
@@ -33,6 +40,8 @@ namespace UPO
 		mCurTickResult = WorldTickResult();
 		ChronometerAccurate frameTimer;
 		frameTimer.Start();
+
+		CheckPendingKills();
 
 		if (mIsPlaying)
 		{
@@ -64,9 +73,62 @@ namespace UPO
 		mTickEndEvent.SetSignaled();
 		//we can do anything that doesn't change entities render-related properties such as audio and ..
 		{
+			//during here render thread is performing fetch
 		}
 		mFetchCompleted.Wait();
+
+		mEntitiesPendingAddToRS.RemoveAll();
+		mEntitiesPendingDestroyFromRS.RemoveAll();
+		mEntitiesRenderDataDirty.RemoveAll();
 		
+	}
+	//////////////////////////////////////////////////////////////////////////
+	void World::Tick(float delta)
+	{
+		mDeltaTime = delta * mDeltaScale;
+
+		CheckPendingKills();
+
+		mIsInTick = true;
+
+		if (mIsPlaying)
+		{
+			///////////begin playing
+			if (mDoBeginPlay)
+			{
+				PerformBeginPlay();
+				mDoBeginPlay = false;
+			}
+
+			mTimer.Tick(mDeltaTime);
+			mTicking.Tick(mDeltaTime);
+
+			mSecondsSincePlay += mDeltaTime;
+		}
+		else
+		{
+			if (mDoEndPlay)
+			{
+				PerformEndPlay();
+				mDoEndPlay = false;
+				mSecondsSincePlay = 0;
+			}
+		}
+
+		mIsInTick = false;
+
+		mNumTickSinceLastDestroy++;
+
+		mTickEndEvent.SetSignaled();
+		//we can do anything that doesn't change entities render-related properties such as audio and ..
+		{
+			//during here render thread is performing fetch
+		}
+		mFetchCompleted.Wait();
+
+		mEntitiesPendingAddToRS.RemoveAll();
+		mEntitiesPendingDestroyFromRS.RemoveAll();
+		mEntitiesRenderDataDirty.RemoveAll();
 	}
 
 	void World::PerformBeginPlay()
@@ -107,8 +169,6 @@ namespace UPO
 	{
 		mTimer.Tick(mDeltaTime);
 		mTicking.Tick(mDeltaTime);
-
-		CheckPendingKills();
 	}
 
 	void World::KillDestroyedEntities()
@@ -154,6 +214,32 @@ namespace UPO
 	{
 		mTimer.StopAll();
 		
+	}
+
+	WorldRS* World::CreateRS()
+	{
+		UASSERT(IsGameThread());
+
+		WorldRS* rs = new WorldRS;
+		rs->mGS = this;
+		
+
+		return nullptr;
+	}
+
+	World* World::Duplicate()
+	{
+		return new World;
+	}
+
+	void World::PushToPendingAddToRS(Entity* ent)
+	{
+		mEntitiesPendingAddToRS.Add(ent);
+	}
+
+	void World::PushToPendingDestroyFromRS(Entity* ent)
+	{
+		mEntitiesPendingDestroyFromRS.Add(ent);
 	}
 
 	void World::Intersection()
@@ -207,12 +293,23 @@ namespace UPO
 		mTickEndEvent(false, false),
 		mFetchCompleted(false, false)
 	{
-		
+		mRootEntity = NewObject<Entity>();
+
+		Event eventRSCreation(false, false);
+		EnqueueRenderCommend([this, &eventRSCreation]() {
+
+			WorldRS* rs = new WorldRS;
+			rs->mGS = this;
+			this->mRS = rs;
+// 			eventRSCreation.SetSignaled();
+		});
+// 		eventRSCreation.Wait();
+
 	}
 	//////////////////////////////////////////////////////////////////////////
 	World::~World()
 	{
-
+		DeleteObject(mRootEntity);
 	}
 	void World::SetPlaying()
 	{

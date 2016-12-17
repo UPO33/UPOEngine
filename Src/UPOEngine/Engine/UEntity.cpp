@@ -1,6 +1,7 @@
 #include "UEntity.h"
 #include "../Meta/UMeta.h"
 #include "UWorld.h"
+#include "UEntityStaticMesh.h"
 
 namespace UPO
 {
@@ -241,9 +242,10 @@ namespace UPO
 
 		FlagSet(EEF_Alive | EEF_Initilized);
 
-		mParent = parent ? parent : world->mRootEntity;
+		mParent = (parent && parent->IsAlive()) ? parent : world->mRootEntity;
 		mParent->AddChildToList(this);
 
+		
 		mIndexInWorld = (unsigned)mWorld->mEntities.Add(this);
 	}
 
@@ -299,6 +301,9 @@ namespace UPO
 
 			mWorld->mEntitiesPendingKill.Add(this);
 
+			mWorld->PushToPendingDestroyFromRS(this);
+
+
 			//GetWorld()->PushToLimbo(this);
 			//this pass sets children flag and adds them to limbo
 			Destroy_Pass0();
@@ -313,7 +318,7 @@ namespace UPO
 			if (child->FlagTestAnClear(EEF_Alive))
 			{
 				child->mWorld->mEntitiesPendingKill.Add(child);
-
+				child->mWorld->PushToPendingDestroyFromRS(child);
 				//child->GetWorld()->PushToLimbo(child);
 				child->Destroy_Pass0();
 			}

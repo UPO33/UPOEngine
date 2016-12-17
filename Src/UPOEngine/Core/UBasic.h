@@ -114,9 +114,12 @@ namespace UPO
 	class TypeInfo;
 	class Stream;
 	class Buffer;
+
+	//UMetaSys.h
+	struct ZZ_ClassTypeCheckResult;
 };
 
-//rest in ../Meta/UMeta.h
+//rest in ../Meta/UMetaSys.h
 #define UCLASS(Class, ParentClass)\
 public:\
 	static int ZZZLineNumber() { return __LINE__; }\
@@ -124,6 +127,7 @@ public:\
 	typedef ParentClass Parent;\
 	typedef Class Self;\
 	friend struct ZZZ_##Class;\
+	friend UPO::ZZ_ClassTypeCheckResult;\
 	static UPO::ClassInfo* GetClassInfoStatic();\
 	void ZZZIsMeta() { static_assert(std::is_same<std::remove_pointer<decltype(this)>::type, Class>::value, "wrong Claass"); }\
 

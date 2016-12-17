@@ -172,8 +172,10 @@ namespace UPO
 	};
 
 
-	UDECLARE_MEMBERFUNCTION_CHECKING(MetaSerializeCheck, MetaSerialize, void, UPO::Stream&);
-	UDECLARE_MEMBERFUNCTION_CHECKING(MetaPropertyChangedCheck, MetaPropertyChanged, void, const UPO::PropertyInfo*);
+	UDECLARE_MEMBERFUNCTION_CHECKING(MetaSerialize, MetaSerialize, void, UPO::Stream&);
+// 	UDECLARE_MEMBERFUNCTION_CHECKING(MetaPropertyChangedCheck, MetaPropertyChanged, void, const UPO::PropertyInfo*);	//DEPRECATED
+	UDECLARE_MEMBERFUNCTION_CHECKING(MetaBeforePropertyChange, MetaBeforePropertyChange, void, const UPO::PropertyInfo*);
+	UDECLARE_MEMBERFUNCTION_CHECKING(MetaAfterPropertyChange, MetaAfterPropertyChange, void, const UPO::PropertyInfo*);
 
 
 	///////////new meta class function declaration here ^^^^^^^^^^^^^
@@ -185,6 +187,7 @@ namespace UPO
 		const char* mClassName = nullptr;	//eg UPO::EntityStaticMesh 
 		const char* mParentClassName = nullptr;	//eg UPO::Entity
 		bool mHasParent = false;
+		bool mIsAbstract = false;
 		size_t mTypeSize = 0;
 		size_t mTypeAlign = 0;
 		// 	size_t mParentTypeSize = 0;
@@ -194,7 +197,12 @@ namespace UPO
 		UPO::TFP<void, void*>								mDestructor = nullptr;
 
 		UPO::TMFP<void, Stream&>				mMetaSerialize = nullptr;
-		UPO::TMFP<void, const PropertyInfo*>	mMetaPropertyChanged = nullptr;
+		TMFP<void, const PropertyInfo*>			mMetaBeforePropertyChange = nullptr;
+		TMFP<void, const PropertyInfo*>			mMetaAfterPropertyChange = nullptr;
+
+		//^^^^^^^^^^^^^^^^^ New meta class here ^^^^^^^^^^^^^^^^^^^^^^^
+
+// 		UPO::TMFP<void, const PropertyInfo*>	mMetaPropertyChanged = nullptr;	//DEPRECATED
 
 		template<typename TClass, typename TParent> void Make()
 		{
@@ -208,12 +216,25 @@ namespace UPO
 			// 		mParentTypeSize = sizeof(void);
 			// 		mParentTypeAlign = alignof(void);
 
-			mDefaulConstructor = [](void* object) { new (object) TClass; };
-			mDestructor = [](void* object) { ((TClass*)object)->~TClass(); };
+			static const bool IsAbs = std::is_abstract<TClass>::value;
+			mIsAbstract = IsAbs;
+			
+			if (IsAbs)
+			{
+				mDefaulConstructor = nullptr;
+				mDestructor = nullptr;
+			}
+			else
+			{
+				mDefaulConstructor = [](void* object) { new (object) std::conditional<IsAbs, Void, TClass>::type; };
+				mDestructor = [](void* object) { ((TClass*)object)->~TClass(); };
+			}
 
 			{
-				mMetaSerialize = UCLASS_GET_MEMBERFUNCTION(MetaSerializeCheck, TClass);
-				mMetaPropertyChanged = UCLASS_GET_MEMBERFUNCTION(MetaPropertyChangedCheck, TClass);
+				mMetaSerialize = UCLASS_GET_MEMBERFUNCTION(MetaSerialize, TClass);
+// 				mMetaPropertyChanged = UCLASS_GET_MEMBERFUNCTION(MetaPropertyChangedCheck, TClass); //DEPRECATED
+				mMetaBeforePropertyChange = UCLASS_GET_MEMBERFUNCTION(MetaBeforePropertyChange, TClass);
+				mMetaAfterPropertyChange = UCLASS_GET_MEMBERFUNCTION(MetaAfterPropertyChange, TClass);
 			}
 
 		}

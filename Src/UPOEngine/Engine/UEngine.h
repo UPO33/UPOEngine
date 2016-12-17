@@ -35,5 +35,6 @@ namespace UPO
 		void LoadWorldAsync(Name assetName);
 	};
 
+	
 	UAPI void LaunchEngine(IEngineInterface* itf);
 }

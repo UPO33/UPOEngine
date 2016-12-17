@@ -15,7 +15,7 @@ namespace UPO
 				{
 					UASSERT(elementTypeInfo);
 					UASSERT(elementTypeInfo->Cast<ClassInfo>());
-					elementTypeInfo->Cast<ClassInfo>()->CallDestructor(element);
+					elementTypeInfo->Cast<ClassInfo>()->Call_Destructor(element);
 				}
 			}
 		}
@@ -38,7 +38,7 @@ namespace UPO
 				{
 					UASSERT(elementTypeInfo);
 					UASSERT(elementTypeInfo->Cast<ClassInfo>());
-					elementTypeInfo->Cast<ClassInfo>()->CallDefaultConstructor(element);
+					elementTypeInfo->Cast<ClassInfo>()->Call_DefaultConstructor(element);
 				}
 				else if (elementType == EPropertyType::EPT_TObjectPtr)
 				{

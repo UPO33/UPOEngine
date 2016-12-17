@@ -9,6 +9,7 @@ namespace UPO
 {
 	//////////////////////////////////////////////////////////////////////////
 	class World;
+	class WorldRS;
 	class WorldTicking;
 	class EntityRS;
 
@@ -125,7 +126,7 @@ namespace UPO
 		{
 			mEntityFlag.Set(flag);
 		}
-		void FlagClear(EEntityFlag flag)
+		void FlagClear(unsigned flag)
 		{
 			mEntityFlag.Clear(flag);
 		}

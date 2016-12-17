@@ -36,7 +36,7 @@ namespace UPO
 #endif
 	private:
 		ClassInfo*			mClassInfo;
-		ObjectRefData*		mRefData;
+		mutable ObjectRefData*		mRefData;
 		
 	public:
 		Object() {}
@@ -46,12 +46,11 @@ namespace UPO
 		ObjectRefData* GetRefData();
 		template<typename T> T* Cast() const
 		{
-			if (GetClassInfo()->IsBaseOf(T::GetClassInfoStatic())) return (T*) this;
+			if (IsBaseOf(T::GetClassInfoStatic())) return (T*) this;
 			return nullptr;
 		}
-
+		bool IsBaseOf(const ClassInfo* baseClass) const;
 		bool IsAsset() const;
 		bool IsEntity() const;
 	};
-
 };

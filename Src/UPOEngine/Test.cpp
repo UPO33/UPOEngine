@@ -14,6 +14,7 @@
 #include "Engine/UWorldTimer.h"
 #include "Core/USparseArray.h"
 #include "Core/UMatrix.h"
+#include "core/UDelegate.h"
 
 namespace UPO
 {
@@ -161,17 +162,41 @@ namespace UPO
 		//Matrix
 		//A * B * C 
 		//applying order first C then B then A
-		Matrix4 mt;
-		mt.MakeTranslation(Vec3(10, 0, 0));
-		Matrix4 mr;
-		mr.MakeRotationY(180);
-		Matrix4 mr2;
-		mr2.MakeRotationY(180);
-		Matrix4 mat2 = mr*mt; //mt * mr * mr2;
-		mat2.MakeTranslationRotationScale(Vec3(10, 0, 0), Vec3(0), Vec3(2));
-		Vec3 vt = mat2.TransformVec3W1(Vec3(0));
-		VECPRINT(vt);
+// 		Matrix4 mt;
+// 		mt.MakeTranslation(Vec3(10, 0, 0));
+// 		Matrix4 mr;
+// 		mr.MakeRotationY(180);
+// 		Matrix4 mr2;
+// 		mr2.MakeRotationY(180);
+// 		Matrix4 mat2 = mr*mt; //mt * mr * mr2;
+// 		mat2.MakeTranslationRotationScale(Vec3(10, 0, 0), Vec3(0), Vec3(2));
+// 		Vec3 vt = mat2.TransformVec3W1(Vec3(0));
+// 		VECPRINT(vt);
 
+		struct TestS3
+		{
+			static void SFunc(int i)
+			{
+				printf("sfunc %i\n", i);
+			}
+			void Func(int i)
+			{
+				printf("b  %i\n", i);
+			}
+		};
+
+		struct Obj333 : public Object
+		{
+			void Func(int i)
+			{
+
+			}
+		};
+
+		int nnnn = 90;
+
+		TDelegate<void, int> del0;
+		if (del0) del0(0);
 
 		int tmp = 0;
 		std::cin >> tmp;

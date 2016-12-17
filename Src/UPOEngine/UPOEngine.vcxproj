@@ -32,6 +32,7 @@
     <ClInclude Include="Core\UHash.h" />
     <ClInclude Include="Core\UConfig.h" />
     <ClInclude Include="Core\UInstruction.h" />
+    <ClInclude Include="Core\ULambtion.h" />
     <ClInclude Include="Core\ULog.h" />
     <ClInclude Include="Core\UMap.h" />
     <ClInclude Include="Core\UMatrix.h" />
@@ -54,8 +55,10 @@
     <ClInclude Include="Engine\UComponent.h" />
     <ClInclude Include="Engine\UEngine.h" />
     <ClInclude Include="Engine\UEntity.h" />
+    <ClInclude Include="Engine\UEntityCamera.h" />
     <ClInclude Include="Engine\UEntityGFX.h" />
     <ClInclude Include="Engine\UEntityStaticMesh.h" />
+    <ClInclude Include="Engine\UEntityTest.h" />
     <ClInclude Include="Engine\UGameInstance.h" />
     <ClInclude Include="Engine\UGameWindow.h" />
     <ClInclude Include="Engine\UMaterial.h" />
@@ -130,8 +133,10 @@
     <ClCompile Include="Engine\UComponent.cpp" />
     <ClCompile Include="Engine\UEngine.cpp" />
     <ClCompile Include="Engine\UEntity.cpp" />
+    <ClCompile Include="Engine\UEntityCamera.cpp" />
     <ClCompile Include="Engine\UEntityGFX.cpp" />
     <ClCompile Include="Engine\UEntityStaticMesh.cpp" />
+    <ClCompile Include="Engine\UEntityTest.cpp" />
     <ClCompile Include="Engine\UGameInstance.cpp" />
     <ClCompile Include="Engine\UGameWindow.cpp" />
     <ClCompile Include="Engine\UMaterial.cpp" />

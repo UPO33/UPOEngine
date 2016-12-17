@@ -6,7 +6,7 @@
 namespace UPO
 {
 	//////////////////////////////////////////////////////////////////////////
-	template<unsigned CapacityInBytes, bool GameIsWriter = true> class alignas(64) CommandPool
+	template<unsigned CapacityInBytes, bool GameIsWriter = true> class alignas(64) TCommandPool
 	{
 		static const unsigned CAPACITY = CapacityInBytes;
 
@@ -40,10 +40,10 @@ namespace UPO
 		}
 
 	public:
-		CommandPool(const CommandPool&) = delete;
-		CommandPool& operator = (const CommandPool&) = delete;
+		TCommandPool(const TCommandPool&) = delete;
+		TCommandPool& operator = (const TCommandPool&) = delete;
 
-		CommandPool()
+		TCommandPool()
 		{
 			mLine0.mSeek = mLine0.mBuffer;
 			mLine1.mSeek = mLine1.mBuffer;
@@ -51,7 +51,7 @@ namespace UPO
 			mWrite = &mLine0;
 			mRead = &mLine1;
 		}
-		~CommandPool()
+		~TCommandPool()
 		{
 			UASSERT(mWrite->mSeek == mWrite->mBuffer);
 			UASSERT(mRead->mSeek == mRead->mBuffer);
@@ -75,7 +75,7 @@ namespace UPO
 			char* ptr = PEnqueue(sizeof(NewCMD));
 			new (ptr) NewCMD(proc, ptr + sizeof(NewCMD));
 		}
-		template<typename Lambda> CommandPool& operator << (Lambda& proc)
+		template<typename Lambda> TCommandPool& operator << (Lambda& proc)
 		{
 			Enqueue(proc);
 			return *this;

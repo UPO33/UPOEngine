@@ -28,12 +28,19 @@ namespace UPO
 	{
 		if (mRefData == nullptr)
 		{
-			mRefData = ObjectRefData::GetNew(this);
+			mRefData = ObjectRefData::GetNew();
+			mRefData->mObject = this;
+			mRefData->mRefCount = 0;
 		}
 		return mRefData;
 	}
 
 
+
+	bool Object::IsBaseOf(const ClassInfo* baseClass) const
+	{
+		return mClassInfo->IsBaseOf(baseClass);
+	}
 
 	bool Object::IsAsset() const
 	{

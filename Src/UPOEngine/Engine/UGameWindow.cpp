@@ -8,6 +8,31 @@
 
 namespace UPO
 {
+	WPARAM UMapLeftRightVKey(WPARAM vk, LPARAM lParam)
+	{
+		WPARAM new_vk = vk;
+		UINT scancode = (lParam & 0x00ff0000) >> 16;
+		int extended = (lParam & 0x01000000) != 0;
+
+		switch (vk) {
+		case VK_SHIFT:
+			new_vk = MapVirtualKey(scancode, MAPVK_VSC_TO_VK_EX);
+			break;
+		case VK_CONTROL:
+			new_vk = extended ? VK_RCONTROL : VK_LCONTROL;
+			break;
+		case VK_MENU:
+			new_vk = extended ? VK_RMENU : VK_LMENU;
+			break;
+		default:
+			// not a key we map from generic to left/right specialized
+			//  just return it.
+			new_vk = vk;
+			break;
+		}
+
+		return new_vk;
+	}
 
 	LRESULT WINAPI WNDProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam);
 
@@ -154,6 +179,8 @@ namespace UPO
 			MSG msg;
 			ZeroType(msg);
 
+			Input::Tick();
+
 			// Handle the windows messages.
 			while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 			{
@@ -168,22 +195,33 @@ namespace UPO
 			}
 			return true;
 		}
+		bool gAnyKeyDow = false;
 		//////////////////////////////////////////////////////////////////////////
 		LRESULT MessageHandler(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam)
 		{
 			Input::SetMouseState(EMouseButton::EMB_WheelForward, false);
 			Input::SetMouseState(EMouseButton::EMB_WheelBackward, false);
 			Input::SetMouseWheelDelta(0);
+			
+			
+
 
 			switch (umsg)
 			{
 				// Check if a key has been pressed on the keyboard.
 			case WM_KEYDOWN:
-				Input::SetKeyState(wparam, true);
+			case WM_SYSKEYDOWN:
+			{
+				Input::SetKeyState(Win32VKToEKeyCode(UMapLeftRightVKey(wparam, lparam)), true);
+				Input::SetKeyState(EKeyCode::EKC_Any, true);
 				return 0;
+			}
 			case WM_KEYUP:
-				Input::SetKeyState(wparam, false);
+			{
+				Input::SetKeyState(Win32VKToEKeyCode(UMapLeftRightVKey(wparam, lparam)), false);
+				Input::SetKeyState(EKeyCode::EKC_Any, false);
 				return 0;
+			}	
 			case WM_MOUSEMOVE:
 				Input::SetMousePos(GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam));
 				return 0;

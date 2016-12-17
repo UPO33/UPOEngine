@@ -39,7 +39,7 @@ namespace UPO
 		}
 
 		static ObjectRefData NullRef;
-		static ObjectRefData* GetNew(Object* owner);
+		static ObjectRefData* GetNew();
 		static void Free(ObjectRefData* refdata);
 	};
 
@@ -57,6 +57,10 @@ namespace UPO
 		using ObjectType = T;
 
 		TObjectPtr()
+		{
+			mRefData = &ObjectRefData::NullRef;
+		}
+		TObjectPtr(std::nullptr_t)
 		{
 			mRefData = &ObjectRefData::NullRef;
 		}
@@ -100,6 +104,12 @@ namespace UPO
 			}
 			return *this;
 		}
+		TObjectPtr& operator = (std::nullptr_t)
+		{
+			mRefData->Dec();
+			mRefData = &ObjectRefData::NullRef;
+			return *this;
+		}
 		~TObjectPtr()
 		{
 			mRefData->Dec();
@@ -108,6 +118,12 @@ namespace UPO
 		operator T* () const { return (T*)mRefData->mObject; }
 		T* operator -> () const { return (T*)mRefData->mObject; }
 		T* Get() const { return (T*)mRefData->mObject; }
+		
+		bool operator == (const Object* obj) const { return ((Object*)mRefData->mObject) == obj; }
+		bool operator != (const Object* obj) const { return ((Object*)mRefData->mObject) != obj; }
+
+		bool operator == (const TObjectPtr& objptr) const { return mRefData == objptr->mRefData; }
+		bool operator != (const TObjectPtr& objptr) const { return mRefData != objptr->mRefData; }
 	};
 
 	typedef TObjectPtr<Object> ObjectPtr;

@@ -20,13 +20,16 @@ namespace UPO
 	struct AVertexPackRS
 	{
 		class GFXVertexBuffer*	mVB;
+		class GFXIndexBuffer* mIB;
+		unsigned	mVCount;
+		unsigned	mICount;
 	};
 	class AVertexPack : public Asset
 	{
 		TArray<Vec3>	mVertices;
 		AVertexPackRS*	mRS;
 
-		void OnInit()
+		void OnInit() override
 		{
 			EnqueueRenderCommend([this]() {
 				AVertexPackRS* rs = new AVertexPackRS;
@@ -40,20 +43,20 @@ namespace UPO
 				}
 			});
 		}
-		void OnRelease()
+		bool IsRenderDataReady() const
 		{
-			EnqueueRenderCommend([this]() {
+			return mRS != nullptr;
+		}
+		void OnRelease() override
+		{
+			EnqueueRenderCommend([mRS]() {
 				if (mRS)
 				{
 					delete mRS;
-					mRS = nullptr;
 				}
-				EnqueueRenderCommend([this]() {
-
-				});
 			});
 		}
-		void MetaPropertyChanged(PropertyInfo*)
+		void MetaAfterPropertyChange(const PropertyInfo*)
 		{
 			EnqueueRenderCommend([this]() {
 				USCOPE_LOCK();
@@ -61,7 +64,7 @@ namespace UPO
 				rs->mVB = gGFX->CreateVertexBuffer(GFXVertexBuffer_Desc());
 			});
 		}
-		void MetaPpopertyBeforeChange(PropertyInfo*)
+		void MetaBeforePropertyChange(const PropertyInfo*)
 		{
 			USCOPE_LOCK(mEditingLock);
 		}

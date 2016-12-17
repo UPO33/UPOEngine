@@ -429,13 +429,72 @@ namespace UPO
 
 	void AssetSys::Tick(float delta)
 	{
+		///////////////////cheeking release
+		{
+			static const unsigned NUM_RELEASECHECK = 32;
 
+			unsigned i = mReleaseCheckIndex;
+			unsigned num = mReleaseCheckIndex + NUM_RELEASECHECK;
+			mReleaseCheckIndex += NUM_RELEASECHECK;
+			for (; i < num; i++)
+			{
+				if (mLoadedAssets.IsIndexValid(i))
+				{
+					Asset* asset = mLoadedAssets[i];
+					if (asset->FlagTestAndClear(EAF_Alive) && asset->NeedsRelease())
+					{
+						mTickSinceLastKill = 0;
+						mPendingKillAssets.Add(asset);
+						asset->OnRelease();
+					}
+				}
+				else
+				{
+					mReleaseCheckIndex = 0;
+					break;
+				}
+			}
+		}
+
+		/////////////////////kill released entities
+		static const unsigned NUM_TICK_REQUIRED_TO_KILL = 60;
+
+		if (mTickSinceLastKill > NUM_TICK_REQUIRED_TO_KILL);
+		{
+			mTickSinceLastKill = 0;
+
+			for (Asset* pendingKill : mPendingKillAssets)
+			{
+				mLoadedAssets.LastElement()->mPrivateIndex = pendingKill->mPrivateIndex;
+				mLoadedAssets.RemoveAtSwap(pendingKill->mPrivateIndex);
+			}
+
+			for (Asset* pendingKill : mPendingKillAssets)
+			{
+				DeleteObject(pendingKill);
+			}
+
+			mPendingKillAssets.RemoveAll();
+		}
+		mTickSinceLastKill++;
 	}
 
 	void AssetSys::Frame(float delta)
 	{
 
 	}
+
+// 	bool AssetSys::ForceUnloadAsset(Asset* asset)
+// 	{
+// 		if (asset->FlagTestAndClear(EAF_Alive))
+// 		{
+// 			mLoadedAssets.LastElement()->mPrivateIndex = asset->mPrivateIndex;
+// 			mLoadedAssets.RemoveAtSwap(asset->mPrivateIndex);
+// 
+// 			asset->mRefs.RemoveAll();
+// 			asset->OnRelease();
+// 		}
+// 	}
 
 	ClassInfo* AssetEntry::GetClassInfo() const
 	{
@@ -491,7 +550,7 @@ namespace UPO
 			return true;
 		}
 
-		if (const ClassInfo* assetClass = MetaSys::Get()->FindClass(mClassName))
+		if (const ClassInfo* assetClass = GMetaSys()->FindClass(mClassName))
 		{
 			ULOG_MESSAGE("start loading asset [%s] ...", mAssetName.CStr());
 
@@ -504,12 +563,15 @@ namespace UPO
 				
 				asset->AddRef(ref);
 				asset->mEntry = this;
+				asset->mPrivateIndex = GAssetSys()->mLoadedAssets.Add(asset);
 
 				mInstance = asset;
 			
-				asset->PostLoad();
-
 				ULOG_SUCCESS("asset [%s] loaded", GetName());
+
+				asset->OnInit();
+
+				
 				return true;
 			}
 			else

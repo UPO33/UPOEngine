@@ -25,23 +25,12 @@ namespace UPO
 		OnInitRS();
 	}
 
-	void Asset::Release()
+	bool Asset::NeedsRelease()
 	{
-		if (mAssetFlag.TestAndClear(EAF_Alive))
-		{
+		for (size_t i = 0; i < mRefs.Length(); i++)
+			if (mRefs[i]) return false;
 
-		}
-	}
-	void OnContruction()
-	{
-		Enqueue([]()
-		{
-
-		});
-	}
-	void OnDestruction()
-	{
-
+		return true;
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -78,12 +67,12 @@ namespace UPO
 		return true;
 	}
 
-	void Asset::MetaPropertyChanged(PropertyInfo*)
-	{
-	}
+
 
 	void Asset::AddRef(Object* obj)
 	{
+		if (!IsAlive()) return;
+
 		ObjectPtr objPtr = obj;
 		if (objPtr)
 		{
@@ -93,26 +82,18 @@ namespace UPO
 
 	void Asset::RemoveRef(Object* obj)
 	{
+		if (!IsAlive()) return;
+
 		ObjectPtr objPtr = obj;
 		if (objPtr)
 		{
 			mRefs.RemoveSwap(objPtr);
 		}
+	}
 
-
-		//check remove
-		for (size_t i = 0; i < mRefs.Length(); i++)
-		{
-		}
-
-		mRefs.RemoveIf([](ObjectPtr& pobj) { 
-			return pobj.Get() == nullptr;
-		});
-
-		if (mRefs.Length() == 0) // there is no ref
-		{
-
-		}
+	void Asset::MetaAfterPropertyChange(const PropertyInfo*)
+	{
+		MarkDirty();
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -134,5 +115,7 @@ namespace UPO
 	{
 		stream.RW(mID0).RW(mID1);
 	}
+
+
 
 };

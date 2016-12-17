@@ -119,28 +119,42 @@ namespace UPO
 
 
 	//////////////////////////////////////////////////////////////////////////
-	void ClassInfo::CallDefaultConstructor(void* object) const
+	void ClassInfo::Call_DefaultConstructor(void* object) const
 	{
 		UASSERT(object);
 		UASSERT(mDefalutConstructor);
 		mDefalutConstructor(object);
 	}
 	//////////////////////////////////////////////////////////////////////////
-	void ClassInfo::CallDestructor(void* object) const
+	void ClassInfo::Call_Destructor(void* object) const
 	{
 		UASSERT(object);
 		UASSERT(mDestructor);
 		mDestructor(object);
 	}
-	//////////////////////////////////////////////////////////////////////////
-	void ClassInfo::CallMetaPropertyChanged(void* object, const PropertyInfo* prp) const
+//DEPRECATED
+//////////////////////////////////////////////////////////////////////////
+// 	void ClassInfo::CallMetaPropertyChanged(void* object, const PropertyInfo* prp) const
+// 	{
+// 		UASSERT(object);
+// 		UASSERT(mMetaPropertyChanged);
+// 		mMetaPropertyChanged(object, prp);
+// 	}
+
+	void ClassInfo::Call_MetaBeforePropertyChange(void* obj, const PropertyInfo* prp)
 	{
-		UASSERT(object);
-		UASSERT(mMetaPropertyChanged);
-		mMetaPropertyChanged(object, prp);
+		UASSERT(obj && mMetaBeforePropertyChange);
+		mMetaBeforePropertyChange(obj, prp);
 	}
+
+	void ClassInfo::Call_MetaAfterPropertyChange(void* obj, const PropertyInfo* prp)
+	{
+		UASSERT(obj && mMetaAfterPropertyChange);
+		mMetaAfterPropertyChange(obj, prp);
+	}
+
 	//////////////////////////////////////////////////////////////////////////
-	void ClassInfo::CallMetaSerialize(void* object, Stream& stream) const
+	void ClassInfo::Call_MetaSerialize(void* object, Stream& stream) const
 	{
 		UASSERT(object);
 		UASSERT(mMetaSerialize);
@@ -363,25 +377,26 @@ namespace UPO
 		return MetaSys::Get()->FindType(lut[(unsigned)propertyType]);
 	}
 
-	void SPropertyChain::PerformMetaPropertyChanged(void* object)
-	{
-		UASSERT(object);
-
-		if (mNumProperty == 0) return;
-
-		void* objs[MAX_INHERITANCE];
-		void* obj = object;
-		for (unsigned i = 0; i < mNumProperty; i++)
-		{
-			objs[i] = obj = mProperties[i]->Map(obj);
-		}
-		for (unsigned i = mNumProperty - 1; i >= 0; i--)
-		{
-			if (mProperties[i]->GetOwner()->HasMetaPropertyChanged())
-			{
-				mProperties[i]->GetOwner()->CallMetaPropertyChanged(objs[i], mProperties[i]);
-			}
-		}
-	}
+//DEPRECATED
+// 	void SPropertyChain::PerformMetaPropertyChanged(void* object)
+// 	{
+// 		UASSERT(object);
+// 
+// 		if (mNumProperty == 0) return;
+// 
+// 		void* objs[MAX_INHERITANCE];
+// 		void* obj = object;
+// 		for (unsigned i = 0; i < mNumProperty; i++)
+// 		{
+// 			objs[i] = obj = mProperties[i]->Map(obj);
+// 		}
+// 		for (unsigned i = mNumProperty - 1; i >= 0; i--)
+// 		{
+// 			if (mProperties[i]->GetOwner()->HasMetaPropertyChanged())
+// 			{
+// 				mProperties[i]->GetOwner()->CallMetaPropertyChanged(objs[i], mProperties[i]);
+// 			}
+// 		}
+// 	}
 
 };

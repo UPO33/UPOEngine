@@ -17,10 +17,10 @@ namespace UPO
 	{
 		PropertyInfo* mProperties[MAX_INHERITANCE];
 		unsigned mNumProperty;
-
-		//performs MetaPropertyChanged from down to up
-		//@object : the object that first property in inside it
-		void PerformMetaPropertyChanged(void* object);
+//DEPRECATED
+// 		//performs MetaPropertyChanged from down to up
+// 		//@object : the object that first property in inside it
+// 		void PerformMetaPropertyChanged(void* object);
 	};
 
 	//////////////////////////////////////////////////////////////////////////
@@ -133,11 +133,17 @@ namespace UPO
 		TFP<void,void*>						mDefalutConstructor = nullptr;
 		TFP<void,void*>						mDestructor = nullptr;
 		
-		TMFP<void, const PropertyInfo*>		mMetaPropertyChanged = nullptr;
+		//DEPRECATED
+// 		TMFP<void, const PropertyInfo*>		mMetaPropertyChanged = nullptr;
+
 		TMFP<void, Stream&>					mMetaSerialize = nullptr;
-		
+
+		TMFP<void, const PropertyInfo*>		mMetaBeforePropertyChange = nullptr;
+		TMFP<void, const PropertyInfo*>		mMetaAfterPropertyChange = nullptr;
+
 		TArray<PropertyInfo>				mProperties;
 		TArray<ClassInfo*>					mSubClasses;
+		bool								mIsAbstract;
 		bool								mRegistered = false;
 		
 		
@@ -148,17 +154,28 @@ namespace UPO
 		bool IsObject() const;
 		bool IsAsset() const;
 		bool IsBaseOf(const ClassInfo* base) const;
+		bool IsAbstract() const { return mIsAbstract; }
 
 		//calls default constructor on object
-		void CallDefaultConstructor(void* object) const;
+		bool Has_DefaultConstructor() const { return mDefalutConstructor; }
+		void Call_DefaultConstructor(void* object) const;
 		//calls destructor on object
-		void CallDestructor(void* object) const;
+		void Call_Destructor(void* object) const;
+		bool Has_Destructor() const { return mDestructor; }
 
-		bool HasMetaPropertyChanged() const { return mMetaPropertyChanged != nullptr; }
-		void CallMetaPropertyChanged(void* object, const PropertyInfo* prp) const;
+		//DEPRECATED
+// 		bool HasMetaPropertyChanged() const { return mMetaPropertyChanged != nullptr; }
+// 		void CallMetaPropertyChanged(void* object, const PropertyInfo* prp) const;
 
-		bool HasMetaSerialize() const { return mMetaSerialize; }
-		void CallMetaSerialize(void* object, Stream& stream) const;
+		bool Has_MetaBeforePropertyChange() const { return mMetaBeforePropertyChange; }
+		void Call_MetaBeforePropertyChange(void* obj, const PropertyInfo* prp);
+		bool Has_MetaAfterPropertyChange() const { return mMetaAfterPropertyChange; }
+		void Call_MetaAfterPropertyChange(void* obj, const PropertyInfo* prp);
+
+
+
+		bool Has_MetaSerialize() const { return mMetaSerialize; }
+		void Call_MetaSerialize(void* object, Stream& stream) const;
 
 		size_t NumProperty() const { return mProperties.Length(); }
 		const TArray<PropertyInfo>& GetProperties() const { return mProperties; }

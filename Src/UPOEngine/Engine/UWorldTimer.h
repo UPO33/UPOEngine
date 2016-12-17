@@ -1,7 +1,7 @@
 #pragma once
 
 #include "UEntity.h"
-
+#include "../Core/UDelegate.h"
 
 namespace UPO
 {
@@ -21,25 +21,20 @@ namespace UPO
 		float					mFireTime;
 		unsigned				mNumRepeat;
 		unsigned				mIsPaused;
-		TObjectPtr<Object>		mObject;
+		TDelegate<void>			mProc;
 		float					mInterval;
-		TFP<void>				mFunc;
-		TMFP<void>				mMemFunc;
-		std::function<void()>	mStdFunc;
 		float					mPauseTime;
 		unsigned				mID;
 
+		
+
 		void Check();
-	public:
 		void Pause();
 		void Resume();
 		void Stop();
 
 		bool ShouldBeRemoved() const 
 		{ 
-// 			if (mNumRepeat == 0) return true;
-// 			if (mFunc) return false;
-// 			return !mObject;
 			return mNumRepeat == 0;
 		}
 		
@@ -60,8 +55,14 @@ namespace UPO
 			return nullptr;
 		}
 		void Invalidate() { mEntry = nullptr; mID = 0; }
+		TimerHandle& operator = (std::nullptr_t)
+		{
+			Invalidate();
+			return *this;
+		}
 		bool IsValid() const { return GetEntry() != nullptr; }
-		
+		operator bool() const { return IsValid(); }
+
 		void Pause() const { if (auto entry = GetEntry()) entry->Pause(); }
 		void Resume() const { if (auto entry = GetEntry()) entry->Resume(); }
 		void Stop() const { if (auto entry = GetEntry()) entry->Stop(); }
@@ -83,7 +84,7 @@ namespace UPO
 
 		void Tick(float delta);
 		
-		TimerEntry* GetNewTimerEntry();
+		TimerEntry* GetNewTimerEntry(float intervalSeconds, unsigned numRepeat);
 
 	public:
 		WorldTimer();
@@ -94,9 +95,34 @@ namespace UPO
 		
 		//'proc' will be called 'numRepeat' times every 'intervalSeconds' seconds
 		TimerHandle StartTimer(float intervalSeconds, unsigned numRepeat, void(*proc)());
-		TimerHandle StartTimer(float intervalSeconds, unsigned numRepeat, Object* object, TMFP<void> proc);
-		TimerHandle StartTimer(float intervalSeconds, unsigned numRepeat, Object* object, std::function<void()> proc);
 
+		template<typename TClass> TimerHandle StartTimer(float intervalSeconds, unsigned numRepeat, Object* object, void(TClass::* memfunc)())
+		{
+			if (numRepeat == 0 || memfunc == nullptr || object == nullptr) return TimerHandle();
+
+			TimerEntry* newEntry = GetNewTimerEntry(intervalSeconds, numRepeat);
+			newEntry->mProc.BindMemberObject<TClass>(object, memfunc);
+
+			return TimerHandle(newEntry);
+		}
+		template<typename Lambda> TimerHandle StartTimer(float intervalSeconds, unsigned numRepeat, Object* object, const Lambda& lambda)
+		{
+			if (numRepeat == 0 || object == nullptr) return TimerHandle();
+
+			TimerEntry* newEntry = GetNewTimerEntry(intervalSeconds, numRepeat);
+			newEntry->mProc.BindLambdaObject(object, lambda);
+
+			return TimerHandle(newEntry);
+		}
+		template<typename Lambda> TimerHandle StartTimer(float intervalSeconds, unsigned numRepeat, const Lambda& lambda)
+		{
+			if (numRepeat == 0) return TimerHandle();
+
+			TimerEntry* newEntry = GetNewTimerEntry(intervalSeconds, numRepeat);
+			newEntry->mProc.BindLambda(lambda);
+
+			return TimerHandle(newEntry);
+		}
 		void StopAll();
 	};
 };

@@ -207,9 +207,9 @@ namespace UPO
 
 			uint16 numProperty = 0;
 
-			if (classInfo->HasMetaSerialize())
+			if (classInfo->Has_MetaSerialize())
 			{
-				classInfo->CallMetaSerialize(object, memStream);
+				classInfo->Call_MetaSerialize(object, memStream);
 				numProperty = 0xFFff;
 			}
 			else
@@ -255,7 +255,7 @@ namespace UPO
 			
 			if (numProperty == 0xFFff)	//has custom serialize ?
 			{
-				if(ci) ci->CallMetaSerialize(obj, streamProperties);
+				if(ci) ci->Call_MetaSerialize(obj, streamProperties);
 			}
 			else
 			{

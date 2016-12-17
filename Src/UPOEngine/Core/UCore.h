@@ -13,7 +13,7 @@
 #include "UStream.h"
 #include "UModule.h"
 #include "UTree.h"
-#include "UDelegate.h"
+// #include "UDelegate.h"
 #include "UMap.h"
 #include "UConfig.h"
 #include "UEngineConfig.h"

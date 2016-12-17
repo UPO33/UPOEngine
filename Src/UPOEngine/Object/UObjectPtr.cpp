@@ -90,7 +90,7 @@ namespace UPO
 	FreeListAllocator gObjPtrAllocator { sizeof(ObjectRefData), 256 };
 
 	//////////////////////////////////////////////////////////////////////////
-	ObjectRefData* ObjectRefData::GetNew(Object* owner)
+	ObjectRefData* ObjectRefData::GetNew()
 	{
 		return new (gObjPtrAllocator.Alloc()) ObjectRefData;
 // 		ObjectRefData* ret = gObjectPtrContext.GetFreeInstance();

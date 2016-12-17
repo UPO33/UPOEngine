@@ -9,7 +9,6 @@ namespace UPO
 {
 	//////////////////////////////////////////////////////////////////////////
 	class AWorldSetting;
-	class IWorldRS;
 	class WorldRS;
 
 	//////////////////////////////////////////////////////////////////////////
@@ -29,8 +28,9 @@ namespace UPO
 	//////////////////////////////////////////////////////////////////////////
 	struct EntityCreationParam
 	{
-		ClassInfo*	mClass;
-		Entity*		mParent;
+		ClassInfo*	mClass = nullptr;
+		Entity*		mParent = nullptr;
+		Transform	mWorldTransform = Transform::IDENTITY;
 	};
 	//////////////////////////////////////////////////////////////////////////
 	class UAPI World : public Asset
@@ -75,12 +75,19 @@ namespace UPO
 
 		TArray<Entity*>		mEntitiesPendingKill;
 		TArray<Entity*>		mEntitiesRenderDataDirty;
-		IWorldRS*			mRS = nullptr;
+		WorldRS*			mRS = nullptr;
+		
 		TArray<Entity*>		mEntitiesPendingAddToRS;
-		TArray<EntityRS*>	mEntitiesPendingDestroyFromRS;
+		TArray<Entity*>		mEntitiesPendingDestroyFromRS;
+
+		volatile long		mPendingIndex;	//world uses mPendingIndex, rs uses mPendingIndex ^ 1;
 		Event				mFetchCompleted;
 		Event				mTickEndEvent;
 		CriticalSection		mIntersection;
+
+
+		void PushToPendingAddToRS(Entity* ent);
+		void PushToPendingDestroyFromRS(Entity* ent);
 
 		void Intersection();
 
@@ -92,6 +99,8 @@ namespace UPO
 
 		World();
 		~World();
+		
+		WorldRS* GetRS() const { return mRS; }
 
 		void SetPlaying();
 		void PausePlaying();
@@ -109,7 +118,7 @@ namespace UPO
 		Entity* CreateEntity(EntityCreationParam& param);
 		//////////////////////////////////////////////////////////////////////////
 		void SingleTick(WorldTickResult& result);
-
+		void Tick(float delta);
 		void PerformBeginPlay();
 		void PerformEndPlay();
 		void PerformTick();
@@ -123,21 +132,13 @@ namespace UPO
 		Entity* GetRootEntity();
 
 		void Release();
+
+		WorldRS* CreateRS();
+
+		World* Duplicate();
 	};
 	//////////////////////////////////////////////////////////////////////////
-// 	class Renderer;
 
-	class IWorldRS
-	{
-	public:
-		World* mGS;
-
-		IWorldRS(World* gs) : mGS(gs) {}
-
-		//get Destroyed entities in this frame
-		virtual void FetchDestroyedEntities(TArray<Entity*>& entities) {}
-		virtual void PerformFetch() {}
-	};
 	//////////////////////////////////////////////////////////////////////////
 // 	class EntityCamera
 // 	{

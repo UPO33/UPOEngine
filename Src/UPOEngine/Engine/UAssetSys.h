@@ -62,10 +62,20 @@ namespace UPO
 	************************************************************************/
 	class UAPI AssetSys
 	{
+		friend AssetEntry;
+
 		TArray<AssetEntry*>	mAssetEntries;
 		AssetEntry* mEngineFolder = nullptr;
 		AssetEntry* mProjectFolder = nullptr;
 
+		TArray<Asset*>	mLoadedAssets;
+		TArray<Asset*>	mPendingKillAssets;
+
+		TArray<Asset*>	mTickEnableAssets;
+		TArray<Asset*>	mFrameEnableAssets;
+
+		unsigned			mReleaseCheckIndex = 0;
+		unsigned			mTickSinceLastKill = 0;
 
 	public:
 		static AssetSys* Get();
@@ -108,6 +118,8 @@ namespace UPO
 
 		void Tick(float delta);
 		void Frame(float delta);
+
+// 		bool ForceUnloadAsset(Asset* asset);
 	};
 	inline AssetSys* GAssetSys() { return AssetSys::Get(); }
 

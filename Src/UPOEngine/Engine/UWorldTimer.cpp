@@ -13,15 +13,15 @@ namespace UPO
 		return ++Counter;
 	}
 
-	TimerEntry* WorldTimer::GetNewTimerEntry()
+	TimerEntry* WorldTimer::GetNewTimerEntry(float intervalSeconds, unsigned numRepeat)
 	{
 		TimerEntry* newEntry = new (gTimerEntryAllocator.Alloc()) TimerEntry;
 		newEntry->mOwner = this;
-		newEntry->mStdFunc = nullptr;
-		newEntry->mMemFunc = nullptr;
-		newEntry->mFunc = nullptr;
 		newEntry->mIsPaused = false;
 		newEntry->mPauseTime = 0;
+		newEntry->mInterval = intervalSeconds;
+		newEntry->mNumRepeat = numRepeat;
+		newEntry->mFireTime = mSeconds + intervalSeconds;
 		newEntry->mID = GetNewTimerID();
 
 		mTimers.Add(newEntry);
@@ -45,40 +45,11 @@ namespace UPO
 	{
 		if (numRepeat == 0 || proc == nullptr) return TimerHandle();
 
-		TimerEntry* newEntry = GetNewTimerEntry();
-		newEntry->mInterval = intervalSeconds;
-		newEntry->mNumRepeat = numRepeat;
-		newEntry->mFunc = proc;
-		newEntry->mFireTime = mSeconds + intervalSeconds;
+		TimerEntry* newEntry = GetNewTimerEntry(intervalSeconds, numRepeat);
+		newEntry->mProc.BindStatic(proc);
+		UASSERT(newEntry->mProc.IsBound());
 		return TimerHandle(newEntry);
 	}
-
-	TimerHandle WorldTimer::StartTimer(float intervalSeconds, unsigned numRepeat, Object* object, TMFP<void> proc)
-	{
-		if (numRepeat == 0 || proc == nullptr || object == nullptr) return TimerHandle();
-
-		TimerEntry* newEntry = GetNewTimerEntry();
-		newEntry->mInterval = intervalSeconds;
-		newEntry->mNumRepeat = numRepeat;
-		newEntry->mObject = object;
-		newEntry->mMemFunc = proc;
-		newEntry->mFireTime = mSeconds + intervalSeconds;
-		return TimerHandle(newEntry);
-	}
-
-	TimerHandle WorldTimer::StartTimer(float intervalSeconds, unsigned numRepeat, Object* object, std::function<void()> proc)
-	{
-		if (numRepeat == 0 || proc == nullptr || object == nullptr) return TimerHandle();
-
-		TimerEntry* newEntry = GetNewTimerEntry();
-		newEntry->mInterval = intervalSeconds;
-		newEntry->mNumRepeat = numRepeat;
-		newEntry->mObject = object;
-		newEntry->mStdFunc = proc;
-		newEntry->mFireTime = mSeconds + intervalSeconds;
-		return TimerHandle(newEntry);
-	}
-
 
 	void WorldTimer::StopAll()
 	{
@@ -157,6 +128,8 @@ namespace UPO
 		mID = GetNewTimerID();
 	}
 
+
+
 	void TimerEntry::Check()
 	{
 		// member function and lambda with capture need Object
@@ -168,7 +141,7 @@ namespace UPO
 		{
 			if (mIsPaused)
 			{
-				if (mFunc == nullptr && !mObject)
+				if(!mProc.IsBound())
 				{
 					mNumRepeat = 0;
 					mID = GetNewTimerID();
@@ -180,10 +153,8 @@ namespace UPO
 				mNumRepeat--;
 				mFireTime += mInterval;
 
-				if (mFunc)
-					mFunc();
-				else if (Object* obj = mObject.Get())
-					mMemFunc ? mMemFunc(obj) : mStdFunc();
+				if (mProc.IsBound())
+					mProc.Invoke();
 				else
 					mNumRepeat = 0;
 
