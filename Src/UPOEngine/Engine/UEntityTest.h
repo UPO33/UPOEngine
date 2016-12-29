@@ -5,7 +5,7 @@
 
 namespace UPO
 {
-	class EntityTest : public Entity
+	class UAPI EntityTest : public Entity
 	{
 		UCLASS(EntityTest, Entity)
 	public:

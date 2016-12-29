@@ -17,10 +17,15 @@ inline float getCofactor(float m0, float m1, float m2,
 
 namespace UPO
 {
-	struct alignas(16) Quat
+	struct UAPI alignas(16) Quat
 	{
 		float mX, mY, mZ, mW;
 
+		Quat(const Vec3& axis, float angle);
+		Quat(const Vec3& angles);
+		
+		static void Mul(const Quat& a, const Quat& b, Quat& out);
+		
 	};
 
 // 	struct Transform
@@ -90,6 +95,8 @@ namespace UPO
 	//4x4 column major Matrix
 	struct UAPI Matrix4
 	{
+		UCLASS(Matrix4, void)
+
 		static const Matrix4 IDENTITY;
 
 		union
@@ -195,6 +202,12 @@ namespace UPO
 		//Translation, rotation, and reflection are the only orthogonal transformations
 		bool IsOrthogonal(float epsilon = 0.000001f);
 		Matrix4& operator += (const Matrix4& m);
+
+		void MetaSerialize(Stream&);
+
+
+			Vec3 GetRotationEuler0() const;
+			Vec3 GetRotationEuler1() const;
 	};
 
 	typedef Matrix4 Transform;

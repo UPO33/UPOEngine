@@ -1,7 +1,6 @@
 #pragma once
 
-#include "../Object/UObject.h"
-#include "../Core/UCore.h"
+#include "UWorld.h"
 
 #define UUSE_ARRAYCHILD
 
@@ -63,15 +62,20 @@ namespace UPO
 		Flag			mEntityFlag;
 
 		Entity*		mParent;
-// 		Entity*		mChildHead;
-// 		Entity*		mUpEntity;
-// 		Entity*		mDownEntity;
-
+#ifndef UUSE_ARRAYCHILD
+		Entity*		mChildHead;
+		Entity*		mUpEntity;
+		Entity*		mDownEntity;
+		unsigned	mNumChild;
+#else
 		TArray<Entity*>	mChildren;
-		unsigned		mIndexInParent;
+#endif
+
+		
+		
 
 		Name		mName;
-		unsigned	mNumChild;
+		
 		unsigned	mIndexInWorld;
 		unsigned	mTickRegistered : 1;
 		unsigned	mTickPendingAdd : 1;
@@ -88,7 +92,11 @@ namespace UPO
 		void TransformChanged();
 		void UpdateChildrenTransform();
 		void CalcLocalTrsFromWorldAndParent();
+		
 	public:
+
+		Vec3	mTestVec3;
+
 		Entity();
 
 		void TagRenderDataDirty(unsigned flag);
@@ -179,18 +187,23 @@ namespace UPO
 			while (iter)
 			{
 				proc(iter);
-				DoOnChilChild(proc);
+				iter->DoOnChilChild(proc);
 				iter = iter->mDownEntity;
 			}
-		}
 #else
 			for (size_t i = 0; i < mChildren.Length(); i++)
 			{
 				proc(mChildren[i]);
-				DoOnChilChild(proc);
+				mChildren[i]->DoOnChilChild(proc);
 			}
 #endif
 		};
+
+	public:
+		template<typename TLambda> TimerHandle Invoke(float intervalSeconds, unsigned numRepeat, const TLambda& lambda)
+		{
+			return GetWorld()->GetTimer()->StartTimer(intervalSeconds, numRepeat, this, lambda);
+		}
 	};
 
 

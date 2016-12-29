@@ -103,4 +103,6 @@ namespace UPOEd
 // 		}
 		void InitWorld();
 	};
+
+	extern MainWindow* gMainWindow;
 };

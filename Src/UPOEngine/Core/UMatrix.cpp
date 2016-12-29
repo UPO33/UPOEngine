@@ -1,7 +1,7 @@
 #include "UMatrix.h"
+#include "../Meta/UMeta.h"
 
 #include <DirectXMath.h>
-
 
 namespace UPO
 {
@@ -370,13 +370,95 @@ namespace UPO
 	{
 		return Vec3(mColumn[0].Length3(), mColumn[1].Length3(), mColumn[2].Length3());
 	}
+	bool closeEnough(const float& a, const float& b, const float& epsilon = 0.00001f /*std::numeric_limits<float>::epsilon()*/) {
+		return (epsilon > std::abs(a - b));
+	}
 	Vec3 Matrix4::GetRotationEuler() const
+	{
+		return GetRotationEuler0();
+	}
+
+	Vec3 Matrix4::GetRotationEuler0() const
 	{
 		Vec3 out;
 		out.mX = ::atan2(mElements[1][2], mElements[2][2]) * RAD2DEG;
 		out.mY = ::atan2(-mElements[0][2], Sqrt(mElements[1][2] * mElements[1][2] + mElements[2][2] * mElements[2][2])) * RAD2DEG;
 		out.mZ = ::atan2(mElements[0][1], mElements[0][0]) * RAD2DEG;
 		return out;
+	}
+
+	Vec3 Matrix4::GetRotationEuler1() const
+	{
+#if 0
+		//check for gimbal lock
+		if (closeEnough(mElements[0][2], -1.0f)) {
+			float x = 0; //gimbal lock, value of x doesn't matter
+			float y = PI / 2;
+			float z = x + atan2(mElements[1][0], mElements[2][0]);
+			return Vec3{ x, y, z } * RAD2DEG;
+		}
+		else if (closeEnough(mElements[0][2], 1.0f)) {
+			float x = 0;
+			float y = -PI / 2;
+			float z = -x + atan2(-mElements[1][0], -mElements[2][0]);
+			return Vec3{ x, y, z } * RAD2DEG;
+		}
+		else { //two solutions exist
+			float x1 = -asin(mElements[0][2]);
+			float x2 = PI - x1;
+
+			float y1 = atan2(mElements[1][2] / cos(x1), mElements[2][2] / cos(x1));
+			float y2 = atan2(mElements[1][2] / cos(x2), mElements[2][2] / cos(x2));
+
+			float z1 = atan2(mElements[0][1] / cos(x1), mElements[0][0] / cos(x1));
+			float z2 = atan2(mElements[0][1] / cos(x2), mElements[0][0] / cos(x2));
+
+			//choose one solution to return
+			//for example the "shortest" rotation
+			if ((std::abs(x1) + std::abs(y1) + std::abs(z1)) <= (std::abs(x2) + std::abs(y2) + std::abs(z2))) {
+				return Vec3{ x1, y1, z1 } * RAD2DEG;
+			}
+			else {
+				return Vec3{ x2, y2, z2 } * RAD2DEG;
+			}
+		}
+#else
+		//check for gimbal lock
+		if (closeEnough(mElements[0][2], -1.0f)) {
+			float x = 0; //gimbal lock, value of x doesn't matter
+			float y = PI / 2;
+			float z = x + atan2(mElements[1][0], mElements[2][0]);
+			ULOG_WARN("Gimble lock");
+			return Vec3{ y, x, z } *RAD2DEG;
+		}
+		else if (closeEnough(mElements[0][2], 1.0f)) {
+			ULOG_WARN("Gimble lock 2");
+			float x = 0;
+			float y = -PI / 2;
+			float z = -x + atan2(-mElements[1][0], -mElements[2][0]);
+			return Vec3{ y, x, z } *RAD2DEG;
+		}
+		else { //two solutions exist
+			float x1 = -asin(mElements[0][2]);
+			float x2 = PI - x1;
+
+			float y1 = atan2(mElements[1][2] / cos(x1), mElements[2][2] / cos(x1));
+			float y2 = atan2(mElements[1][2] / cos(x2), mElements[2][2] / cos(x2));
+
+			float z1 = atan2(mElements[0][1] / cos(x1), mElements[0][0] / cos(x1));
+			float z2 = atan2(mElements[0][1] / cos(x2), mElements[0][0] / cos(x2));
+
+			//choose one solution to return
+			//for example the "shortest" rotation
+			if ((std::abs(x1) + std::abs(y1) + std::abs(z1)) <= (std::abs(x2) + std::abs(y2) + std::abs(z2))) {
+				return Vec3{ y1, x1, z1 } *RAD2DEG;
+			}
+			else {
+				return Vec3{ y2, x2, z2 } *RAD2DEG;
+			}
+		}
+#endif 
+
 	}
 	void Matrix4::Invert3x3()
 	{
@@ -557,6 +639,14 @@ namespace UPO
 		return ((*this) * this->GetTranspose()).IsEqual(Matrix4::IDENTITY);
 		
 	}
+
+	void Matrix4::MetaSerialize(Stream& stream)
+	{
+		stream.Bytes(this, sizeof(Matrix4));
+	}
+
+
+
 
 	Matrix4& Matrix4::operator+=(const Matrix4& m)
 	{
@@ -746,6 +836,19 @@ namespace UPO
 		mElements[2][0] = invDeterminant * tmp[6];
 		mElements[2][1] = invDeterminant * tmp[7];
 		mElements[2][2] = invDeterminant * tmp[8];
+	}
+
+	UCLASS_BEGIN_IMPL(Matrix4)
+	UCLASS_END_IMPL(Matrix4)
+	
+	Quat::Quat(const Vec3& axis, float angle)
+	{
+// 		DirectX::XMQuaternionRotationAxis(XMLoadFloat3(nullptr), angle * DEG2RAD);
+	}
+
+	Quat::Quat(const Vec3& angles)
+	{
+
 	}
 
 };

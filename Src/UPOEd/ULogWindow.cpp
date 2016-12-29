@@ -23,6 +23,10 @@ namespace UPOEd
 
 
 	LogDW* gLogWindow = nullptr;
+	void ULogReceived(const LogEntry& newEntry)
+	{
+		if (gLogWindow) gLogWindow->LogReceived(newEntry);
+	}
 
 	//////////////////////////////////////////////////////////////////////////
 	LogDW::LogDW(QWidget* parent) : QDockWidget(parent)
@@ -31,7 +35,7 @@ namespace UPOEd
 
 		gLogWindow = this;
 
-		Log::Get()->AddListener(LogDW::SLogReceived);
+		Log::Get()->AddListener(ULogReceived);
 
 		this->setWidget(new LogWidget(nullptr));
 
@@ -52,7 +56,7 @@ namespace UPOEd
 
 	void LogDW::Tick()
 	{
-
+		((LogWidget*)this->widget())->Tick();
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -145,11 +149,19 @@ namespace UPOEd
 		if (mLogsQueue.count() > MAX_LOG)
 			mLogsQueue.dequeue();
 		mLogsQueue.enqueue(entry);
+		mIsLogDirty = true;
+	}
+	void LogWidget::Tick()
+	{
+		if(mIsLogDirty)
+		{
+			mIsLogDirty = false;
+			FillHTML();
 
-		FillHTML();
+			//set scroll bottom
+			mTextEdit->verticalScrollBar()->setValue(mTextEdit->verticalScrollBar()->maximum());
+		}
 
-		//set scroll bottom
-		mTextEdit->verticalScrollBar()->setValue(mTextEdit->verticalScrollBar()->maximum());
 	}
 	void LogWidget::FillHTML()
 	{

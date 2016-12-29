@@ -1,19 +1,9 @@
 #pragma once
 
-#include "../Core/UCore.h"
-#include <SDL.h>
+#include "../Core/UBasic.h"
 
 namespace UPO
 {
-	enum EMouseButton
-	{
-		EMB_Right,
-		EMB_Left,
-		EMB_Middle,
-		EMB_WheelForward,
-		EMB_WheelBackward,
-	};
-
 	enum EKeyCode
 	{
 		EKC_Null = 0,
@@ -98,7 +88,7 @@ namespace UPO
 		EKC_Backslash = '\\',
 		EKC_Backquote = '`',
 
-		EKC_Right = 200,
+		EKC_Right = 180,
 		EKC_Left,
 		EKC_Up,
 		EKC_Down,
@@ -138,11 +128,35 @@ namespace UPO
 
 		EKC_RightWin,
 		EKC_LeftWin,
+		
+		EKC_Numlock,
+		EKC_Numpad0,
+		EKC_Numpad1,
+		EKC_Numpad2,
+		EKC_Numpad3,
+		EKC_Numpad4,
+		EKC_Numpad5,
+		EKC_Numpad6,
+		EKC_Numpad7,
+		EKC_Numpad8,
+		EKC_Numpad9,
+		EKC_Add,
+		EKC_Subtract,
+		EKC_Multiply,
+		EKC_Divide,
+		EKC_Decimal,
 
+		EKC_MouseRight,
+		EKC_MouseLeft,
+		EKC_MouseMiddle,
+		EKC_MouseWheelForward,
+		EKC_MouseWheelBackward,
 	};
 
 	UAPI const char* EnumToStr(EKeyCode);
-	UAPI EKeyCode Win32VKToEKeyCode(unsigned vk);
+
+
+	
 
 	class UAPI Input
 	{
@@ -151,20 +165,27 @@ namespace UPO
 		static bool IsKeyPressed(EKeyCode key);
 		static bool IsKeyReleased(EKeyCode key);
 		
-		static void SetMousePos(int x, int y);
-		static void Tick();
+
 		static void GetMousePosition(int& outX, int& outY);
 		static void GetMouseVelocity(int& outX, int& outY);
 		//positive value indicates that the wheel was rotated forward, negative indicates backward
 		static int  GetMouseWheelDelta();
 
-		static bool IsMouseDown(EMouseButton btn);
-		static bool IsMousePressed(EMouseButton btn);
-		static bool IsMouseReleased(EMouseButton btn);
-		
 
-		static void SetMouseState(EMouseButton btn, bool down);
+
+
 		static void SetKeyState(EKeyCode key, bool down);
 		static void SetMouseWheelDelta(int value);
+		static void SetMousePos(int x, int y);
+		static void Tick();
 	};
+
+
+
+#ifdef UPLATFORM_WIN
+	UAPI EKeyCode UWin32VKToEKeyCode(unsigned vk);
+#else
+
+#endif
+
 };

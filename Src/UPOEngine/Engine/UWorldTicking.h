@@ -1,10 +1,13 @@
 #pragma once
 
-#include "UEntity.h"
-
+#include "../Core/UBasic.h"
+#include "../Core/UArray.h"
 
 namespace UPO
 {
+	//////////////////////////////////////////////////////////////////////////
+	class Entity;
+
 	class UAPI WorldTicking
 	{
 		TArray<Entity*>		mTickEnableEntities;

@@ -157,46 +157,28 @@ namespace UPO
 
 #define VECPRINT(v) ULOG_WARN(#v "  %f  %f  %f", v.mX, v.mY, v.mZ)
 
+	float AngleEq(Vec3 a, Vec3 b)
+	{
+		Matrix4 m0, m1;
+		m0.MakeRotationXYZ(a);
+		m1.MakeRotationXYZ(b);
+		return (Dot(m0.GetColumn(2) , m1.GetColumn(2)));
+	}
 	void DebugTest()
 	{
-		//Matrix
-		//A * B * C 
-		//applying order first C then B then A
-// 		Matrix4 mt;
-// 		mt.MakeTranslation(Vec3(10, 0, 0));
-// 		Matrix4 mr;
-// 		mr.MakeRotationY(180);
-// 		Matrix4 mr2;
-// 		mr2.MakeRotationY(180);
-// 		Matrix4 mat2 = mr*mt; //mt * mr * mr2;
-// 		mat2.MakeTranslationRotationScale(Vec3(10, 0, 0), Vec3(0), Vec3(2));
-// 		Vec3 vt = mat2.TransformVec3W1(Vec3(0));
-// 		VECPRINT(vt);
 
-		struct TestS3
+		Matrix4 rotation;
+		for (size_t i = 0; i < 10; i++)
 		{
-			static void SFunc(int i)
-			{
-				printf("sfunc %i\n", i);
-			}
-			void Func(int i)
-			{
-				printf("b  %i\n", i);
-			}
-		};
+			Vec3 ang = Vec3(i * 10, 90 , 0);
+			rotation.MakeRotationXYZ(ang);
+			Vec3 v0 = rotation.GetRotationEuler1();
+			VECPRINT(ang);
+			VECPRINT(v0);
+			ULOG_WARN("eq : %f\n", AngleEq(ang, v0 ));
+		}
 
-		struct Obj333 : public Object
-		{
-			void Func(int i)
-			{
 
-			}
-		};
-
-		int nnnn = 90;
-
-		TDelegate<void, int> del0;
-		if (del0) del0(0);
 
 		int tmp = 0;
 		std::cin >> tmp;
@@ -207,7 +189,7 @@ namespace UPO
 	UAPI void TestMain(int argc, const char** argv)
 	{
 
-// 		DebugTest();
+		DebugTest();
 
 // 		BitArray ba;
 // 		ba.Add(true);

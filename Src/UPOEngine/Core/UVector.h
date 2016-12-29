@@ -284,7 +284,7 @@ namespace UPO
 		//dot product
 		float operator | (const Vec3& v) const
 		{
-			return mX * v.mX + mY * v.mY + mZ + v.mZ;
+			return mX * v.mX + mY * v.mY + mZ * v.mZ;
 		}
 		//cross product
 		//(swapping the position of any two arguments negates the result): If AxB == C then BxA == -C. 
@@ -410,7 +410,7 @@ namespace UPO
 
 	inline float Dot(const Vec3& a, const Vec3& b)
 	{
-		return a.mX * b.mX + a.mY * b.mY + a.mZ + b.mZ;
+		return a.mX * b.mX + a.mY * b.mY + a.mZ * b.mZ;
 	}
 	inline Vec3 Abs(const Vec3& v)
 	{

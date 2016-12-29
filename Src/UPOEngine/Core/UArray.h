@@ -471,7 +471,7 @@ namespace UPO
 				if (compareLambda(mElements[i])) return true;
 			return false;
 		}
-		template < typename Lambda> void ForEach(Lambda proc)
+		template < typename Lambda> void ForEach(Lambda proc) const
 		{
 			for (size_t i = 0; i < mLength; i++)
 				proc(mElements[i]);
@@ -496,7 +496,23 @@ namespace UPO
 			}
 			mLength = j;
 		}
+		template<typename TFunctor> void BubbleSort(TFunctor func)
+		{
+			int len = (int)Length();
+			for (int i = len - 1; i >= 0; i--)
+			{
+				for (int j = 0; j <= i; j++)
+				{
+					if(func(mElements[j], mElements[j + 1]))
+					{
+						auto temp = mElements[j];
+						mElements[j] = mElements[j + 1];
+						mElements[j + 1] = temp;
+					}
+				}
 
+			}
+		}
 	};
 	//////////////////////////////////////////////////////////////////////////
 	class TypeInfo;

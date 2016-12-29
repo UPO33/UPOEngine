@@ -1,6 +1,7 @@
 #include "UMainWindow.h"
 
 #include "../UPOEngine/UPOEngine.h"
+#include "../UPOEngine/Engine/UEntityTest.h"
 
 #include "UNewProjectDialog.h"
 
@@ -9,7 +10,7 @@ namespace UPOEd
 
 	static const char* UPO_PROJECT_FILE_EXT = ".uproj";
 
-
+	MainWindow* gMainWindow = nullptr;
 
 
 	UCLASS_BEGIN_IMPL(TestObject)
@@ -260,16 +261,31 @@ namespace UPOEd
 		this->tabifyDockWidget(mAssetBrowser, mEntityBrowser);
 		this->setCorner(Qt::Corner::BottomLeftCorner, Qt::LeftDockWidgetArea);
 		InitActions();
+
+		//////////////////////////////////////////////////////////////////////////TEST World
+		{
+			mActiveWorld = IEngineInterface::Get()->CreateWorld();
+			mActiveWorld->CreateEntity<Entity>(nullptr);
+			Entity* parent = mActiveWorld->CreateEntity<Entity>(nullptr);
+			for (size_t i = 0; i < 4; i++)
+			{
+				mActiveWorld->CreateEntity<Entity>(parent);
+			}
+			IEngineInterface::Get()->SetWorld(mActiveWorld);
+			mEntityBrowser->AttachWorld(mActiveWorld);
+		};
 	}
 
 	void MainWindow::Tick()
 	{
-		if(mPropertyBrowser) mPropertyBrowser->Tick();
-		if(mAssetBrowser) mAssetBrowser->Tick();
-		if(mLog) mLog->Tick();
+		if (mPropertyBrowser) mPropertyBrowser->Tick();
+		if (mAssetBrowser)	mAssetBrowser->Tick();
+		if (mEntityBrowser) mEntityBrowser->Tick();
 		if (mMainViewport) mMainViewport->Tick();
 
 		if (AssetViewer::Current) AssetViewer::Current->Tick();
+
+		if (mLog) mLog->Tick();
 	}
 
 	void MainWindow::InitWorld()

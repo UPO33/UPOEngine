@@ -1,6 +1,8 @@
 #include "UWorld.h"
 #include "UComponent.h"
 #include "UEntity.h"
+#include "UEntityCamera.h"
+
 #include "UWorldRS.h"
 
 #include "../Meta/UMeta.h"
@@ -30,6 +32,8 @@ namespace UPO
 		}
 
 		PushToPendingAddToRS(newEntity);
+
+		mOnEntityCreated.InvokeAll(newEntity);
 
 		return newEntity;
 	}
@@ -124,11 +128,14 @@ namespace UPO
 		{
 			//during here render thread is performing fetch
 		}
-		mFetchCompleted.Wait();
+		if(mRS && mIsPlaying)
+		{
+			mFetchCompleted.Wait();
 
-		mEntitiesPendingAddToRS.RemoveAll();
-		mEntitiesPendingDestroyFromRS.RemoveAll();
-		mEntitiesRenderDataDirty.RemoveAll();
+			mEntitiesPendingAddToRS.RemoveAll();
+			mEntitiesPendingDestroyFromRS.RemoveAll();
+			mEntitiesRenderDataDirty.RemoveAll();
+		}
 	}
 
 	void World::PerformBeginPlay()
@@ -210,6 +217,11 @@ namespace UPO
 	}
 
 
+	Entity* World::GetRootEntity()
+	{
+		return mRootEntity;
+	}
+
 	void World::Release()
 	{
 		mTimer.StopAll();
@@ -218,11 +230,10 @@ namespace UPO
 
 	WorldRS* World::CreateRS()
 	{
-		UASSERT(IsGameThread());
+// 		UASSERT(IsGameThread());
 
 		WorldRS* rs = new WorldRS;
 		rs->mGS = this;
-		
 
 		return nullptr;
 	}
@@ -262,6 +273,7 @@ namespace UPO
 
 	void World::KillEntity(Entity* entity)
 	{
+		ULOG_MESSAGE("kiling entity [%s]", entity->mName.CStr());
 		DeleteObject(entity);
 	}
 
@@ -294,22 +306,34 @@ namespace UPO
 		mFetchCompleted(false, false)
 	{
 		mRootEntity = NewObject<Entity>();
+		mRootEntity->mWorld = this;
+		mRootEntity->mIndexInWorld = 0;
+		mRootEntity->mName = "Root";
 
-		Event eventRSCreation(false, false);
-		EnqueueRenderCommend([this, &eventRSCreation]() {
+// 		Event eventRSCreation(false, false);
+// 		EnqueueRenderCommend([this, &eventRSCreation]() {
+// 
+// 			WorldRS* rs = new WorldRS;
+// 			rs->mGS = this;
+// 			this->mRS = rs;
+// // 			eventRSCreation.SetSignaled();
+// 		});
+// // 		eventRSCreation.Wait();
 
-			WorldRS* rs = new WorldRS;
-			rs->mGS = this;
-			this->mRS = rs;
-// 			eventRSCreation.SetSignaled();
-		});
-// 		eventRSCreation.Wait();
-
+		{
+			mEditorCamera =  CreateEntity<EntityCamera>(nullptr);
+		}
 	}
 	//////////////////////////////////////////////////////////////////////////
 	World::~World()
 	{
 		DeleteObject(mRootEntity);
+
+		WorldRS* rs = mRS;
+		EnqueueRenderCommend([rs]()
+		{
+			if (rs) delete rs;
+		});
 	}
 	void World::SetPlaying()
 	{
@@ -359,5 +383,6 @@ namespace UPO
 
 	
 
-
+	UCLASS_BEGIN_IMPL(World)
+	UCLASS_END_IMPL(World)
 };

@@ -21,11 +21,11 @@ namespace UPO
 		{
 			GFXInputLayoutDesc desc = 
 			{
+				mVertexShader,				
 				{
 					GFXVertexElementDesc("POSITION", EVertexFormat::EFloat2),
 					GFXVertexElementDesc("UV", EVertexFormat::EFloat2),
 				},
-				mVertexShader
 			};
 
 			mLayout = gGFX->CreateInputLayout(desc);
@@ -108,8 +108,8 @@ namespace UPO
 
 
 		gGFX->BinInputLayout(mLayout);
-		gGFX->SetRasterizer(mRaster);
-		gGFX->SetDepthStencilState(mDepthStencilState);
+		gGFX->BindRasterizer(mRaster);
+		gGFX->BindDepthStencilState(mDepthStencilState);
 		gGFX->SetPrimitiveTopology(EPrimitiveTopology::EPT_TRIANGLELIST);
 		gGFX->BinVertexBuffer(mQuadBuffer, sizeof(VertexType), 0);
 		gGFX->BindShaders(mVertexShader, mPixelShader);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "UBasic.h"
+#include "UArray.h"
 #include "../Object/UObject.h"
 
 namespace UPO
@@ -287,5 +288,63 @@ namespace UPO
 		}
 
 
+	};
+
+
+	template<typename TRet, typename... TArgs> class TDelegateMulti
+	{
+		using DelegateType = TDelegate<TRet, TArgs...>;
+
+		TArray<DelegateType>	mDeletages;
+
+	public:
+		TDelegateMulti()
+		{
+
+		}
+		~TDelegateMulti()
+		{
+
+		}
+		void BindStatic(TRet(*function)(TArgs...))
+		{
+			mDeletages.AddDefault();
+			mDeletages.LastElement().BindStatic(function);
+		}
+		template<typename TClass> void BindMember(void* object, TRet(TClass::* memberfunction)(TArgs...))
+		{
+			mDeletages.AddDefault();
+			mDeletages.LastElement().BindMember(object, memberfunction);
+		}
+		template<class TClass> void BindMemberObject(Object* object, TRet(TClass::* memberfunction)(TArgs...))
+		{
+			mDeletages.AddDefault();
+			mDeletages.LastElement().BindMemberObject(object, memberfunction);
+		}
+		template<typename TLambda> void BindLambda(const TLambda& lambda)
+		{
+			mDeletages.AddDefault();
+			mDeletages.LastElement().BindLambda(lambda);
+		}
+		template<typename TLambda> void BindLambdaObject(Object* object, const TLambda& lambda)
+		{
+			mDeletages.AddDefault();
+			mDeletages.LastElement().BindLambdaObject(object, lambda);
+		}
+		void InvokeAll(TArgs... args) const
+		{
+			for (size_t i = 0; i < mDeletages.Length(); i++)
+			{
+				if (mDeletages[i].IsBound())
+				{
+					mDeletages[i].Invoke(args...);
+				}
+			}
+		}
+		void Clear()
+		{
+			mDeletages.RemoveAll();
+		}
+		TDelegateMulti& operator = (std::nullptr_t) { Clear(); return *this; }
 	};
 };

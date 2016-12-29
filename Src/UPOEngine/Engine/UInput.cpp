@@ -1,139 +1,14 @@
 #include "UInput.h"
+#include "../Meta/UMeta.h"
 
+#ifdef UPLATFORM_WIN
+
+
+#include <windows.h>
 namespace UPO
 {
-	inline unsigned EKeyToWin32VK(EKeyCode key)
-	{
-		static unsigned LUT[256];
-		static bool Initilized = false;
-		if (!Initilized)
-		{
-			Initilized = true;
 
-			LUT[EKC_Null] = 0;
-
-			LUT[EKC_0] = '0';
-			LUT[EKC_1] = '1';
-			LUT[EKC_2] = '2';
-			LUT[EKC_3] = '3';
-			LUT[EKC_4] = '4';
-			LUT[EKC_5] = '5';
-			LUT[EKC_6] = '6';
-			LUT[EKC_7] = '7';
-			LUT[EKC_8] = '8';
-			LUT[EKC_9] = '9';
-
-			LUT[EKC_A] = 'A';
-			LUT[EKC_B] = 'B';
-			LUT[EKC_C] = 'C';
-			LUT[EKC_D] = 'D';
-			LUT[EKC_E] = 'E';
-			LUT[EKC_F] = 'F';
-			LUT[EKC_G] = 'G';
-			LUT[EKC_H] = 'H';
-			LUT[EKC_I] = 'I';
-			LUT[EKC_J] = 'J';
-			LUT[EKC_K] = 'K';
-			LUT[EKC_L] = 'L';
-			LUT[EKC_M] = 'M';
-			LUT[EKC_N] = 'N';
-			LUT[EKC_O] = 'O';
-			LUT[EKC_P] = 'P';
-			LUT[EKC_Q] = 'Q';
-			LUT[EKC_R] = 'R';
-			LUT[EKC_S] = 'S';
-			LUT[EKC_T] = 'T';
-			LUT[EKC_U] = 'U';
-			LUT[EKC_V] = 'V';
-			LUT[EKC_W] = 'W';
-			LUT[EKC_X] = 'X';
-			LUT[EKC_Y] = 'Y';
-			LUT[EKC_Z] = 'Z';
-
-			LUT[EKC_Return] = VK_RETURN;
-			LUT[EKC_Esc] = VK_ESCAPE;
-			LUT[EKC_Backspace] = VK_BACK;
-			LUT[EKC_Tab] = VK_TAB;
-			LUT[EKC_Space] = VK_SPACE;
-
-			LUT[EKC_Exclaim] = '!';
-			LUT[EKC_At] = '@';
-			LUT[EKC_Hash] = '#';
-			LUT[EKC_Dollar] = '$';
-			LUT[EKC_Percent] = '%';
-			LUT[EKC_Caret] = '^';
-			LUT[EKC_Ampersand] = '&';
-			LUT[EKC_Asterisk] = '*';
-
-			LUT[EKC_LefParen] = '(';
-			LUT[EKC_RightParen] = ')';
-
-			LUT[EKC_Minus] = VK_SUBTRACT;
-			LUT[EKC_Plus] = VK_ADD;
-			LUT[EKC_Equals] = '=';
-
-			LUT[EKC_Quote] = '\'';
-			LUT[EKC_DoubleQuote] = '"';
-
-			LUT[EKC_Less] = '<';
-			LUT[EKC_Greater] = '>';
-
-			LUT[EKC_Underscore] = '_';
-			LUT[EKC_Comma] = ';';
-			LUT[EKC_Dot] = '.';
-			LUT[EKC_Slash] = '/';
-			LUT[EKC_Colon] = ':';
-			LUT[EKC_Semicolon] = ';';
-
-
-			LUT[EKC_LeftBracket] = '[';
-			LUT[EKC_RightBracket] = ']';
-			LUT[EKC_Backslash] = '\\';
-			LUT[EKC_Backquote] = '`';
-
-			LUT[EKC_Right] = VK_RIGHT;
-			LUT[EKC_Left] = VK_LEFT;
-			LUT[EKC_Up] = VK_UP;
-			LUT[EKC_Down] = VK_DOWN;
-			LUT[EKC_CapsLock] = VK_CAPITAL;
-			LUT[EKC_LeftShift] = VK_LSHIFT;
-			LUT[EKC_RightShift] = VK_RSHIFT;
-			LUT[EKC_LeftCtrl] = VK_LCONTROL;
-			LUT[EKC_RightCtrl] = VK_RCONTROL;
-			LUT[EKC_LeftAlt] = VK_LMENU;
-			LUT[EKC_RightAlt] = VK_RMENU;
-
-			LUT[EKC_F1] = VK_F1;
-			LUT[EKC_F2] = VK_F2;
-			LUT[EKC_F3] = VK_F3;
-			LUT[EKC_F4] = VK_F4;
-			LUT[EKC_F5] = VK_F5;
-			LUT[EKC_F6] = VK_F6;
-			LUT[EKC_F7] = VK_F7;
-			LUT[EKC_F8] = VK_F8;
-			LUT[EKC_F9] = VK_F9;
-			LUT[EKC_F10] = VK_F10;
-			LUT[EKC_F11] = VK_F11;
-			LUT[EKC_F12] = VK_F12;
-
-			LUT[EKC_PrintScreen] = VK_SNAPSHOT;
-			LUT[EKC_ScrollLock] = VK_SCROLL;
-			LUT[EKC_Pause] = VK_PAUSE;
-			LUT[EKC_Insert] = VK_INSERT;
-			LUT[EKC_Home] = VK_HOME;
-			LUT[EKC_Pageup] = VK_PRIOR;
-			LUT[EKC_Delete] = VK_DELETE;
-			LUT[EKC_End] = VK_END;
-			LUT[EKC_Pagedown] = VK_NEXT;
-
-			LUT[EKC_RightWin] = VK_RWIN;
-			LUT[EKC_LeftWin] = VK_LWIN;
-		}
-
-		return LUT[(unsigned)key];
-	}
-
-	EKeyCode Win32VKToEKeyCode(unsigned vk)
+	UAPI EKeyCode UWin32VKToEKeyCode(unsigned vk)
 	{
 		static EKeyCode LUT[256];
 		static bool Initilized = false;
@@ -184,6 +59,38 @@ namespace UPO
 			LUT[VK_BACK] = EKC_Backspace;
 			LUT[VK_TAB] = EKC_Tab;
 			LUT[VK_SPACE] = EKC_Space;
+
+			LUT[VK_NUMLOCK] = EKC_Numlock;
+			LUT[VK_NUMPAD0] = EKC_Numpad0;
+			LUT[VK_NUMPAD1] = EKC_Numpad1;
+			LUT[VK_NUMPAD2] = EKC_Numpad2;
+			LUT[VK_NUMPAD3] = EKC_Numpad3;
+			LUT[VK_NUMPAD4] = EKC_Numpad4;
+			LUT[VK_NUMPAD5] = EKC_Numpad5;
+			LUT[VK_NUMPAD6] = EKC_Numpad6;
+			LUT[VK_NUMPAD7] = EKC_Numpad7;
+			LUT[VK_NUMPAD8] = EKC_Numpad8;
+			LUT[VK_NUMPAD9] = EKC_Numpad9;
+
+			LUT[VK_ADD] = EKC_Add;
+			LUT[VK_SUBTRACT] = EKC_Subtract;
+			LUT[VK_MULTIPLY] = EKC_Multiply;
+			LUT[VK_DIVIDE] = EKC_Divide;
+
+			LUT[VK_DECIMAL] = EKC_Decimal;
+
+			LUT[VK_OEM_PERIOD] = EKC_Dot;
+			LUT[VK_OEM_PLUS] = EKC_Plus;
+			LUT[VK_OEM_MINUS] = EKC_Minus;
+			LUT[VK_OEM_COMMA] = EKC_Comma;
+
+			LUT[VK_OEM_1] = EKC_Semicolon;
+			LUT[VK_OEM_2] = EKC_Slash;
+			LUT[VK_OEM_3] = EKC_Backquote;
+			LUT[VK_OEM_4] = EKC_LeftBracket;
+			LUT[VK_OEM_5] = EKC_Backslash;
+			LUT[VK_OEM_6] = EKC_RightBracket;
+			LUT[VK_OEM_7] = EKC_Quote;
 
 			// 			LUT[] = EKC_Exclaim;
 			// 			LUT[] = EKC_At;
@@ -263,8 +170,150 @@ namespace UPO
 		}
 		return LUT[vk];
 	}
+};
+#else
 
-	
+
+
+#endif
+
+
+
+namespace UPO
+{
+// 	inline unsigned EKeyToWin32VK(EKeyCode key)
+// 	{
+// 		static unsigned LUT[256];
+// 		static bool Initilized = false;
+// 		if (!Initilized)
+// 		{
+// 			Initilized = true;
+// 
+// 			LUT[EKC_Null] = 0;
+// 
+// 			LUT[EKC_0] = '0';
+// 			LUT[EKC_1] = '1';
+// 			LUT[EKC_2] = '2';
+// 			LUT[EKC_3] = '3';
+// 			LUT[EKC_4] = '4';
+// 			LUT[EKC_5] = '5';
+// 			LUT[EKC_6] = '6';
+// 			LUT[EKC_7] = '7';
+// 			LUT[EKC_8] = '8';
+// 			LUT[EKC_9] = '9';
+// 
+// 			LUT[EKC_A] = 'A';
+// 			LUT[EKC_B] = 'B';
+// 			LUT[EKC_C] = 'C';
+// 			LUT[EKC_D] = 'D';
+// 			LUT[EKC_E] = 'E';
+// 			LUT[EKC_F] = 'F';
+// 			LUT[EKC_G] = 'G';
+// 			LUT[EKC_H] = 'H';
+// 			LUT[EKC_I] = 'I';
+// 			LUT[EKC_J] = 'J';
+// 			LUT[EKC_K] = 'K';
+// 			LUT[EKC_L] = 'L';
+// 			LUT[EKC_M] = 'M';
+// 			LUT[EKC_N] = 'N';
+// 			LUT[EKC_O] = 'O';
+// 			LUT[EKC_P] = 'P';
+// 			LUT[EKC_Q] = 'Q';
+// 			LUT[EKC_R] = 'R';
+// 			LUT[EKC_S] = 'S';
+// 			LUT[EKC_T] = 'T';
+// 			LUT[EKC_U] = 'U';
+// 			LUT[EKC_V] = 'V';
+// 			LUT[EKC_W] = 'W';
+// 			LUT[EKC_X] = 'X';
+// 			LUT[EKC_Y] = 'Y';
+// 			LUT[EKC_Z] = 'Z';
+// 
+// 			LUT[EKC_Return] = VK_RETURN;
+// 			LUT[EKC_Esc] = VK_ESCAPE;
+// 			LUT[EKC_Backspace] = VK_BACK;
+// 			LUT[EKC_Tab] = VK_TAB;
+// 			LUT[EKC_Space] = VK_SPACE;
+// 
+// 			LUT[EKC_Exclaim] = '!';
+// 			LUT[EKC_At] = '@';
+// 			LUT[EKC_Hash] = '#';
+// 			LUT[EKC_Dollar] = '$';
+// 			LUT[EKC_Percent] = '%';
+// 			LUT[EKC_Caret] = '^';
+// 			LUT[EKC_Ampersand] = '&';
+// 			LUT[EKC_Asterisk] = '*';
+// 
+// 			LUT[EKC_LefParen] = '(';
+// 			LUT[EKC_RightParen] = ')';
+// 
+// 			LUT[EKC_Minus] = VK_SUBTRACT;
+// 			LUT[EKC_Plus] = VK_ADD;
+// 			LUT[EKC_Equals] = '=';
+// 
+// 			LUT[EKC_Quote] = '\'';
+// 			LUT[EKC_DoubleQuote] = '"';
+// 
+// 			LUT[EKC_Less] = '<';
+// 			LUT[EKC_Greater] = '>';
+// 
+// 			LUT[EKC_Underscore] = '_';
+// 			LUT[EKC_Comma] = ';';
+// 			LUT[EKC_Dot] = '.';
+// 			LUT[EKC_Slash] = '/';
+// 			LUT[EKC_Colon] = ':';
+// 			LUT[EKC_Semicolon] = ';';
+// 
+// 
+// 			LUT[EKC_LeftBracket] = '[';
+// 			LUT[EKC_RightBracket] = ']';
+// 			LUT[EKC_Backslash] = '\\';
+// 			LUT[EKC_Backquote] = '`';
+// 
+// 			LUT[EKC_Right] = VK_RIGHT;
+// 			LUT[EKC_Left] = VK_LEFT;
+// 			LUT[EKC_Up] = VK_UP;
+// 			LUT[EKC_Down] = VK_DOWN;
+// 			LUT[EKC_CapsLock] = VK_CAPITAL;
+// 			LUT[EKC_LeftShift] = VK_LSHIFT;
+// 			LUT[EKC_RightShift] = VK_RSHIFT;
+// 			LUT[EKC_LeftCtrl] = VK_LCONTROL;
+// 			LUT[EKC_RightCtrl] = VK_RCONTROL;
+// 			LUT[EKC_LeftAlt] = VK_LMENU;
+// 			LUT[EKC_RightAlt] = VK_RMENU;
+// 
+// 			LUT[EKC_F1] = VK_F1;
+// 			LUT[EKC_F2] = VK_F2;
+// 			LUT[EKC_F3] = VK_F3;
+// 			LUT[EKC_F4] = VK_F4;
+// 			LUT[EKC_F5] = VK_F5;
+// 			LUT[EKC_F6] = VK_F6;
+// 			LUT[EKC_F7] = VK_F7;
+// 			LUT[EKC_F8] = VK_F8;
+// 			LUT[EKC_F9] = VK_F9;
+// 			LUT[EKC_F10] = VK_F10;
+// 			LUT[EKC_F11] = VK_F11;
+// 			LUT[EKC_F12] = VK_F12;
+// 
+// 			LUT[EKC_PrintScreen] = VK_SNAPSHOT;
+// 			LUT[EKC_ScrollLock] = VK_SCROLL;
+// 			LUT[EKC_Pause] = VK_PAUSE;
+// 			LUT[EKC_Insert] = VK_INSERT;
+// 			LUT[EKC_Home] = VK_HOME;
+// 			LUT[EKC_Pageup] = VK_PRIOR;
+// 			LUT[EKC_Delete] = VK_DELETE;
+// 			LUT[EKC_End] = VK_END;
+// 			LUT[EKC_Pagedown] = VK_NEXT;
+// 
+// 			LUT[EKC_RightWin] = VK_RWIN;
+// 			LUT[EKC_LeftWin] = VK_LWIN;
+// 		}
+// 
+// 		return LUT[(unsigned)key];
+// 	}
+
+
+
 	struct InputData
 	{
 		bool mkeys[256] = {};
@@ -310,7 +359,7 @@ namespace UPO
 
 	void Input::Tick()
 	{
-		CopyType(gPreInputData, gCurInputData);
+		gPreInputData = gCurInputData;
 	}
 
 	void Input::GetMousePosition(int& outX, int& outY)
@@ -330,25 +379,7 @@ namespace UPO
 		return gCurInputData.mMouseWheelDelta;
 	}
 
-	bool Input::IsMouseDown(EMouseButton btn)
-	{
-		return gCurInputData.mMouseBtn[(unsigned)btn];
-	}
 
-	bool Input::IsMousePressed(EMouseButton btn)
-	{
-		return gCurInputData.mMouseBtn[btn] == true && gPreInputData.mMouseBtn[btn] == false;
-	}
-
-	bool Input::IsMouseReleased(EMouseButton btn)
-	{
-		return gCurInputData.mMouseBtn[btn] == false && gPreInputData.mMouseBtn[btn] == true;
-	}
-
-	void Input::SetMouseState(EMouseButton btn, bool down)
-	{
-		gCurInputData.mMouseBtn[btn] = down;
-	}
 
 	UAPI const char* EnumToStr(EKeyCode keycode)
 	{
@@ -427,7 +458,7 @@ namespace UPO
 			LUT[EKC_Greater] = ">";
 
 			LUT[EKC_Underscore] = "_";
-			LUT[EKC_Comma] = ";";
+			LUT[EKC_Comma] = ",";
 			LUT[EKC_Dot] = ".";
 			LUT[EKC_Slash] = "/";
 			LUT[EKC_Colon] = ":";
@@ -479,6 +510,30 @@ namespace UPO
 
 			LUT[EKC_RightWin] = "RightWin";
 			LUT[EKC_LeftWin] = "LeftWin";
+
+			LUT[EKC_Numlock] = "Numlock";
+			LUT[EKC_Numpad0] = "Numpad0";
+			LUT[EKC_Numpad1] = "Numpad1";
+			LUT[EKC_Numpad2] = "Numpad2";
+			LUT[EKC_Numpad3] = "Numpad3";
+			LUT[EKC_Numpad4] = "Numpad4";
+			LUT[EKC_Numpad5] = "Numpad5";
+			LUT[EKC_Numpad6] = "Numpad6";
+			LUT[EKC_Numpad7] = "Numpad7";
+			LUT[EKC_Numpad8] = "Numpad8";
+			LUT[EKC_Numpad9] = "Numpad9";
+
+			LUT[EKC_Add] = "Add";
+			LUT[EKC_Subtract] = "Subtract";
+			LUT[EKC_Multiply] = "Multiply";
+			LUT[EKC_Divide] = "Divide";
+			LUT[EKC_Decimal] = "Decimal";
+
+			LUT[EKC_MouseRight] = "RightMouse";
+			LUT[EKC_MouseLeft] = "LeftMouse";
+			LUT[EKC_MouseMiddle] = "MiddleMouse";
+			LUT[EKC_MouseWheelForward] = "MouseWheelForward";
+			LUT[EKC_MouseWheelBackward] = "MouseWheelBackward";
 		}
 
 
@@ -486,5 +541,10 @@ namespace UPO
 		return LUT[(unsigned)keycode];
 	}
 
-
+	UENUM(EKeyCode, false, nullptr,
+		EKC_Null,
+		EKC_Any,
+		EKC_0, EKC_1, EKC_2, EKC_3, EKC_4, EKC_5, EKC_6, EKC_7, EKC_8, EKC_9,		EKC_A, EKC_B, EKC_C, EKC_D, EKC_E, EKC_F, EKC_G, EKC_H, EKC_I, EKC_J, EKC_K, EKC_L, EKC_M, EKC_N, EKC_O, EKC_P, EKC_Q, EKC_R, EKC_S, EKC_T, EKC_U, EKC_V, EKC_W, EKC_X, EKC_Y, EKC_Z,		EKC_Return,		EKC_Esc,		EKC_Backspace,		EKC_Tab,		EKC_Space,		EKC_Exclaim,		EKC_At,		EKC_Hash,		EKC_Dollar,		EKC_Percent,		EKC_Caret,		EKC_Ampersand,		EKC_Asterisk,		EKC_LefParen,		EKC_RightParen,		EKC_Minus,		EKC_Plus,		EKC_Equals,		EKC_Quote,		EKC_DoubleQuote,		EKC_Less,		EKC_Greater,		EKC_Underscore,		EKC_Comma,		EKC_Dot,		EKC_Slash,		EKC_Colon,		EKC_Semicolon,		EKC_LeftBracket,		EKC_RightBracket,		EKC_Backslash,		EKC_Backquote,		EKC_Right,		EKC_Left,		EKC_Up,		EKC_Down,		EKC_CapsLock,		EKC_LeftShift,		EKC_RightShift,		EKC_LeftCtrl,		EKC_RightCtrl,		EKC_LeftAlt,		EKC_RightAlt,		EKC_F1,		EKC_F2,		EKC_F3,		EKC_F4,		EKC_F5,		EKC_F6,		EKC_F7,		EKC_F8,		EKC_F9,		EKC_F10,		EKC_F11,		EKC_F12,		EKC_PrintScreen,		EKC_ScrollLock,		EKC_Pause,		EKC_Insert,		EKC_Home,		EKC_Pageup,		EKC_Delete,		EKC_End,		EKC_Pagedown,		EKC_RightWin,		EKC_LeftWin,		EKC_Numlock,		EKC_Numpad0,		EKC_Numpad1,		EKC_Numpad2,		EKC_Numpad3,		EKC_Numpad4,		EKC_Numpad5,		EKC_Numpad6,		EKC_Numpad7,		EKC_Numpad8,		EKC_Numpad9,		EKC_Add,		EKC_Subtract,		EKC_Multiply,		EKC_Divide,		EKC_Decimal,		EKC_MouseRight,		EKC_MouseLeft,		EKC_MouseMiddle,		EKC_MouseWheelForward,		EKC_MouseWheelBackward
+	);
 };
+

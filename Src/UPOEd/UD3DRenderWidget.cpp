@@ -3,12 +3,15 @@
 
 namespace UPOEd
 {
+	void* gHandleTest = 0;
+
 	//////////////////////////////////////////////////////////////////////////
 	D3DRenderWidget::D3DRenderWidget(QWidget* parent /*= nullptr*/)
 		: QWidget(parent)
 	{
 		setAttribute(Qt::WA_PaintOnScreen);
 		setAttribute(Qt::WA_NativeWindow);
+		gHandleTest = reinterpret_cast<void*>(winId());
 	}
 	//////////////////////////////////////////////////////////////////////////
 	D3DRenderWidget::~D3DRenderWidget()
@@ -42,19 +45,18 @@ namespace UPOEd
 // 		return true;
 // 	};
 
-	unsigned D3DRenderWidget::GetWidth()
+	
+	void D3DRenderWidget::GetSize(Vec2I& out)
 	{
-		return width();
-	}
-
-	unsigned D3DRenderWidget::GetHeight()
-	{
-		return height();
+// 		out.mX = width();
+// 		out.mY = height();
+		out = Vec2I(400, 400);
 	}
 
 	void* D3DRenderWidget::GetWinHandle()
 	{
-		return reinterpret_cast<void*>(winId());
+// 		return reinterpret_cast<void*>(winId());
+		return gHandleTest;
 	}
 
 }

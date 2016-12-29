@@ -18,7 +18,6 @@ namespace UPOEd
 
 	QSplashScreen* gSplash = nullptr;
 	QApplication* gQApp = nullptr;
-	MainWindow* gMainWindow = nullptr;
 	ProjectInfo* gProject = nullptr;
 	TArray<Module*>	mLoadedModules;
 
@@ -70,6 +69,7 @@ namespace UPOEd
 
 		virtual GameWindow* OnCreateGameWindow() override
 		{
+
 			return gMainWindow->mMainViewport;
 		}
 

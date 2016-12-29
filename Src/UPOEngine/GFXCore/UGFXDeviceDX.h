@@ -431,28 +431,39 @@ namespace UPO
 	{
 
 	};
+	class GFXSwapChainDX
+	{
+
+	};
 	//////////////////////////////////////////////////////////////////////////
 	class GFXDeviceDX : public GFXDevice
 	{
 	public:
 		ID3D11Device* mDevice = nullptr;
-		ID3D11DeviceContext* mDeviceContext = nullptr;
+		ID3D11DeviceContext* mImmediateContext = nullptr;
+		D3D_FEATURE_LEVEL	mFeatureLevel;
 
-		GFXDeviceDX()
-		{}
-		GFXDeviceDX(ID3D11Device* device, ID3D11DeviceContext* deviceContext) 
-			: mDevice(device), mDeviceContext(deviceContext)
+		static GFXDeviceDX* Create();
+		
+		GFXDeviceDX(){}
+
+		GFXDeviceDX(ID3D11Device* device, ID3D11DeviceContext* immediateContext, D3D_FEATURE_LEVEL featureLevel)
+			: mDevice(device), mImmediateContext(immediateContext), mFeatureLevel(featureLevel)
 		{}
 
 		ID3D11Device* GetDXDevice() const { return mDevice; }
-		ID3D11DeviceContext* GetDXDeviceContext() const { return mDeviceContext; }
+		ID3D11DeviceContext* GetDXDeviceContext() const { return mImmediateContext; }
+
+		//////////////////////////////////////////////////////////////////////////
+		GFXSwapChain* CreateSwapChain(GameWindow* wnd) override;
+
 		//////////////////////////////////////////////////////////////////////////
 		virtual void ClearRenderTarget(const GFXTexture2D* renderTarget, const Color& color) override
 		{
 			if (renderTarget == nullptr) return;
 			ID3D11RenderTargetView* rtv = renderTarget->As<GFXTexture2DDX>()->mRenderTargetView;
 			if (rtv == nullptr) return;
-			mDeviceContext->ClearRenderTargetView(rtv, color.mRGBA);
+			mImmediateContext->ClearRenderTargetView(rtv, color.mRGBA);
 		}
 		//////////////////////////////////////////////////////////////////////////
 		virtual void ClearDepthStencil(const GFXTexture2D* depthTexture, bool clearDepth, bool clearStencil, float depth, char stencil) override
@@ -463,7 +474,7 @@ namespace UPO
 			UINT clearFlag = 0;
 			if (clearDepth) clearFlag |= D3D11_CLEAR_DEPTH;
 			if (clearStencil) clearFlag |= D3D11_CLEAR_STENCIL;
-			mDeviceContext->ClearDepthStencilView(dsv, clearFlag, depth, stencil);
+			mImmediateContext->ClearDepthStencilView(dsv, clearFlag, depth, stencil);
 		}
 		//////////////////////////////////////////////////////////////////////////
 		virtual GFXIndexBuffer* CreateIndexBuffer(const GFXIndexBuffer_Desc& param) override
@@ -499,7 +510,7 @@ namespace UPO
 			{
 				GFXIndexBufferDX* ret = new GFXIndexBufferDX;
 				ret->mDevice = mDevice;
-				ret->mDeviceContext = mDeviceContext;
+				ret->mDeviceContext = mImmediateContext;
 				ret->mHandle = handle;
 				ret->mDesc = param;
 				ret->mDesc.mInitialData = nullptr;
@@ -545,7 +556,7 @@ namespace UPO
 			{
 				GFXVertexBufferDX* ret = new GFXVertexBufferDX;
 				ret->mDevice = mDevice;
-				ret->mDeviceContext = mDeviceContext;
+				ret->mDeviceContext = mImmediateContext;
 				ret->mHandle = handle;
 				ret->mDesc = param;
 				ret->mDesc.mInitialData = nullptr;
@@ -581,7 +592,7 @@ namespace UPO
 			{
 				GFXConstantBufferDX* ret = new GFXConstantBufferDX;
 				ret->mDevice = mDevice;
-				ret->mDeviceContext = mDeviceContext;
+				ret->mDeviceContext = mImmediateContext;
 				ret->mHandle = handle;
 				ret->mDesc = param;
 				ret->mDesc.mInitialData = nullptr;
@@ -684,56 +695,56 @@ namespace UPO
 		{
 			if (buffer == nullptr)
 			{
-				mDeviceContext->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
+				mImmediateContext->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
 				return;
 			}
 
 			ID3D11Buffer* buffers[1] = { buffer->As<GFXVertexBufferDX>()->mHandle };
 			UINT strides[1] = { stride };
 			UINT offsets[1] = { offset };
-			mDeviceContext->IASetVertexBuffers(0, 1, buffers, strides, offsets);
+			mImmediateContext->IASetVertexBuffers(0, 1, buffers, strides, offsets);
 		}
 		//////////////////////////////////////////////////////////////////////////
 		virtual void BinIndexBuffer(const GFXIndexBuffer* buffer, unsigned offset) override
 		{
 			if (buffer == nullptr)
 			{
-				mDeviceContext->IASetIndexBuffer(nullptr, DXGI_FORMAT::DXGI_FORMAT_UNKNOWN, 0);
+				mImmediateContext->IASetIndexBuffer(nullptr, DXGI_FORMAT::DXGI_FORMAT_UNKNOWN, 0);
 				return;
 			}
 
 			GFXIndexBufferDX* ib = buffer->As<GFXIndexBufferDX>();
-			mDeviceContext->IASetIndexBuffer(ib->mHandle, ToDXType(ib->GetDesc().mType), offset);
+			mImmediateContext->IASetIndexBuffer(ib->mHandle, ToDXType(ib->GetDesc().mType), offset);
 		}
 		//////////////////////////////////////////////////////////////////////////
 		virtual void BindConstantBuffer(const GFXConstantBuffer* buffer, unsigned slot, EShaderType whichShader) override
 		{
 			ID3D11Buffer* d3dBuffer = buffer ? buffer->As<GFXConstantBufferDX>()->GetHandle() : nullptr;
 			if (whichShader == EShaderType::EVertex)
-				mDeviceContext->VSSetConstantBuffers(slot, 1, &d3dBuffer);
+				mImmediateContext->VSSetConstantBuffers(slot, 1, &d3dBuffer);
 			else if (whichShader == EShaderType::EHull)
-				mDeviceContext->PSSetConstantBuffers(slot, 1, &d3dBuffer);
+				mImmediateContext->PSSetConstantBuffers(slot, 1, &d3dBuffer);
 		}
 		//////////////////////////////////////////////////////////////////////////
 		virtual void SetPrimitiveTopology(EPrimitiveTopology topology) override
 		{
-			mDeviceContext->IASetPrimitiveTopology(ToDXType(topology));
+			mImmediateContext->IASetPrimitiveTopology(ToDXType(topology));
 		}
 		//////////////////////////////////////////////////////////////////////////
 		virtual void Draw(unsigned vertexCount, unsigned startVertexLocation, unsigned instanceCount, unsigned startInstanceLocation) override
 		{
 			if(instanceCount > 1)
-				mDeviceContext->DrawInstanced(vertexCount, instanceCount, startVertexLocation, startInstanceLocation);
+				mImmediateContext->DrawInstanced(vertexCount, instanceCount, startVertexLocation, startInstanceLocation);
 			else
-				mDeviceContext->Draw(vertexCount, startVertexLocation);
+				mImmediateContext->Draw(vertexCount, startVertexLocation);
 		}
 		//////////////////////////////////////////////////////////////////////////
 		virtual void DrawIndexed(unsigned indexCount, unsigned startIndexLocation, unsigned baseVertexLocation, unsigned instanceCount, unsigned startInstanceLocation) override
 		{
 			if(instanceCount > 1)
-				mDeviceContext->DrawIndexedInstanced(indexCount, instanceCount, startIndexLocation, baseVertexLocation, startInstanceLocation);
+				mImmediateContext->DrawIndexedInstanced(indexCount, instanceCount, startIndexLocation, baseVertexLocation, startInstanceLocation);
 			else
-				mDeviceContext->DrawIndexed(indexCount, startIndexLocation, baseVertexLocation);
+				mImmediateContext->DrawIndexed(indexCount, startIndexLocation, baseVertexLocation);
 		}
 		//////////////////////////////////////////////////////////////////////////
 		virtual GFXTexture2D* CreateTexture2D(const GFXTexture2D_Desc& param)
@@ -850,15 +861,15 @@ namespace UPO
 			return nullptr;
 		}
 		//////////////////////////////////////////////////////////////////////////
-		virtual void SetDepthStencilState(const GFXDepthStencilState* state) override
+		virtual void BindDepthStencilState(const GFXDepthStencilState* state) override
 		{
 			if (state == nullptr)
-				mDeviceContext->OMSetDepthStencilState(nullptr, 0);
+				mImmediateContext->OMSetDepthStencilState(nullptr, 0);
 			else
-				mDeviceContext->OMSetDepthStencilState(state->As<GFXDepthStencilStateDX>()->mHandle, 1);
+				mImmediateContext->OMSetDepthStencilState(state->As<GFXDepthStencilStateDX>()->mHandle, 1);
 		}
 		//////////////////////////////////////////////////////////////////////////
-		virtual void SetRenderTarget(const GFXTexture2D* renderTarget, const GFXTexture2D* depthStencil) override
+		virtual void BindRenderTarget(const GFXTexture2D* renderTarget, const GFXTexture2D* depthStencil) override
 		{
 			ID3D11RenderTargetView* rtv = nullptr;
 			if (renderTarget)
@@ -872,12 +883,12 @@ namespace UPO
 				dsv = depthStencil->As<GFXTexture2DDX>()->mDepthStencilView;
 				UASSERT(dsv);
 			}
-			mDeviceContext->OMSetRenderTargets(1, &rtv, dsv);
+			mImmediateContext->OMSetRenderTargets(1, &rtv, dsv);
 		}
 		//////////////////////////////////////////////////////////////////////////
-		virtual void SetRasterizer(const GFXRasterizerState* state) override
+		virtual void BindRasterizer(const GFXRasterizerState* state) override
 		{
-			mDeviceContext->RSSetState(state ? state->As<GFXRasterizerStateDX>()->mHandle : nullptr);
+			mImmediateContext->RSSetState(state ? state->As<GFXRasterizerStateDX>()->mHandle : nullptr);
 		}
 		
 		GFXShader* CreateShaderFromBytecode(const Buffer& bytecodes, EShaderType type)
@@ -951,9 +962,9 @@ namespace UPO
 		virtual void BindShaders(GFXVertexShader* vertexShader, GFXPixelShader* pixelShader) override
 		{
 			if(auto vs = vertexShader->As<GFXVertexShaderDX>())
-				mDeviceContext->VSSetShader(vs->Handle(), nullptr, 0);
+				mImmediateContext->VSSetShader(vs->Handle(), nullptr, 0);
 			if (auto ps = pixelShader->As<GFXPixelShaderDX>())
-				mDeviceContext->PSSetShader(ps->Handle(), nullptr, 0);
+				mImmediateContext->PSSetShader(ps->Handle(), nullptr, 0);
 		}
 
 		virtual void BindShader(const GFXShaderBound& shaders) override
@@ -975,9 +986,9 @@ namespace UPO
 				}
 			}
 			if(whichShader == EShaderType::EVertex)
-				mDeviceContext->VSSetShaderResources(slot, 1, &view);
+				mImmediateContext->VSSetShaderResources(slot, 1, &view);
 			else if (whichShader == EShaderType::EHull)
-				mDeviceContext->PSSetShaderResources(slot, 1, &view);
+				mImmediateContext->PSSetShaderResources(slot, 1, &view);
 		}
 		//////////////////////////////////////////////////////////////////////////
 		virtual void BindSamplerState(GFXSamplerState* sampler, unsigned slot, EShaderType shader) override
@@ -986,9 +997,9 @@ namespace UPO
 			if(sampler) samplerState = sampler->As<GFXSamplerStateDX>()->mHandle;
 			
 			if (shader == EShaderType::EVertex)
-				mDeviceContext->VSSetSamplers(slot, 1, &samplerState);
+				mImmediateContext->VSSetSamplers(slot, 1, &samplerState);
 			else if (shader == EShaderType::EHull)
-				mDeviceContext->PSSetSamplers(slot, 1, &samplerState);
+				mImmediateContext->PSSetSamplers(slot, 1, &samplerState);
 		}
 		//////////////////////////////////////////////////////////////////////////
 		virtual GFXInputLayout* CreateInputLayout(const GFXInputLayoutDesc& param) override
@@ -1032,7 +1043,7 @@ namespace UPO
 		//////////////////////////////////////////////////////////////////////////
 		virtual void BinInputLayout(const GFXInputLayout* layout) override
 		{
-			mDeviceContext->IASetInputLayout(layout ? layout->As<GFXInputLayoutDX>()->mHandle : nullptr);
+			mImmediateContext->IASetInputLayout(layout ? layout->As<GFXInputLayoutDX>()->mHandle : nullptr);
 		}
 		//////////////////////////////////////////////////////////////////////////
 		virtual GFXBlendState* CreateBlendState(const GFXBlendState_Desc& param) override
@@ -1066,7 +1077,7 @@ namespace UPO
 		virtual void BindBlendState(const GFXBlendState* state, float blendFactor[4], unsigned sampleMask = 0xFFffFFff) override
 		{
 			ID3D11BlendState* bs = state ? state->As<GFXBlendStateDX>()->mHandle : nullptr;
-			mDeviceContext->OMSetBlendState(bs, blendFactor, sampleMask);
+			mImmediateContext->OMSetBlendState(bs, blendFactor, sampleMask);
 		}
 		//////////////////////////////////////////////////////////////////////////
 		virtual GFXTexture2D* LoadTextureFromFile(const char* filename)

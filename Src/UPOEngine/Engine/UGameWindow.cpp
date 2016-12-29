@@ -5,9 +5,10 @@
 #include <windowsx.h>
 #include <WinUser.h>
 
-
 namespace UPO
 {
+
+
 	WPARAM UMapLeftRightVKey(WPARAM vk, LPARAM lParam)
 	{
 		WPARAM new_vk = vk;
@@ -199,8 +200,10 @@ namespace UPO
 		//////////////////////////////////////////////////////////////////////////
 		LRESULT MessageHandler(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam)
 		{
-			Input::SetMouseState(EMouseButton::EMB_WheelForward, false);
-			Input::SetMouseState(EMouseButton::EMB_WheelBackward, false);
+// 			Input::SetMouseState(EMouseButton::EMB_WheelForward, false);
+// 			Input::SetMouseState(EMouseButton::EMB_WheelBackward, false);
+			Input::SetKeyState(EKC_MouseWheelForward, false);
+			Input::SetKeyState(EKC_MouseWheelBackward, false);
 			Input::SetMouseWheelDelta(0);
 			
 			
@@ -212,13 +215,15 @@ namespace UPO
 			case WM_KEYDOWN:
 			case WM_SYSKEYDOWN:
 			{
-				Input::SetKeyState(Win32VKToEKeyCode(UMapLeftRightVKey(wparam, lparam)), true);
+				EKeyCode key = UWin32VKToEKeyCode(UMapLeftRightVKey(wparam, lparam));
+				Input::SetKeyState(key, true);
 				Input::SetKeyState(EKeyCode::EKC_Any, true);
+				ULOG_MESSAGE("Key down [%s]", EnumToStr(key));
 				return 0;
 			}
 			case WM_KEYUP:
 			{
-				Input::SetKeyState(Win32VKToEKeyCode(UMapLeftRightVKey(wparam, lparam)), false);
+				Input::SetKeyState(UWin32VKToEKeyCode(UMapLeftRightVKey(wparam, lparam)), false);
 				Input::SetKeyState(EKeyCode::EKC_Any, false);
 				return 0;
 			}	
@@ -226,34 +231,45 @@ namespace UPO
 				Input::SetMousePos(GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam));
 				return 0;
 			case WM_LBUTTONDOWN:
-				Input::SetMouseState(EMouseButton::EMB_Left, true);
+				Input::SetKeyState(EKC_MouseLeft, true);
+// 				Input::SetMouseState(EMouseButton::EMB_Left, true);
 				return 0;
 			case WM_RBUTTONDOWN:
-				Input::SetMouseState(EMouseButton::EMB_Right, true);
+				Input::SetKeyState(EKC_MouseRight, true);
+// 				Input::SetMouseState(EMouseButton::EMB_Right, true);
 				return 0;
 			case WM_MBUTTONDOWN:
-				Input::SetMouseState(EMouseButton::EMB_Middle, true);
+				Input::SetKeyState(EKC_MouseMiddle, true);
+// 				Input::SetMouseState(EMouseButton::EMB_Middle, true);
 				return 0;
 
 			case WM_LBUTTONUP:
-				Input::SetMouseState(EMouseButton::EMB_Left, false);
+				Input::SetKeyState(EKC_MouseLeft, false);
+// 				Input::SetMouseState(EMouseButton::EMB_Left, false);
 				return 0;
 			case WM_RBUTTONUP:
-				Input::SetMouseState(EMouseButton::EMB_Right, false);
+				Input::SetKeyState(EKC_MouseRight, false);
+// 				Input::SetMouseState(EMouseButton::EMB_Right, false);
 				return 0;
 			case WM_MBUTTONUP:
-				Input::SetMouseState(EMouseButton::EMB_Middle, false);
+				Input::SetKeyState(EKC_MouseMiddle, false);
+// 				Input::SetMouseState(EMouseButton::EMB_Middle, false);
 				return 0;
 
 			case WM_MOUSEWHEEL:
 			{
 				//A positive value indicates that the wheel was rotated forward,
 				unsigned zDelta = GET_WHEEL_DELTA_WPARAM(wparam);
+				ULOG_MESSAGE("mouse wheel delta %i", zDelta);
 				Input::SetMouseWheelDelta(zDelta);
+// 				if (zDelta > 0)
+// 					Input::SetMouseState(EMouseButton::EMB_WheelForward, true);
+// 				if (zDelta < 0)
+// 					Input::SetMouseState(EMouseButton::EMB_WheelBackward, true);
 				if (zDelta > 0)
-					Input::SetMouseState(EMouseButton::EMB_WheelForward, true);
+					Input::SetKeyState(EKC_MouseWheelForward, true);
 				if (zDelta < 0)
-					Input::SetMouseState(EMouseButton::EMB_WheelBackward, true);
+					Input::SetKeyState(EKC_MouseWheelBackward, true);
 
 				return 0;
 			}

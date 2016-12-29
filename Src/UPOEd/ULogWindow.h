@@ -12,7 +12,7 @@ namespace UPOEd
 		QAction* mActionClear;
 
 		QQueue<LogEntry> mLogsQueue;
-
+		bool mIsLogDirty;
 	public:
 
 		LogWidget(QWidget* parent);
@@ -20,6 +20,7 @@ namespace UPOEd
 		void LogReceived(const LogEntry& entry);
 		void FillHTML();
 		void Clean();
+		void Tick();
 	};
 
 	//////////////////////////////////////////////////////////////////////////

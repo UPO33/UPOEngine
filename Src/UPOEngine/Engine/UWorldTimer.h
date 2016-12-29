@@ -1,6 +1,5 @@
 #pragma once
 
-#include "UEntity.h"
 #include "../Core/UDelegate.h"
 
 namespace UPO

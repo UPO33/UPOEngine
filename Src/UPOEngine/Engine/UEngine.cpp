@@ -13,19 +13,15 @@ namespace UPO
 	unsigned	gGameTickCounter = 0;
 	unsigned	gRenderTickCounter = 0;
 	
-	struct RenderThreadData
-	{
-		GFXContext* mGFXContext;
-		Renderer* mRenderer;
-	};
+
 
 	struct EngineImpl
 	{
 
 		World* mCurrentWorld;
 		WorldRS*	mCurrentWorldRS;
-		GameWindow* mMainWindow;
-		GFXContext* mGFXContext;
+// 		GameWindow* mMainWindow;
+// 		GFXContext* mGFXContext;
 		Renderer* mRenderer;
 		IEngineInterface* mInterface;
 		bool mLoop;
@@ -44,8 +40,19 @@ namespace UPO
 		//when render thread was released this event is signaled
 		Event	mRenderThreadReleased;
 
+		World* mNewWorldToSet = nullptr;
+		Event	mEventRTNewWorldAssign;
+
+		TArray<World*>		mWorlds;
+		TArray<WorldRS*>	mWorldsRS;
+		TArray<World*>		mPendingAddWorld;
+		TArray<World*>		mPendingDestroyWorld;
+		bool mAnyWorldRemoved = false;
+		TinyLock			mLockAddingWorld;
+
 		EngineImpl() :
-			mRenderThreadReleased(false, false)
+			mRenderThreadReleased(false, false), 
+			mEventRTNewWorldAssign(false, false)
 		{
 
 		}
@@ -76,38 +83,36 @@ namespace UPO
 
 
 
-			mMainWindow = mInterface->OnCreateGameWindow();
-			UASSERT(mMainWindow);
-			ULOG_MESSAGE("Game Window Created");
+// 			mMainWindow = mInterface->OnCreateGameWindow();
+// 			UASSERT(mMainWindow);
+// 			ULOG_MESSAGE("Game Window Created");
 
 			EnqueueToRender([this]() {
-				mGFXContext = GFXContext::New();
-				UASSERT(mGFXContext);
-
-				mGFXContext->Init(mMainWindow);
+// 				mGFXContext = GFXContext::New();
+// 				UASSERT(mGFXContext);
+// 
+// 				mGFXContext->Init(mMainWindow);
 
 				//mInterface->OnAfterDeviceCreation();
+				GFXDevice::Create();
 
 				UGlobalShader_CompileAll();
 				mCompilingGlobalShader = false;
 
 				mRenderer = Renderer::New();
-				UASSERT(mRenderer);
-				mRenderer->Init(mGFXContext);
-
-				
+				UASSERT(mRenderer);				
 			});
 
-			mCurrentWorld = new World;
-			mCurrentWorld->SetPlaying();
-			
-			mCurrentWorld->GetTimer()->StartTimer(1, 1, [this]() { 
-				ULOG_MESSAGE("");
-				EntityCreationParam ecp;
-				ecp.mClass = EntityTest::GetClassInfoStatic();
-				ecp.mParent = nullptr;
-				mCurrentWorld->CreateEntity(ecp);
-			});
+// 			mCurrentWorld = new World;
+// 			mCurrentWorld->SetPlaying();
+// 			
+// 			mCurrentWorld->GetTimer()->StartTimer(1, 1, [this]() { 
+// 				ULOG_MESSAGE("");
+// 				EntityCreationParam ecp;
+// 				ecp.mClass = EntityTest::GetClassInfoStatic();
+// 				ecp.mParent = nullptr;
+// 				mCurrentWorld->CreateEntity(ecp);
+// 			});
 		}
 		void Loop()
 		{
@@ -173,8 +178,8 @@ namespace UPO
 // 			mCurrentWorld->Release();
 
 			
-			mInterface->OnReleaseGameWindow();
-			mMainWindow = nullptr;
+// 			mInterface->OnReleaseGameWindow();
+// 			mMainWindow = nullptr;
 
 			mInterface->OnRelease();
 
@@ -185,15 +190,15 @@ namespace UPO
 			UASSERT(IsRenderThread());
 			ULOG_MESSAGE("");
 			mRenderer->Release();
-			mGFXContext->Release();
+// 			mGFXContext->Release();
 			delete mRenderer;
-			delete mGFXContext;
+// 			delete mGFXContext;
 			mRenderer = nullptr;
-			mGFXContext = nullptr;
+// 			mGFXContext = nullptr;
+			delete gGFX;
 		}
 		bool GTick()
 		{
-			mCmdQueueR2G.InvokeAll();
 
 			bool result = true;
 			
@@ -203,11 +208,52 @@ namespace UPO
 
 			result = mInterface->OnTick();
 
-			if (mCurrentWorld)
+			//ticking alive worlds
 			{
-				mCurrentWorld->Tick(mDelta);
+				unsigned numWorld = mWorlds.Length();
+				for (unsigned i = 0; i < numWorld; i++)
+				{
+					if (mWorlds[i]->mIsAlive)
+					{
+						mWorlds[i]->Tick(mDelta);
+					}
+				}
 			}
 
+
+
+
+// 			if (mCurrentWorld)
+// 			{
+// 				mCurrentWorld->Tick(mDelta);
+// 			}
+
+			mCmdQueueR2G.InvokeAll();
+
+			//removing destroyed worlds
+			if(mAnyWorldRemoved)
+			{
+				mEventRTNewWorldAssign.Wait();
+				mAnyWorldRemoved = false;
+				mWorlds.RemoveIf([](World* world) {
+					if (!world->mIsAlive)
+					{
+						delete world;
+						return true;
+					}
+					return false;
+				});
+				mEventRTNewWorldAssign.SetSignaled();
+			}
+
+// 			if (mNewWorldToSet)
+// 			{
+// 				ULOG_MESSAGE("B");
+// 				mEventRTNewWorldAssign.Wait();
+// 				ULOG_MESSAGE("A");
+// 				mCurrentWorld = mNewWorldToSet;
+// 				mNewWorldToSet = nullptr;
+// 			}
 			gGameTickCounter++;
 
 			return result;
@@ -215,20 +261,51 @@ namespace UPO
 		bool RTick()
 		{
 			bool result = true;
-			mCmdQueueG2R.InvokeAll();
-			mAssetCommands.InvokeAll();
+
 
 			//GAssetSys()->Frame(mDelta);
 
 			if(mRenderer)
 			{
-				result = mRenderer->RenderFrame();
-			}
-			if (mCurrentWorld)
-			{
-				mCurrentWorld->GetRS()->Frame();
+				unsigned numWorld = mWorldsRS.Length();
+				for (unsigned i = 0; i < numWorld; i++)
+				{
+					 mRenderer->RenderWorld(mWorldsRS[i]);
+				}
+				
 			}
 
+			mCmdQueueG2R.InvokeAll();
+			mAssetCommands.InvokeAll();
+
+// 			if (mNewWorldToSet && mRenderer)
+// 			{
+// 				mRenderer->AttachWorld(mNewWorldToSet->CreateRS());
+// 				mEventRTNewWorldAssign.SetSignaled();
+// 			}
+
+			{
+				USCOPE_LOCK(mLockAddingWorld);
+				for (World* world : mWorlds)
+				{
+					if (world->GetRS() == nullptr)
+						mWorldsRS.Add(world->CreateRS());
+				}
+			}
+
+			if (mAnyWorldRemoved)
+			{
+				mWorldsRS.RemoveIf([](WorldRS* wrs) {
+					if (!wrs->mGS->mIsAlive)
+					{
+						delete wrs;
+						return true;
+					}
+					return false;
+				});
+				mEventRTNewWorldAssign.SetSignaled();
+				mEventRTNewWorldAssign.Wait();
+			}
 			gRenderTickCounter++;
 			return result;
 		}
@@ -249,5 +326,45 @@ namespace UPO
 		gEngine.Release();
 	}
 
+
+	void IEngineInterface::Quit()
+	{
+		gEngine.mLoopGT = false;
+	}
+
+	void IEngineInterface::LoadWorld(Name assetName)
+	{
+
+	}
+
+	void IEngineInterface::SetWorld(World* world)
+	{
+		 gEngine.mNewWorldToSet = world;
+	}
+
+	World* IEngineInterface::CreateWorld()
+	{
+		World* world = new World;
+		{
+			USCOPE_LOCK(gEngine.mLockAddingWorld);
+			gEngine.mWorlds.Add(world);
+		}
+		
+		return world;
+	}
+
+	void IEngineInterface::DeleteWorld(World* world)
+	{
+		if(world->mIsAlive)
+		{
+			world->mIsAlive = false;
+			gEngine.mAnyWorldRemoved = true;
+		}
+	}
+
+	IEngineInterface* IEngineInterface::Get()
+	{
+		return gEngine.mInterface;
+	}
 
 };

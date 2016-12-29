@@ -1,21 +1,27 @@
 #pragma once
 
-#include "UWorld.h"
+#include "../Core/UCore.h"
 
 namespace UPO
 {
 	//////////////////////////////////////////////////////////////////////////
+	class World;
+	class Entity;
 	class EntityStaticMesh;
 	class EntityStaticMeshRS;
 	class EntityCamera;
 	class EntityCameraRS;
+	class GameWindow;
 
 	//////////////////////////////////////////////////////////////////////////
 	class World;
+	class Renderer;
 
-	class WorldRS
+	class UAPI WorldRS
 	{
 		friend World;
+		friend class EngineImpl;
+		friend Renderer;
 
 		Flag					mFlag;
 		World*					mGS;
@@ -26,16 +32,27 @@ namespace UPO
 		BitArray						mStaticMeshesCullingState;
 
 		TArray<EntityStaticMeshRS*>		mStaticMeshes;
+		TArray<EntityCameraRS*>			mCameras;
+
+		EntityCameraRS*					mMainCamera;
 
 	public:
+		Renderer*		mRenderer = nullptr;
+		GameWindow*		mMainWindow = nullptr;
+		GFXSwapChain*	mMainWndSwapChain = nullptr;
+
 		/*
 		TArray<EntityCameraRS*>			mCameras;
 		TArray<EntityLishtRS*>			mLights;
 		*/
-		void Present();
-		void WaitForGameTickEnd();
+		WorldRS();
+		~WorldRS();
+
 
 		void Frame();
+	private:
+		void Present();
+		void WaitForGameTickEnd();
 		void Culling();
 		void RenderStaticMesh(unsigned index);
 		void Reintegrate();

@@ -7,6 +7,9 @@ namespace UPO
 	static const unsigned GFX_MAX_RENDER_TARGET = 8;
 
 	//////////////////////////////////////////////////////////////////////////
+	class GameWindow;
+
+	//////////////////////////////////////////////////////////////////////////
 	class GFXDevice;
 
 	//////////////////////////////////////////////////////////////////////////
@@ -632,8 +635,9 @@ namespace UPO
 	{
 		static const unsigned MAX_ELEMENT = 32;
 
+		GFXVertexShader* mVertexShader;
 		GFXVertexElementDesc mElements[MAX_ELEMENT];
-		GFXVertexShaderRef mVertexShader;
+		
 	};
 	//////////////////////////////////////////////////////////////////////////
 	class GFXInputLayout : public GFXResource
@@ -697,9 +701,27 @@ namespace UPO
 
 	};
 	//////////////////////////////////////////////////////////////////////////
+	class UAPI GFXSwapChain : public GFXResource
+	{
+	public:
+		virtual bool Present() { return false; };
+		virtual GFXTexture2D* GetBackBuffer() { return nullptr; }
+		virtual void GetBackBufferSize(Vec2I& out) {}
+		virtual bool Resize(const Vec2I& newSize) { return false; }
+		virtual GameWindow* GetGameWindow() { return nullptr; }
+	};
+
+	//////////////////////////////////////////////////////////////////////////
 	class UAPI GFXDevice : public GFXResource
 	{
 	public:
+
+		static GFXDevice* Create();
+
+		//////////////////////////////////////////////////////////////////////////
+		//creates a swap chain from a game window
+		virtual GFXSwapChain* CreateSwapChain(GameWindow*) = 0;
+
 		//////////////////////////////////////////////////////////////////////////buffers
 		virtual GFXIndexBuffer* CreateIndexBuffer(const GFXIndexBuffer_Desc&) = 0;
 		virtual GFXVertexBuffer* CreateVertexBuffer(const GFXVertexBuffer_Desc&) = 0;
@@ -731,9 +753,9 @@ namespace UPO
 
 
 		virtual GFXTexture2D* CreateTexture2D(const GFXTexture2D_Desc& param) = 0;
-		virtual void SetDepthStencilState(const GFXDepthStencilState* state) = 0;
-		virtual void SetRenderTarget(const GFXTexture2D* renderTarget, const GFXTexture2D* depthStencil) = 0;
-		virtual void SetRasterizer(const GFXRasterizerState* state) = 0;
+		virtual void BindDepthStencilState(const GFXDepthStencilState* state) = 0;
+		virtual void BindRenderTarget(const GFXTexture2D* renderTarget, const GFXTexture2D* depthStencil) = 0;
+		virtual void BindRasterizer(const GFXRasterizerState* state) = 0;
 		
 		virtual GFXShader* CreateShader(const ShaderUniqueParam& param) = 0;
 		

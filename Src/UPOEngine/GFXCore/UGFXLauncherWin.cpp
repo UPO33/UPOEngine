@@ -480,8 +480,8 @@ namespace UPO
 	//////////////////////////////////////////////////////////////////////////
 	LRESULT GFXLauncherWin::MessageHandler(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam)
 	{
-		Input::SetMouseState(EMouseButton::EMB_WheelForward, false);
-		Input::SetMouseState(EMouseButton::EMB_WheelBackward, false);
+// 		Input::SetMouseState(EMouseButton::EMB_WheelForward, false);
+// 		Input::SetMouseState(EMouseButton::EMB_WheelBackward, false);
 		Input::SetMouseWheelDelta(0);
 
 		switch (umsg)
@@ -497,23 +497,23 @@ namespace UPO
 			Input::SetMousePos(GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam));
 			return 0;
 		case WM_LBUTTONDOWN:
-			Input::SetMouseState(EMouseButton::EMB_Left, true);
+// 			Input::SetMouseState(EMouseButton::EMB_Left, true);
 			return 0;
 		case WM_RBUTTONDOWN:
-			Input::SetMouseState(EMouseButton::EMB_Right, true);
+// 			Input::SetMouseState(EMouseButton::EMB_Right, true);
 			return 0;
 		case WM_MBUTTONDOWN:
-			Input::SetMouseState(EMouseButton::EMB_Middle, true);
+// 			Input::SetMouseState(EMouseButton::EMB_Middle, true);
 			return 0;
 			
 		case WM_LBUTTONUP:
-			Input::SetMouseState(EMouseButton::EMB_Left, false);
+// 			Input::SetMouseState(EMouseButton::EMB_Left, false);
 			return 0;
 		case WM_RBUTTONUP:
-			Input::SetMouseState(EMouseButton::EMB_Right, false);
+// 			Input::SetMouseState(EMouseButton::EMB_Right, false);
 			return 0;
 		case WM_MBUTTONUP:
-			Input::SetMouseState(EMouseButton::EMB_Middle, false);
+// 			Input::SetMouseState(EMouseButton::EMB_Middle, false);
 			return 0;
 
 		case WM_MOUSEWHEEL:
@@ -521,11 +521,11 @@ namespace UPO
 			//A positive value indicates that the wheel was rotated forward,
 			unsigned zDelta = GET_WHEEL_DELTA_WPARAM(wparam);
 			Input::SetMouseWheelDelta(zDelta);
-			if (zDelta > 0)
-				Input::SetMouseState(EMouseButton::EMB_WheelForward, true);
-			if(zDelta < 0)
-				Input::SetMouseState(EMouseButton::EMB_WheelBackward, true);
-			
+// 			if (zDelta > 0)
+// 				Input::SetMouseState(EMouseButton::EMB_WheelForward, true);
+// 			if(zDelta < 0)
+// 				Input::SetMouseState(EMouseButton::EMB_WheelBackward, true);
+// 			
 			return 0;
 		}
 		case WM_SIZE:

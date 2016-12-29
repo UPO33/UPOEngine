@@ -74,6 +74,8 @@ namespace UPOEd
 
 			if (ci == String::GetClassInfoStatic()) return new PBStringProp(param, mTree);
 			if (ci == Name::GetClassInfoStatic())	return new PBNameProp(param, mTree);
+
+			if (ci == Transform::GetClassInfoStatic()) return new PBTransformProp(param, mTree);
 		}
 		}
 		return new PBBaseProp(param, mTree);

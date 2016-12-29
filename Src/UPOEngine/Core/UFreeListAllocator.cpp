@@ -109,8 +109,10 @@ namespace UPO
 		if (mFirstFree == nullptr) AddNewChunk();
 
 		auto tmp = mFirstFree;
-		mFirstFree->mNextFree = mFirstFree;
+		mFirstFree = mFirstFree->mNextFree;
 		return tmp;
+
+
 	}
 
 	void FreeListAllocator::Free(void* ptr)

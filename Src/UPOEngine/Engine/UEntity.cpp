@@ -28,18 +28,27 @@ namespace UPO
 	//////////////////////////////////////////////////////////////////////////
 	Entity::Entity()
 	{
+		static String StrEntityName = "Entity00000000000";
 		static Name NameEntity = "Entity";
+		static unsigned EntityCTorCounter = 0;
 
 		mParent = nullptr;
+		
+#ifndef UUSE_ARRAYCHILD
 		mNumChild = 0;
+		mChildHead = mDownEntity = mUpEntity = nullptr;
+#endif
+		mEntityFlag = EEF_Default;
 
-// 		mChildHead = mDownEntity = mUpEntity = nullptr;
+		StrEntityName.SetFormatted("%s_%i", GetClassInfo()->GetName().CStr(), EntityCTorCounter++);
 
-		mName = NameEntity;
+		mName = StrEntityName;
 
 		mTickRegistered = false;
 		mTickPendingAdd = false;
 		mIsWorldTransformInvDirty = false;
+
+		mWorldTransform = mLocalTransform = mWorldTransformInv = Transform::IDENTITY;
 	}
 
 	void Entity::TagRenderDataDirty(unsigned flag)
@@ -65,15 +74,19 @@ namespace UPO
 	//////////////////////////////////////////////////////////////////////////
 	Entity* Entity::GetChild(unsigned index) const
 	{
+#ifdef UUSE_ARRAYCHILD
 		return mChildren[index];
-// 		Entity* iter = mChildHead;
-// 		while (iter)
-// 		{
-// 			if (index == 0) break;
-// 
-// 			iter = iter->mDownEntity;
-// 		}
-// 		return iter;
+#else
+		Entity* iter = mChildHead;
+		while (iter)
+		{
+			if (index == 0) break;
+
+			index--;
+			iter = iter->mDownEntity;
+		}
+		return iter;
+#endif
 	}
 	//////////////////////////////////////////////////////////////////////////
 	void Entity::AttachTo(Entity* newParent)
@@ -196,8 +209,7 @@ namespace UPO
 		mNumChild--;
 
 #else
-		mChildren.LastElement()->mIndexInParent = child->mIndexInParent;
-		mChildren.RemoveAtSwap(child->mIndexInParent);
+		mChildren.RemoveShift(mChildren.Find(child));
 #endif
 	}
 	//////////////////////////////////////////////////////////////////////////
@@ -221,26 +233,19 @@ namespace UPO
 		mNumChild++;
 
 #else
-		mIndexInParent = mChildren.Add(child);
+		mChildren.Add(child);
 #endif
 	}
 
 	void Entity::Tick()
 	{
-		if (FlagTest(EEntityFlag::EEF_Tickable | EEntityFlag::EEF_Alive | EEntityFlag::EEF_BeginPlayWasCalled))
-			OnTick();
 
-		DoOnChilChild([](Entity* child) {
-			child->Tick();
-		});
 	}
 
 	//////////////////////////////////////////////////////////////////////////
 	void Entity::Init(Entity* parent, World* world)
 	{
 		mWorld = world;
-
-		FlagSet(EEF_Alive | EEF_Initilized);
 
 		mParent = (parent && parent->IsAlive()) ? parent : world->mRootEntity;
 		mParent->AddChildToList(this);
@@ -284,7 +289,7 @@ namespace UPO
 	//////////////////////////////////////////////////////////////////////////
 	void Entity::Destroy()
 	{
-		UASSERT(mWorld->mRootEntity == this);
+		UASSERT(mWorld->mRootEntity != this);
 
 		if (FlagTestAnClear(EEF_Alive))
 		{
@@ -309,18 +314,33 @@ namespace UPO
 			Destroy_Pass0();
 			//this pass calls related destroy functions
 			Destroy_Pass1();
+
+			mWorld->mOnEntityDestroyed.InvokeAll(this);
+
+			ULOG_MESSAGE("Entity [%s] Destroyed", mName.CStr());
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////
 	void Entity::Destroy_Pass0()
 	{
+// 		for (size_t i = 0; i < mChildren.Length(); i++)
+// 		{
+// 			Entity* child = mChildren[i];
+// 			if (child->FlagTestAnClear(EEF_Alive))
+// 			{
+// 				child->mWorld->mEntitiesPendingKill.Add(child);
+// 				child->mWorld->PushToPendingDestroyFromRS(child);
+// 				//child->GetWorld()->PushToLimbo(child);
+// 				child->Destroy_Pass0();
+// 			}
+// 		}
 		DoOnChilChild([](Entity* child) {
 			if (child->FlagTestAnClear(EEF_Alive))
 			{
 				child->mWorld->mEntitiesPendingKill.Add(child);
 				child->mWorld->PushToPendingDestroyFromRS(child);
 				//child->GetWorld()->PushToLimbo(child);
-				child->Destroy_Pass0();
+// 				child->Destroy_Pass0();
 			}
 		});
 	}
@@ -336,9 +356,19 @@ namespace UPO
 			FlagSet(EEF_OnDestroyWasCalled);
 			OnDestroy();
 
+// 			for (size_t i = 0; i < mChildren.Length(); i++)
+// 			{
+// 				mChildren[i]->Destroy_Pass1();
+// 			}
 			DoOnChilChild([](Entity* child) {
-				child->Destroy_Pass1();
-			});
+				if (!child->FlagTest(EEF_OnDestroyWasCalled))
+				{
+					if (child->FlagTest(EEF_BeginPlayWasCalled))
+						child->OnEndPlay(EPR_Destroy);
+
+					child->FlagSet(EEF_OnDestroyWasCalled);
+					child->OnDestroy();
+				}});
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////
@@ -353,6 +383,10 @@ namespace UPO
 
 
 	UCLASS_BEGIN_IMPL(Entity)
+		UPROPERTY(mName, UATTR_Hidden())
+		UPROPERTY(mEntityFlag, UATTR_Hidden())
+		UPROPERTY(mTestVec3)
+		UPROPERTY(mLocalTransform)
 	UCLASS_END_IMPL(Entity)
 
 

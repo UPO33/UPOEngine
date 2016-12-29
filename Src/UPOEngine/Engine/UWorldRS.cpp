@@ -1,10 +1,21 @@
 #include "UWorldRS.h"
+
+#include "UWorld.h"
 #include "UEntityStaticMesh.h"
 #include "UEntityCamera.h"
 
+#include "../GFX/URenderer.h"
+#include "../GFX/UPrimitiveBatch.h"
+
 namespace UPO
 {
-		//////////////////////////////////////////////////////////////////////////
+
+	WorldRS::WorldRS()
+	{
+		MemZero(this, sizeof(this));
+	}
+
+	//////////////////////////////////////////////////////////////////////////
 // 		class WorldRS : IWorldRS
 // 		{
 // 			World*					mGS;
@@ -95,6 +106,12 @@ namespace UPO
 
 		void WorldRS::Present()
 		{
+			if (mCameras.Length() && mCameras[0])
+			{
+				mMainCamera = mCameras[0];
+			}
+			Matrix4 matrixWorldToCLip = mMainCamera->mView * mMainCamera->mProj;
+			
 
 		}
 
@@ -135,6 +152,13 @@ namespace UPO
 				if (ent->FlagTest(EEF_Alive | EEF_RenderDataDirty))
 					ent->mRS->OnFetch();
 			}
+
+			for (size_t i = 0; i < mCameras.Length(); i++)
+			{
+				mCameras[i]->OnFetch();
+			}
+
+			mRenderer->mPrimitiveBatch->Swap();
 		}
 
 		void WorldRS::CollectMeshesForRender()
@@ -161,10 +185,11 @@ namespace UPO
 		{
 			if (auto sm = ent->Cast<EntityStaticMesh>())
 			{
-				
+				mStaticMeshes.RemoveAtSwap(ent->mRS->mPrivateIndex);
 			}
-			if (EntityCamera* camera = ent->Cast<EntityCamera>())
+			if (auto camera = ent->Cast<EntityCamera>())
 			{
+				mStaticMeshes.RemoveAtSwap(ent->mRS->mPrivateIndex);
 			}
 		}
 
@@ -188,6 +213,13 @@ namespace UPO
 		}
 
 		void WorldRS::Create_EntityCameraRS(EntityCamera* camera)
+		{
+			EntityCameraRS* rs = new EntityCameraRS(camera, this);
+			size_t index = mCameras.Add(rs);
+			rs->mPrivateIndex = index;
+		}
+
+		WorldRS::~WorldRS()
 		{
 
 		}

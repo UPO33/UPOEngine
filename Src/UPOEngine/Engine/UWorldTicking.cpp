@@ -1,4 +1,5 @@
 #include "UWorldTicking.h"
+#include "UEntity.h"
 
 namespace UPO
 {

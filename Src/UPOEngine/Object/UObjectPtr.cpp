@@ -87,12 +87,13 @@ namespace UPO
 	//////////////////////////////////////////////////////////////////////////
 	ObjectRefData ObjectRefData::NullRef = { ~0U, nullptr };
 
-	FreeListAllocator gObjPtrAllocator { sizeof(ObjectRefData), 256 };
+	FreeListAllocator gObjPtrAllocator { sizeof(ObjectRefData)+8, 256 };
 
 	//////////////////////////////////////////////////////////////////////////
 	ObjectRefData* ObjectRefData::GetNew()
 	{
 		return new (gObjPtrAllocator.Alloc()) ObjectRefData;
+
 // 		ObjectRefData* ret = gObjectPtrContext.GetFreeInstance();
 // 		ret->mObject = owner;
 // 		ret->mRefCount = 0;
@@ -102,6 +103,7 @@ namespace UPO
 	void ObjectRefData::Free(ObjectRefData* ptrData)
 	{
 		gObjPtrAllocator.Free(ptrData);
+
 // 		gObjectPtrContext.FreeInstance(ptrData);
 	}
 

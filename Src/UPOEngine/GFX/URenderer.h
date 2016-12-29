@@ -7,15 +7,22 @@ namespace UPO
 {
 	//////////////////////////////////////////////////////////////////////////
 	class World;
+	class WorldRS;
 
 	//////////////////////////////////////////////////////////////////////////
 	class UAPI Renderer
 	{
 	public:
-		virtual bool Init(GFXContext* context) { return false; }
+		class TestQuadRE* mTestQuad = nullptr;
+		class WorldRS* mWorld = nullptr;
+		class PrimitiveBatch*	mPrimitiveBatch = nullptr;
+
+		virtual bool Init() { return false; }
 		virtual bool RenderFrame() { return false; }
 		virtual bool Release() { return false; }
-		virtual void AttachWorld(World* world) {}
+		virtual void AttachWorld(WorldRS* world) {}
+
+		virtual bool RenderWorld(WorldRS*) { return false; }
 
 		static Renderer* New();
 		static void Delete(Renderer*);

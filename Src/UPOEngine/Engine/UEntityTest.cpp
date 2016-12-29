@@ -23,12 +23,19 @@ namespace UPO
 	{
 		Parent::OnBeginPlay();
 		ULOG_MESSAGE("");
+		Invoke(1, 8, [this]()
+		{
+			Destroy();
+			ULOG_MESSAGE("");
+		});
+
 
 	}
 
 	void EntityTest::OnEndPlay(EEndPlayReason)
 	{
 		ULOG_MESSAGE("");
+		
 	}
 
 	void EntityTest::OnTick()
@@ -41,6 +48,7 @@ namespace UPO
 
 	void EntityTest::OnConstruct()
 	{
+		ULOG_MESSAGE("");
 		SetTickEnable(true);
 	}
 

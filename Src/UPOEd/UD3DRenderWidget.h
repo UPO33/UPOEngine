@@ -19,8 +19,7 @@ namespace UPOEd
 		virtual void paintEvent(QPaintEvent* evt) override;
 
 
-		virtual unsigned GetWidth() override;
-		virtual unsigned GetHeight() override;
+		virtual void GetSize(Vec2I&) override;
 		virtual void* GetWinHandle() override;
 
 	};

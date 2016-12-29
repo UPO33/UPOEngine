@@ -8,7 +8,7 @@ how to use:
 .h:
 	UDECL_GLOBAL_SHADER(gMyVertexShader, GFXVertexShader);
 .cpp:
-	UIMPL_GLOBAL_SHADER(gMyVertexShader, "MyVertesShader.hlsl", "VSMain", GFXVertexShader");
+	UIMPL_GLOBAL_SHADER(gMyVertexShader, "MyVertesShader.hlsl", "VSMain", {"MY_DEFINITION", "float3(0,0,0)" }, {"MY_PI", "3.1415" } );
 */
 #define UDECL_GLOBAL_SHADER(varibleName, shaderClass) typedef shaderClass ZZT##varibleName; extern UAPI shaderClass* varibleName;
 

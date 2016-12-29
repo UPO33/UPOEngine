@@ -17,7 +17,7 @@ namespace UPO
 
 
 	//////////////////////////////////////////////////////////////////////////
-	class IEngineInterface
+	class UAPI IEngineInterface
 	{
 	public:
 		virtual bool OnInit() { return true; }
@@ -32,7 +32,13 @@ namespace UPO
 
 		void Quit();
 		void LoadWorld(Name assetName);
+		void SetWorld(World*);
 		void LoadWorldAsync(Name assetName);
+
+		World* CreateWorld();
+		void DeleteWorld(World*);
+
+		static IEngineInterface* Get();
 	};
 
 	

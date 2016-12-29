@@ -1,6 +1,5 @@
 #pragma once
 
-#include "UEntity.h"
 #include "UAsset.h"
 #include "UWorldTimer.h"
 #include "UWorldTicking.h"
@@ -10,6 +9,9 @@ namespace UPO
 	//////////////////////////////////////////////////////////////////////////
 	class AWorldSetting;
 	class WorldRS;
+	class Entity;
+	class EntityCamera;
+	class GameWindow;
 
 	//////////////////////////////////////////////////////////////////////////
 	struct WorldTickResult
@@ -23,6 +25,10 @@ namespace UPO
 	//////////////////////////////////////////////////////////////////////////
 	enum EWorldFlag
 	{
+		EWF_Alive,
+
+		EWF_Default = EWF_Alive,
+
 		EWF_Max
 	};
 	//////////////////////////////////////////////////////////////////////////
@@ -31,6 +37,10 @@ namespace UPO
 		ClassInfo*	mClass = nullptr;
 		Entity*		mParent = nullptr;
 		Transform	mWorldTransform = Transform::IDENTITY;
+
+		EntityCreationParam(ClassInfo* theClass = nullptr, Entity* parent = nullptr) 
+			: mClass(theClass), mParent(parent), mWorldTransform(Transform::IDENTITY) {}
+
 	};
 	//////////////////////////////////////////////////////////////////////////
 	class UAPI World : public Asset
@@ -85,7 +95,16 @@ namespace UPO
 		Event				mTickEndEvent;
 		CriticalSection		mIntersection;
 
+		EntityCamera*		mEditorCamera;
+		
+	public:
+		TDelegateMulti<void, Entity*>	mOnEntityCreated;
+		TDelegateMulti<void, Entity*>	mOnEntityDestroyed;
+		bool							mIsAlive = true;
+		int								mPriority = 1;
+		GameWindow*						mMainWindow = nullptr;
 
+	public:
 		void PushToPendingAddToRS(Entity* ent);
 		void PushToPendingDestroyFromRS(Entity* ent);
 
@@ -93,6 +112,7 @@ namespace UPO
 
 		void KillEntity(Entity*);
 		void CheckPendingKills();
+
 	public:
 		WorldTicking* GetTicking() { return &mTicking; }
 		WorldTimer* GetTimer() { return &mTimer; }
@@ -106,6 +126,7 @@ namespace UPO
 		void PausePlaying();
 		void ResumePlaying();
 		void StopPlaying();
+		bool IsPlaying() const { return mIsPlaying; }
 
 		void PauseGame();
 		void ResumeGame();
@@ -114,8 +135,15 @@ namespace UPO
 		float GetDeltaScale() const { return mDeltaScale; }
 		float GetDeltaTime() const { return mDeltaScale; }
 
+
 		//////////////////////////////////////////////////////////////////////////
 		Entity* CreateEntity(EntityCreationParam& param);
+
+		template <typename TEntityClass> TEntityClass* CreateEntity(Entity* parent)
+		{
+			return (TEntityClass*)CreateEntity(EntityCreationParam(TEntityClass::GetClassInfoStatic(), parent));
+		}
+
 		//////////////////////////////////////////////////////////////////////////
 		void SingleTick(WorldTickResult& result);
 		void Tick(float delta);

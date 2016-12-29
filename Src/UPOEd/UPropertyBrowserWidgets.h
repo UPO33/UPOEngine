@@ -4,6 +4,9 @@
 #include "../UPOEngine/Meta/UMeta.h"
 #include "UColorSelectionDialog.h"
 
+//////////////////////////////////////////////////////////////////////////
+class Ui_TransformProperty;
+
 namespace UPOEd
 {
 	//////////////////////////////////////////////////////////////////////////
@@ -33,82 +36,45 @@ namespace UPOEd
 		Param mParam;
 
 		bool mWidgetValueChanged = false;
-		void WidgetValueChanged() { mWidgetValueChanged = true; }
+		bool mGameIsEditing = false;
 
-		PBBaseProp(const Param& param, QWidget* parent) : QWidget(parent), mParam(param)
-		{
-			setLayout(new QHBoxLayout);
-			layout()->setMargin(0);
-			//set disabled if has EAT_Uneditable attribute
-			if (param.mPropertyInfo->GetAttributes().HasAttrib(EAtrribID::EAT_Uneditable))
-				this->setDisabled(true);
-			//set tooltip to name of property's type
-			if(param.mArrayIndex != -1)
-				setToolTip(ToQString(param.mPropertyInfo->TemplateArgTypeName()));
-			else
-				setToolTip(ToQString(param.mPropertyInfo->GetTypeName()));
-		}
-		//call chain of meta MetaPropertyChanged
-		void PropertyChanged();
+		void WidgetValueChanged();
 
-		PropertyInfo* GetPropertyInfo() const { return mParam.mPropertyInfo; }
-		TypeInfo* GetTypeInfo() const
-		{
-			if (mParam.mArrayIndex == -1) return mParam.mPropertyInfo->GetTypeInfo();
-			else return mParam.mPropertyInfo->TemplateArgTypeInfo();
-		}
+		PBBaseProp(const Param& param, QWidget* parent);
+
+		PropertyInfo* GetPropertyInfo() const;
+		TypeInfo* GetTypeInfo() const;
 		//get the type of property. if its TArray's Element the return value is type of array's element 
-		EPropertyType GetType() const
-		{
-			if (mParam.mArrayIndex == -1) return mParam.mPropertyInfo->GetType();
-			else return mParam.mPropertyInfo->TemplateArgType();
-		}
-		PropertyBrowserWidget* GetOwner() const { return mParam.mOwner; }
+		EPropertyType GetType() const;
+		PropertyBrowserWidget* GetOwner() const;
 
 		//get pointer to value, for instance if its bool property the return value is actually bool*
 		//if the property is element of TArray it return pointer to element as well
-		void* Map() const
-		{
-			void* pValue = mParam.mPropertyInfo->Map(mParam.mInstance);
-			if (mParam.mArrayIndex != -1 && mParam.mPropertyInfo->GetType() == EPropertyType::EPT_TArray) // is TArray element ?
-			{
-				SerArray* arr = (SerArray*)pValue;
-				pValue = arr->GetElement(mParam.mArrayIndex, mParam.mPropertyInfo->TemplateArgType(), mParam.mPropertyInfo->TemplateArgTypeInfo());
-			}
-			return pValue;
-		}
+		void* Map() const;
 		template <typename T> T& ValueAs()
 		{
 			return *((T*)Map());
 		}
+
 		template <typename T> T& GetValue()
 		{
 			return *((T*)Map());
 		}
+
 		template <typename T> void SetValue(T value)
 		{
 			*((T*)Map()) = value;
 		}
+		void BeforePropertyChange();
+		void AfterPropertyChange();
 
-		virtual void Tick()
-		{
-			if (mWidgetValueChanged)
-			{
-				UpdatePropertyValue();
-				PropertyChanged();
-			}
-			else
-			{
-				UpdateWidgetValue();
-			}
-			mWidgetValueChanged = false;
-		}
+		virtual void Tick();
 
 		//if WidgetValueChanged() was called this is called to update property value from widget value
-		virtual void UpdatePropertyValue() {}
+		virtual void UpdatePropertyValue();
 		//update widget value from property, called every tick, its better to check whether property value have changed or not instead of 
 		//setting the widget's value every tick
-		virtual void UpdateWidgetValue() {}
+		virtual void UpdateWidgetValue();
 	};
 
 	//////////////////////////////////////////////////////////////////////////
@@ -541,5 +507,23 @@ namespace UPOEd
 
 		virtual void UpdatePropertyValue();
 		virtual void UpdateWidgetValue();
+	};
+
+
+	//////////////////////////////////////////////////////////////////////////
+	class PBTransformProp : public PBBaseProp
+	{
+	public:
+		Ui_TransformProperty* ui;
+		Transform	mTransform;
+
+		PBTransformProp(const PBBaseProp::Param& param, QWidget* parent);
+
+		virtual void UpdatePropertyValue() override;
+
+		virtual void UpdateWidgetValue() override;
+
+	private:
+		void SetWidgetsValue(const Transform& trs);
 	};
 };

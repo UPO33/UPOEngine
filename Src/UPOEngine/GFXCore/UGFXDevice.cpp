@@ -1,6 +1,7 @@
 #pragma once
 
 #include "UGFXDeviceDX.h"
+#include "UGFXContextDX.h"
 
 namespace UPO
 {
@@ -24,5 +25,10 @@ namespace UPO
 
 
 
+
+	GFXDevice* GFXDevice::Create()
+	{
+	 	 return GFXDeviceDX::Create();
+	}
 
 };

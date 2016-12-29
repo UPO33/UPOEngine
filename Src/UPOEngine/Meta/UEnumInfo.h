@@ -69,7 +69,7 @@ namespace UPO
 };
 
 #define UENUM(Enum, BitFlag, Comment, ...)\
-	struct UWELDINNER(ZZ_RegEnum, __COUNTER__)\
+	struct ZZ_Enum##Enum\
 	{\
 		static_assert(std::is_enum<Enum>::value, "'" #Enum "' is not a enum");\
 		static_assert(sizeof(Enum) == 4, "only 32bit enum is supported");\
