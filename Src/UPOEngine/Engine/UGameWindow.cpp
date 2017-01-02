@@ -1,43 +1,104 @@
 #include "UGameWindow.h"
-#include "UInput.h"
+#include "UCanvas.h"
+#include "UWorld.h"
+#include "UEngineBase.h"
 
-#include <windows.h>
-#include <windowsx.h>
-#include <WinUser.h>
+#include "../GFX/UPrimitiveBatch.h"
+
+#ifdef UPLATFORM_WIN
+#include "UGameWindow_Win.h"
+#else 
+#error
+#endif
 
 namespace UPO
 {
 
+	TArray<GameWindow*> GameWindow::Instances;
 
-	WPARAM UMapLeftRightVKey(WPARAM vk, LPARAM lParam)
+
+	bool GameWindow::Init(const GameWindowCreationParam& param)
 	{
-		WPARAM new_vk = vk;
-		UINT scancode = (lParam & 0x00ff0000) >> 16;
-		int extended = (lParam & 0x01000000) != 0;
+		mCreationParam = param;
+		OnCreateWindow();
+		CreateSwapChain();
+		if (mCreationParam.mCreateCanvas) CreateCanvas();
+		if (mCreationParam.mCreatePrimitiveBatch) CreatePrimitiveBatch();
 
-		switch (vk) {
-		case VK_SHIFT:
-			new_vk = MapVirtualKey(scancode, MAPVK_VSC_TO_VK_EX);
-			break;
-		case VK_CONTROL:
-			new_vk = extended ? VK_RCONTROL : VK_LCONTROL;
-			break;
-		case VK_MENU:
-			new_vk = extended ? VK_RMENU : VK_LMENU;
-			break;
-		default:
-			// not a key we map from generic to left/right specialized
-			//  just return it.
-			new_vk = vk;
-			break;
-		}
-
-		return new_vk;
+		EnqueueRenderCommandAndWait([this]() {
+			Instances.Add(this);
+		});
+		return true;
 	}
 
-	LRESULT WINAPI WNDProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam);
 
-	class GameWindowWin* gGameWindowWin = nullptr;
+	void GameWindow::SetWorld(World* world)
+	{
+		if (mWorld == world) return;
+
+		auto lambda = [this, world]()
+		{
+			mWorld = world;
+			if(mWorld) mWorld->mMainWindow = this;
+		};
+		if (IsRenderThread())
+			lambda();
+		else
+			EnqueueRenderCommandAndWait(lambda);
+
+	}
+
+	GameWindow* GameWindow::Create(const GameWindowCreationParam& param)
+	{
+#ifdef UPLATFORM_WIN
+		GameWindow* gw = new GameWindowWin();
+
+#else
+#error
+#endif
+
+		if (gw->Init(param))
+		{
+			return gw;
+		}
+		else
+		{
+			delete gw;
+			return nullptr;
+		}
+	}
+
+
+	void GameWindow::Destroy(GameWindow* gw)
+	{
+		if (gw)
+		{
+			EnqueueRenderCommandAndWait([gw]()
+			{
+				if (gw->mPrimitiveBatch) gw->DestroyPrimitiveBatch();
+				gw->mPrimitiveBatch = nullptr;
+				if (gw->mCanvas) gw->DestroyCanvas();
+				gw->mCanvas = nullptr;
+				if (gw->mSwapchain) gw->DestroySwapChain();
+				gw->mSwapchain = nullptr;
+
+				Instances.RemoveShift(Instances.Find(gw));
+			});
+			gw->OnDestroyWindow();
+			delete gw;
+		}
+
+	}
+
+	GameWindowCreationParam::GameWindowCreationParam(InitConfig)
+	{
+		mFulllScreen = GEngineConfig()->AsBool("Window.FullScreen");
+		mSize.mX = GEngineConfig()->AsNumber("Window.Width");
+		mSize.mY = GEngineConfig()->AsNumber("Window.Height");
+
+	}
+
+#if 0
 
 	//////////////////////////////////////////////////////////////////////////
 	class GameWindowWin : public GameWindow
@@ -46,35 +107,33 @@ namespace UPO
 		Vec2I mSize;
 
 		HINSTANCE mAppHandle = nullptr;
-		HWND mHWND = nullptr;
 		bool mFullScreen;
 		wchar_t* mWindowName;
 
 	public:
 		//renderer read this every frame so that it must be tread safe
-		void GetSize(Vec2I& out) override
+		void GetWinSize(Vec2I& out) override
 		{
 			USCOPE_LOCK(mSizeLock);
 			out = mSize;
 		}
-		void* GetWinHandle() override { return reinterpret_cast<void*>(mHWND); }
-
-		GameWindowWin()
+		GameWindowWin(const GameWindowCreationnParam& param) : GameWindow(param)
 		{
-			gGameWindowWin = this;
+			// 			gGameWindowWin = this;
+			gGameWindows.Add(this);
 		}
 		~GameWindowWin()
 		{
-			gGameWindowWin = nullptr;
+			// 			gGameWindowWin = nullptr;
+			gGameWindows.RemoveSwap(this);
 		}
-		void Init() override
+		void OnCreateWindow() override
 		{
 			ULOG_MESSAGE("");
-			mFullScreen = GEngineConfig()->AsBool("Window.FullScreen");
-			mSize.mX = GEngineConfig()->AsNumber("Window.Width");
-			mSize.mY = GEngineConfig()->AsNumber("Window.Height");
 
-			mWindowName = L"UPOEngine";
+			mFullScreen = mCreationParam.mFulllScreen;
+			mSize = mCreationParam.mSize;
+			mWindowName = mCreationParam.mWindowClassName;
 
 			WNDCLASSEX wc;
 			DEVMODE dmScreenSettings;
@@ -103,7 +162,7 @@ namespace UPO
 			// Determine the resolution of the clients desktop screen.
 			unsigned screenWidth = GetSystemMetrics(SM_CXSCREEN);
 			unsigned screenHeight = GetSystemMetrics(SM_CYSCREEN);
-			
+
 			unsigned dwStyleBorder = WS_SYSMENU | WS_CAPTION | WS_MINIMIZEBOX | WS_SIZEBOX;
 			unsigned dwStyleNoborder = WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_POPUP;
 
@@ -136,7 +195,7 @@ namespace UPO
 
 				RECT wr = { 0, 0, mSize.mX, mSize.mY };
 				AdjustWindowRect(&wr, dwStyleBorder /*WS_OVERLAPPEDWINDOW*/, FALSE);    // adjust the size
-				
+
 				screenWidth = wr.right - wr.left;
 				screenHeight = wr.bottom - wr.top;
 
@@ -145,21 +204,24 @@ namespace UPO
 
 			ULOG_MESSAGE("");
 			// Create the window with the screen settings and get the handle to it.
-			mHWND = CreateWindowExW(WS_EX_APPWINDOW, mWindowName, mWindowName,
+			mWindowHandle = (void*)CreateWindowExW(WS_EX_APPWINDOW, mWindowName, mWindowName,
 				mFullScreen ? dwStyleNoborder : dwStyleBorder,
 				posX, posY, screenWidth, screenHeight, NULL, NULL, mAppHandle, NULL);
 			// Bring the window up on the screen and set it as main focus.
-			ShowWindow(mHWND, SW_SHOW);
-			SetForegroundWindow(mHWND);
-			SetFocus(mHWND);
+			ShowWindow((HWND)mWindowHandle, SW_SHOW);
+			SetForegroundWindow((HWND)mWindowHandle);
+			SetFocus((HWND)mWindowHandle);
 
 			// Hide the mouse cursor.
 			ShowCursor(true);
 		}
 		//////////////////////////////////////////////////////////////////////////
-		void Release() override
+		void OnDestroyWindow() override
 		{
 			ULOG_MESSAGE("");
+
+			if (!mWindowHandle) return;
+
 			// Fix the display settings if leaving full screen mode.
 			if (mFullScreen)
 			{
@@ -167,15 +229,15 @@ namespace UPO
 			}
 
 			// Remove the window.
-			DestroyWindow(mHWND);
-			mHWND = nullptr;
+			DestroyWindow((HWND)mWindowHandle);
+			mWindowHandle = nullptr;
 
 			// Remove the application instance.
 			UnregisterClass(mWindowName, mAppHandle);
 			mAppHandle = NULL;
 		}
 		//////////////////////////////////////////////////////////////////////////
-		bool Tick() override
+		bool TickWindow() override
 		{
 			MSG msg;
 			ZeroType(msg);
@@ -200,13 +262,13 @@ namespace UPO
 		//////////////////////////////////////////////////////////////////////////
 		LRESULT MessageHandler(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam)
 		{
-// 			Input::SetMouseState(EMouseButton::EMB_WheelForward, false);
-// 			Input::SetMouseState(EMouseButton::EMB_WheelBackward, false);
+			// 			Input::SetMouseState(EMouseButton::EMB_WheelForward, false);
+			// 			Input::SetMouseState(EMouseButton::EMB_WheelBackward, false);
 			Input::SetKeyState(EKC_MouseWheelForward, false);
 			Input::SetKeyState(EKC_MouseWheelBackward, false);
 			Input::SetMouseWheelDelta(0);
-			
-			
+
+
 
 
 			switch (umsg)
@@ -226,34 +288,34 @@ namespace UPO
 				Input::SetKeyState(UWin32VKToEKeyCode(UMapLeftRightVKey(wparam, lparam)), false);
 				Input::SetKeyState(EKeyCode::EKC_Any, false);
 				return 0;
-			}	
+			}
 			case WM_MOUSEMOVE:
 				Input::SetMousePos(GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam));
 				return 0;
 			case WM_LBUTTONDOWN:
 				Input::SetKeyState(EKC_MouseLeft, true);
-// 				Input::SetMouseState(EMouseButton::EMB_Left, true);
+				// 				Input::SetMouseState(EMouseButton::EMB_Left, true);
 				return 0;
 			case WM_RBUTTONDOWN:
 				Input::SetKeyState(EKC_MouseRight, true);
-// 				Input::SetMouseState(EMouseButton::EMB_Right, true);
+				// 				Input::SetMouseState(EMouseButton::EMB_Right, true);
 				return 0;
 			case WM_MBUTTONDOWN:
 				Input::SetKeyState(EKC_MouseMiddle, true);
-// 				Input::SetMouseState(EMouseButton::EMB_Middle, true);
+				// 				Input::SetMouseState(EMouseButton::EMB_Middle, true);
 				return 0;
 
 			case WM_LBUTTONUP:
 				Input::SetKeyState(EKC_MouseLeft, false);
-// 				Input::SetMouseState(EMouseButton::EMB_Left, false);
+				// 				Input::SetMouseState(EMouseButton::EMB_Left, false);
 				return 0;
 			case WM_RBUTTONUP:
 				Input::SetKeyState(EKC_MouseRight, false);
-// 				Input::SetMouseState(EMouseButton::EMB_Right, false);
+				// 				Input::SetMouseState(EMouseButton::EMB_Right, false);
 				return 0;
 			case WM_MBUTTONUP:
 				Input::SetKeyState(EKC_MouseMiddle, false);
-// 				Input::SetMouseState(EMouseButton::EMB_Middle, false);
+				// 				Input::SetMouseState(EMouseButton::EMB_Middle, false);
 				return 0;
 
 			case WM_MOUSEWHEEL:
@@ -262,10 +324,10 @@ namespace UPO
 				unsigned zDelta = GET_WHEEL_DELTA_WPARAM(wparam);
 				ULOG_MESSAGE("mouse wheel delta %i", zDelta);
 				Input::SetMouseWheelDelta(zDelta);
-// 				if (zDelta > 0)
-// 					Input::SetMouseState(EMouseButton::EMB_WheelForward, true);
-// 				if (zDelta < 0)
-// 					Input::SetMouseState(EMouseButton::EMB_WheelBackward, true);
+				// 				if (zDelta > 0)
+				// 					Input::SetMouseState(EMouseButton::EMB_WheelForward, true);
+				// 				if (zDelta < 0)
+				// 					Input::SetMouseState(EMouseButton::EMB_WheelBackward, true);
 				if (zDelta > 0)
 					Input::SetKeyState(EKC_MouseWheelForward, true);
 				if (zDelta < 0)
@@ -283,26 +345,42 @@ namespace UPO
 				mSizeLock.Leave();
 				return 0;
 			}
-	
+
 			}
 			return DefWindowProc(hwnd, umsg, wparam, lparam);
 		}
 	};
 
-	
 
-	GameWindow* GameWindow::New()
+
+
+	bool GameWindow::PeekMessages()
 	{
-		return new GameWindowWin;
+		MSG msg;
+		ZeroType(msg);
+
+		Input::Tick();
+
+		// Handle the windows messages.
+		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+		{
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+
+			// If windows signals to end the application then exit out.
+			if (msg.message == WM_QUIT)
+			{
+				return false;
+			}
+		}
+		return true;
 	}
 
-	void GameWindow::Delete(GameWindow* gw)
-	{
-		delete gw;
-	}
 
 
-	
+
+
+
 
 	LRESULT WINAPI WNDProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam)
 	{
@@ -322,6 +400,16 @@ namespace UPO
 			return 0;
 		}
 		}
-		return gGameWindowWin->MessageHandler(hwnd, umsg, wparam, lparam);
+
+		for (GameWindowWin* gw : gGameWindows)
+		{
+			if (gw->mWindowHandle == hwnd)
+			{
+				return gw->MessageHandler(hwnd, umsg, wparam, lparam);
+			}
+		}
+		// 		return gGameWindowWin->MessageHandler(hwnd, umsg, wparam, lparam);
 	}
+#endif // 0
+
 };

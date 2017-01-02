@@ -1,6 +1,8 @@
 #pragma once
 
 #include "UWorld.h"
+#include "UEngineBase.h"
+
 
 #define UUSE_ARRAYCHILD
 
@@ -82,27 +84,27 @@ namespace UPO
 		unsigned	mIsWorldTransformInvDirty : 1;
 
 		unsigned	mRenderDirtyFlag;
-		EntityRS*	mRS;
 		bool		mStatic;
 
 		Matrix4		mLocalTransform;
 		Matrix4		mWorldTransform;
 		Matrix4		mWorldTransformInv;
+		AABB		mBound;
 
-		void TransformChanged();
 		void UpdateChildrenTransform();
 		void CalcLocalTrsFromWorldAndParent();
-		
+		void TagRenderDirty(unsigned flags);
+		void* mRS;
+
 	public:
 
 		Vec3	mTestVec3;
 
 		Entity();
 
-		void TagRenderDataDirty(unsigned flag);
-
-		virtual void OnCreateRS() {}
-		virtual void OnReleaseRS() {}
+		void TagRenderDirty();	//all render state data is dirty
+		void TagRenderTransformDirty();
+		void TagRenderMiscDirty(); // miscellaneous such as mesh, material ,..
 
 		bool IsRoot() const;
 		Entity* GetParent() const;
@@ -114,9 +116,15 @@ namespace UPO
 
 		World* GetWorld() const { return mWorld; }
 
+		template< typename TRSClass = EntityRS> TRSClass* GetRS() const { return (TRSClass*)mRS; }
+		
+		//return pointer to render state data, this funtion is used in OnCreateRS()
+		void* GetRSMemory() const { return mRS; }
+
 		const Matrix4& GetWorldTransform() const { return mWorldTransform; }
 		const Matrix4& GetLocalTransform() const { return mLocalTransform; }
 		const Matrix4& GetInvWorldTransform();
+		const AABB& GetBound() const;
 
 		void SetLocalTransform(const Transform&);
 		void SetWorldTransform(const Transform&);
@@ -153,14 +161,14 @@ namespace UPO
 		virtual void OnTick() {};
 		virtual void OnDestroy() {};
 
-
-
+		
 		virtual void OnRegisterToWorld() {};
 
 		virtual void RegisterToWorld(World* world);
 
 		virtual void OnParentChanged();
-		virtual void OnTransformChanged() {}
+		virtual void OnTransformChanged() {};
+		virtual void OnCalcBound() { };
 
 		bool IsTickEnable() const
 		{ 
@@ -212,15 +220,13 @@ namespace UPO
 	{
 	public:
 		Entity*		mGS;
-		Flag		mEntityFlag;
+		WorldRS*	mOwner;
 		Flag		mRSFlag;
-		unsigned	mCullingMask;
 		unsigned	mPrivateIndex;
-		ClassInfo*	mClass;
+
 
 		template<typename T = Entity> T* Owner() const { return mGS; }
 
-		virtual void OnFetch(){}
-
+		virtual void OnFetch(unsigned flag){}
 	};
 };

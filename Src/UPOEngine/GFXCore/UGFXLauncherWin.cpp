@@ -1,3 +1,4 @@
+#if 0
 #include "UGFXLauncherWin.h"
 #include "../Engine/UInput.h"
 #include "../GFX/UGFX.h"
@@ -577,3 +578,4 @@ namespace UPO
 	}
 
 }
+#endif

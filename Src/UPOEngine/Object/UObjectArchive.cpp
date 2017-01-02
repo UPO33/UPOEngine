@@ -122,7 +122,7 @@ namespace UPO
 				if(newObj) 
 					mObjectsList.Add(newObj);
 			}
-			ULOG_MESSAGE("%d object was read", mObjectsList.Length());
+			ULOG_MESSAGE("% object was read", mObjectsList.Length());
 		}
 		//////////////////////////////////////////////////////////////////////////
 		/*
@@ -182,7 +182,7 @@ namespace UPO
 				}
 				else
 				{
-					ULOG_ERROR("there is no such class %s", IndexToName(classIndex).CStr());
+					ULOG_ERROR("there is no such class %", IndexToName(classIndex));
 					return nullptr;
 				}
 			}
@@ -363,7 +363,7 @@ namespace UPO
 			Name prpName = ReadPropertyName(stream);
 			EPropertyType prpType = ReadPropertyType(stream);
 
-			ULOG_MESSAGE("reading property %s", prpName.CStr());
+			ULOG_MESSAGE("reading property %", prpName);
 
 			auto prpFound = classInfo->FindPropertyByName(prpName, true);
 
@@ -517,7 +517,7 @@ namespace UPO
 			uint32 arrayLength = 0;
 			stream.RW(arrayLength);
 
-			ULOG_WARN("read Array len = %d", arrayLength);
+			ULOG_WARN("read Array len = %", arrayLength);
 
 
 			pArray->RemoveAll(prpTArray->TemplateArgType(), prpTArray->TemplateArgTypeInfo());

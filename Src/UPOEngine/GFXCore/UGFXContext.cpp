@@ -4,6 +4,7 @@
 
 namespace UPO
 {
+#if 0
 	//////////////////////////////////////////////////////////////////////////
 	class UAPI GFXContextDX : public GFXContext
 	{
@@ -344,5 +345,6 @@ namespace UPO
 	{
 		delete ctx;
 	}
+#endif // 
 
 };

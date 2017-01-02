@@ -21,7 +21,7 @@ namespace UPOEd
 
 	void D3DRenderWidget::resizeEvent(QResizeEvent* evt)
 	{
-		ULOG_MESSAGE("resizing %d %d", width(), height());
+		ULOG_MESSAGE("resizing %,  %", width(), height());
 	}
 
 	void D3DRenderWidget::paintEvent(QPaintEvent* evt)

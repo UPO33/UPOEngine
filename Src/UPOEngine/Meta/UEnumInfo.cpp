@@ -38,13 +38,13 @@ namespace UPO
 	//////////////////////////////////////////////////////////////////////////
 	void EnumInfo::PrintDbg()
 	{
-		ULOG_MESSAGE("-------------------------------");
-		ULOG_MESSAGE("Enum : [%s]   NumElement %d", GetName().CStr(), NumElement());
-		for (size_t i = 0; i < NumElement(); i++)
-		{
-			auto elem = GetElement(i);
-			ULOG_MESSAGE("Element name: [%s]  lname: [%s], value %d", elem->Name().CStr(), elem->LegibleName().CStr(), elem->Value());
-		}
+// 		ULOG_MESSAGE("-------------------------------");
+// 		ULOG_MESSAGE("Enum : [%s]   NumElement %d", GetName().CStr(), NumElement());
+// 		for (size_t i = 0; i < NumElement(); i++)
+// 		{
+// 			auto elem = GetElement(i);
+// 			ULOG_MESSAGE("Element name: [%s]  lname: [%s], value %d", elem->Name().CStr(), elem->LegibleName().CStr(), elem->Value());
+// 		}
 	}
 
 	//////////////////////////////////////////////////////////////////////////

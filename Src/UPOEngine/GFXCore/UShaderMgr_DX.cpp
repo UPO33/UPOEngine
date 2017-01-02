@@ -124,7 +124,7 @@ namespace UPO
 
 					if (found != ~0) // found ?
 					{
-						ULOG_ERROR("shader macro confilict [%s]", customDefinitions->mName);
+						ULOG_ERROR("shader macro confilict [%]", customDefinitions->mName);
 					}
 					else
 					{
@@ -161,7 +161,7 @@ namespace UPO
 			Buffer fileContent;
 			if (!File::OpenReadFull(fullFileName, fileContent))
 			{
-				ULOG_ERROR("there is no such a shader file %s", param.mFileName);
+				ULOG_ERROR("there is no such a shader file %", param.mFileName);
 				return false;
 			}
 
@@ -178,9 +178,9 @@ namespace UPO
 			else
 			{
 				if (shaderError)
-					ULOG_ERROR("failed to compile shader [%s] [%s] [%s]    %s", param.mFileName, param.mEntryPoint, EnumToStr(param.mType), ((char*)shaderError->GetBufferPointer()));
+					ULOG_ERROR("failed to compile shader [%] [%] [%]    %", param.mFileName, param.mEntryPoint, EnumToStr(param.mType), ((char*)shaderError->GetBufferPointer()));
 				else
-					ULOG_ERROR("Mising Shader File [%s]", param.mFileName);
+					ULOG_ERROR("Mising Shader File [%]", param.mFileName);
 				return false;
 			}
 		}

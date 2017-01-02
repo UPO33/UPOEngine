@@ -11,12 +11,10 @@ namespace UPO
 		String mEngineAssetsPath;
 		String mProjectPath;
 		String mProjectAssetsPath;
-		bool mIsEditor;
 	};
 
 	extern UAPI App* GApp();
 
 	extern UAPI bool gIsEditor;
-	extern UAPI String gProjectPath;
-	extern UAPI String gEnginePath;
+
 };

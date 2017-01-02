@@ -52,11 +52,11 @@ namespace UPO
 		{
 			ObjectArchive::Save(this, stream);
 			mEntry->CloseStream();
-			ULOG_SUCCESS("asset [%s] saved", GetName().CStr());
+			ULOG_SUCCESS("asset [%] saved", GetName());
 			return true;
 		}
 		
-		ULOG_ERROR("failed to open stream for saving asset [%s]", GetName().CStr());
+		ULOG_ERROR("failed to open stream for saving asset [%]", GetName());
 		return false;
 	}
 

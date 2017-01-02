@@ -81,8 +81,6 @@ namespace UPO
 			{
 				mCurSection = line.SubStr(1, endSecIndex - 1);
 				mCurSection.Trim();
-
-				ULOG_WARN("[%s]", mCurSection.CStr());
 			}
 			else
 			{
@@ -248,7 +246,7 @@ namespace UPO
 		}
 		else
 		{
-			ULOG_FATAL("Failed to load config file [%s]", iniFilename ? iniFilename : "");
+			ULOG_FATAL("Failed to load config file [%]", iniFilename ? iniFilename : "");
 			return false;
 		}
 	}
@@ -264,11 +262,11 @@ namespace UPO
 	{
 		for (size_t i = 0; i < mKeysName.Length(); i++)
 		{
-			ULOG_WARN("Key [%s]", mKeysName[i].CStr());
+			ULOG_WARN("Key [%]", mKeysName[i]);
 			if (mKeysValue[i].mType == EConfigValue::ECV_Number)
-				ULOG_WARN("Vlaue NUmber [%f]", mKeysValue[i].mValueNumber);
+				ULOG_WARN("Vlaue NUmber [%]", mKeysValue[i].mValueNumber);
 			if (mKeysValue[i].mType == EConfigValue::ECV_String)
-				ULOG_WARN("Vlaue String [%s]", mKeysValue[i].mValueString.CStr());
+				ULOG_WARN("Vlaue String [%]", mKeysValue[i].mValueString);
 		}
 	}
 

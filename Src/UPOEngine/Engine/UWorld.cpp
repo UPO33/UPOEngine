@@ -2,14 +2,31 @@
 #include "UComponent.h"
 #include "UEntity.h"
 #include "UEntityCamera.h"
-
+#include "UEntityStaticMesh.h"
 #include "UWorldRS.h"
 
 #include "../Meta/UMeta.h"
 
 namespace UPO
 {
+	//////////////////////////////////////////////////////////////////////////
+	//returns the size of render state corresponding to the entity, zero if entity has not render state
+	size_t UGetEntityClassRSSize(const ClassInfo* entityClass)
+	{
+		if (entityClass->IsBaseOf(EntityStaticMesh::GetClassInfoStatic())) return sizeof(EntityStaticMeshRS);
 
+		if (entityClass->IsBaseOf(EntityCamera::GetClassInfoStatic())) return sizeof(EntityCameraRS);
+		
+		return 0;
+	}
+
+
+	EntityRS* UGetEntityRS(Entity* ent, size_t sizeOfRS)
+	{
+		if (sizeOfRS == 0) return 0;
+		
+
+	}
 	//////////////////////////////////////////////////////////////////////////
 	Entity* World::CreateEntity(EntityCreationParam& param)
 	{
@@ -20,10 +37,27 @@ namespace UPO
 			return nullptr;
 		}
 
-		Entity* newEntity = NewObject<Entity>(entityClass);
-		newEntity->Init(param.mParent, this);
 
+		size_t rsSize = UGetEntityClassRSSize(entityClass);
+		Entity* newEntity = nullptr;
+		if (rsSize)
+		{
+			size_t rsOffset = entityClass->GetSize() + UCACHE_ALIGN;
+			newEntity = (Entity*)GObjectSys()->NewObject(entityClass, rsOffset + rsSize);
+			newEntity->mRS = (void*)(((size_t)newEntity) + rsOffset);
+		}
+		else
+		{
+			newEntity = NewObject<Entity>(entityClass);
+		}
+		
+		newEntity->Init(param.mParent, this);
 		newEntity->OnConstruct();
+
+		if (rsSize)
+		{
+			newEntity->OnCreateRS();
+		}
 
 		if (mIsPlaying)
 		{
@@ -40,50 +74,6 @@ namespace UPO
 	//////////////////////////////////////////////////////////////////////////
 	void World::SingleTick(WorldTickResult& result)
 	{
-		mIsInTick = true;
-		mCurTickResult = WorldTickResult();
-		ChronometerAccurate frameTimer;
-		frameTimer.Start();
-
-		CheckPendingKills();
-
-		if (mIsPlaying)
-		{
-			///////////begin playing
-			if (mDoBeginPlay)
-			{
-				PerformBeginPlay();
-				mDoBeginPlay = false;
-			}
-
-			PerformTick();
-
-		}
-		else
-		{
-			if (mDoEndPlay)
-			{
-				PerformEndPlay();
-				mDoEndPlay = false;
-			}
-		}
-
-
-		mCurTickResult.mConsumedTimeMS = frameTimer.SinceMiliseconds();
-		mIsInTick = false;
-
-		mNumTickSinceLastDestroy++;
-
-		mTickEndEvent.SetSignaled();
-		//we can do anything that doesn't change entities render-related properties such as audio and ..
-		{
-			//during here render thread is performing fetch
-		}
-		mFetchCompleted.Wait();
-
-		mEntitiesPendingAddToRS.RemoveAll();
-		mEntitiesPendingDestroyFromRS.RemoveAll();
-		mEntitiesRenderDataDirty.RemoveAll();
 		
 	}
 	//////////////////////////////////////////////////////////////////////////
@@ -128,13 +118,13 @@ namespace UPO
 		{
 			//during here render thread is performing fetch
 		}
-		if(mRS && mIsPlaying)
+		if(mRS)
 		{
-			mFetchCompleted.Wait();
-
-			mEntitiesPendingAddToRS.RemoveAll();
-			mEntitiesPendingDestroyFromRS.RemoveAll();
-			mEntitiesRenderDataDirty.RemoveAll();
+// 			mFetchCompleted.Wait();
+// 
+// 			mEntitiesPendingAddToRS.RemoveAll();
+// 			mEntitiesPendingDestroyFromRS.RemoveAll();
+// 			mEntitiesRenderDataDirty.RemoveAll();
 		}
 	}
 
@@ -228,14 +218,15 @@ namespace UPO
 		
 	}
 
-	WorldRS* World::CreateRS()
+	void World::CreateRS()
 	{
-// 		UASSERT(IsGameThread());
+		mRS = new WorldRS(this);
+	}
 
-		WorldRS* rs = new WorldRS;
-		rs->mGS = this;
-
-		return nullptr;
+	void World::DestroyRS()
+	{
+		if (mRS) delete mRS;
+		mRS = nullptr;
 	}
 
 	World* World::Duplicate()
@@ -245,35 +236,19 @@ namespace UPO
 
 	void World::PushToPendingAddToRS(Entity* ent)
 	{
-		mEntitiesPendingAddToRS.Add(ent);
+		mEntitiesPendingAddToRS->Add(ent);
 	}
 
 	void World::PushToPendingDestroyFromRS(Entity* ent)
 	{
-		mEntitiesPendingDestroyFromRS.Add(ent);
+		mEntitiesPendingDestroyFromRS->Add(ent);
 	}
 
-	void World::Intersection()
-	{
-		USCOPE_LOCK(mIntersection);
 
-		if (IsRenderThread())
-		{
-			mTickEndEvent.Wait();
-			mRS->PerformFetch();
-			mFetchCompleted.SetSignaled();
-		}
-		else
-		{
-			UASSERT(IsGameThread());
-
-			mFetchCompleted.Wait();
-		}
-	}
 
 	void World::KillEntity(Entity* entity)
 	{
-		ULOG_MESSAGE("kiling entity [%s]", entity->mName.CStr());
+		ULOG_MESSAGE("kiling entity [%]", entity->mName.CStr());
 		DeleteObject(entity);
 	}
 
@@ -305,20 +280,18 @@ namespace UPO
 		mTickEndEvent(false, false),
 		mFetchCompleted(false, false)
 	{
+		mEntitiesPendingAddToRS = new EntityArray;
+		mEntitiesPendingDestroyFromRS = new EntityArray;
+
+		EnqueueRenderCommandAndWait([this]() {
+			CreateRS();
+		});
+
 		mRootEntity = NewObject<Entity>();
 		mRootEntity->mWorld = this;
 		mRootEntity->mIndexInWorld = 0;
 		mRootEntity->mName = "Root";
 
-// 		Event eventRSCreation(false, false);
-// 		EnqueueRenderCommend([this, &eventRSCreation]() {
-// 
-// 			WorldRS* rs = new WorldRS;
-// 			rs->mGS = this;
-// 			this->mRS = rs;
-// // 			eventRSCreation.SetSignaled();
-// 		});
-// // 		eventRSCreation.Wait();
 
 		{
 			mEditorCamera =  CreateEntity<EntityCamera>(nullptr);
@@ -327,13 +300,11 @@ namespace UPO
 	//////////////////////////////////////////////////////////////////////////
 	World::~World()
 	{
-		DeleteObject(mRootEntity);
-
-		WorldRS* rs = mRS;
-		EnqueueRenderCommend([rs]()
-		{
-			if (rs) delete rs;
+		EnqueueRenderCommandAndWait([this]() {
+			DestroyRS();
 		});
+
+		DeleteObject(mRootEntity);
 	}
 	void World::SetPlaying()
 	{

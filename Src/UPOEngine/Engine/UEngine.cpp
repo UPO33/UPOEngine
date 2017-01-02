@@ -7,12 +7,15 @@
 #include "../Engine/UEntityStaticMesh.h"
 #include "../Engine/UEntityTest.h"
 
+#include "UEngineBase.h"
+#include "../Misc/UMisc.h"
 
 namespace UPO
 {
 	unsigned	gGameTickCounter = 0;
 	unsigned	gRenderTickCounter = 0;
 	
+	TRenderCommandQueue gGame2RenderQueue;
 
 
 	struct EngineImpl
@@ -25,11 +28,6 @@ namespace UPO
 		Renderer* mRenderer;
 		IEngineInterface* mInterface;
 		bool mLoop;
-		ThreadHandle	mRenderThreadHandle;
-
-		TCommandPool<1024 * 8, true>		mCmdQueueG2R;
-		TCommandPool<1024 * 8, false>	mCmdQueueR2G;
-		
 		AssetCommendQueue	mAssetCommands;
 
 		volatile bool mLoopGT = true;
@@ -38,21 +36,13 @@ namespace UPO
 		volatile bool mCompilingGlobalShader = false;
 
 		//when render thread was released this event is signaled
-		Event	mRenderThreadReleased;
-
-		World* mNewWorldToSet = nullptr;
-		Event	mEventRTNewWorldAssign;
+		Event	mFetchCompleteEvent;
 
 		TArray<World*>		mWorlds;
-		TArray<WorldRS*>	mWorldsRS;
-		TArray<World*>		mPendingAddWorld;
-		TArray<World*>		mPendingDestroyWorld;
 		bool mAnyWorldRemoved = false;
-		TinyLock			mLockAddingWorld;
-
+		
 		EngineImpl() :
-			mRenderThreadReleased(false, false), 
-			mEventRTNewWorldAssign(false, false)
+			mFetchCompleteEvent(false, false)
 		{
 
 		}
@@ -60,8 +50,6 @@ namespace UPO
 		{
 		}
 
-		template<typename L> void EnqueueToRender(L& l) { mCmdQueueG2R.Enqueue(l); }
-		template<typename L> void EnqueueToGame(L& l) { mCmdQueueR2G.Enqueue(l); }
 		//////////////////////////////////////////////////////////////////////////
 		void Init()
 		{
@@ -75,45 +63,20 @@ namespace UPO
 	
 				ULOG_MESSAGE("Render Thread Created");
 
-				gEngine.InitRT();
-				gEngine.LoopRT();
+				gGame2RenderQueue.RunTillQuit();
 			});
 
 			mInterface->OnInit();
 
-
-
-// 			mMainWindow = mInterface->OnCreateGameWindow();
-// 			UASSERT(mMainWindow);
-// 			ULOG_MESSAGE("Game Window Created");
-
-			EnqueueToRender([this]() {
-// 				mGFXContext = GFXContext::New();
-// 				UASSERT(mGFXContext);
-// 
-// 				mGFXContext->Init(mMainWindow);
-
-				//mInterface->OnAfterDeviceCreation();
+			EnqueueRenderCommandAndWait([this](){
+				
 				GFXDevice::Create();
-
 				UGlobalShader_CompileAll();
-				mCompilingGlobalShader = false;
-
 				mRenderer = Renderer::New();
-				UASSERT(mRenderer);				
+				UASSERT(mRenderer);
 			});
-
-// 			mCurrentWorld = new World;
-// 			mCurrentWorld->SetPlaying();
-// 			
-// 			mCurrentWorld->GetTimer()->StartTimer(1, 1, [this]() { 
-// 				ULOG_MESSAGE("");
-// 				EntityCreationParam ecp;
-// 				ecp.mClass = EntityTest::GetClassInfoStatic();
-// 				ecp.mParent = nullptr;
-// 				mCurrentWorld->CreateEntity(ecp);
-// 			});
 		}
+
 		void Loop()
 		{
 			double lastTime = 0;
@@ -136,6 +99,7 @@ namespace UPO
 				lastTime = curTime;
 			}
 		}
+#if 0
 		void InitRT()
 		{
 
@@ -168,49 +132,58 @@ namespace UPO
 			ReleaseRT();
 			mRenderThreadReleased.SetSignaled();
 		}
+#endif // 0
 		void Release()
 		{
 			ULOG_MESSAGE("");
-			mLoopRT = false;
-			mRenderThreadReleased.Wait();
-
-
-// 			mCurrentWorld->Release();
-
-			
-// 			mInterface->OnReleaseGameWindow();
-// 			mMainWindow = nullptr;
+			EnqueueRenderCommandAndWait([this]() {
+				ReleaseRT();
+			});
 
 			mInterface->OnRelease();
-
-// 			delete mCurrentWorld;
 		}
 		void ReleaseRT()
 		{
 			UASSERT(IsRenderThread());
 			ULOG_MESSAGE("");
 			mRenderer->Release();
-// 			mGFXContext->Release();
 			delete mRenderer;
-// 			delete mGFXContext;
 			mRenderer = nullptr;
-// 			mGFXContext = nullptr;
 			delete gGFX;
 		}
+		void Render()
+		{
+			if (!gEngine.mRenderer) return;
+
+			for (GameWindow* gw : GameWindow::Instances)
+			{
+				 gEngine.mRenderer->RenderGameWin(gw);
+			}
+		}
+		//////////////////////////////////////////////////////////////////////////game thread tick
 		bool GTick()
 		{
+			EnqueueRenderCommand([this]() {
+				Render();
+			});
 
 			bool result = true;
 			
-			if (mCompilingGlobalShader) return true;
-
 			GAssetSys()->Tick(mDelta);
 
-			result = mInterface->OnTick();
+			if(!gIsEditor)
+			{
+				result = GameWindow::PeekMessages();
+				if (!result) return false;
+			}
 
 			//ticking alive worlds
 			{
+				result = mInterface->OnBeforeWorldsTick();
+				if (!result) return false;
+
 				unsigned numWorld = mWorlds.Length();
+				//ticking world
 				for (unsigned i = 0; i < numWorld; i++)
 				{
 					if (mWorlds[i]->mIsAlive)
@@ -218,99 +191,66 @@ namespace UPO
 						mWorlds[i]->Tick(mDelta);
 					}
 				}
-			}
 
+				result = mInterface->OnAfterWorldsTick();
+				if (!result) return false;
 
+				///////////////wait for render command to finish
+				EnqueueRenderCommandAndWait([]() {});
 
+				//removing destroyed worlds if any
+				if (mAnyWorldRemoved)
+				{
+					mAnyWorldRemoved = false;
+					mWorlds.RemoveIf([](World* world) {
+						if (!world->mIsAlive)
+						{
+							delete world;
+							return true;
+						}
+						return false;
+					});
+				}
 
-// 			if (mCurrentWorld)
-// 			{
-// 				mCurrentWorld->Tick(mDelta);
-// 			}
+				/////////////fetching changes
+				EnqueueRenderCommand([this]()
+				{
+					unsigned numWorld = mWorlds.Length();
 
-			mCmdQueueR2G.InvokeAll();
-
-			//removing destroyed worlds
-			if(mAnyWorldRemoved)
-			{
-				mEventRTNewWorldAssign.Wait();
-				mAnyWorldRemoved = false;
-				mWorlds.RemoveIf([](World* world) {
-					if (!world->mIsAlive)
+					for (unsigned i = 0; i < numWorld; i++)
 					{
-						delete world;
-						return true;
+						mWorlds[i]->GetRS()->Fetch();
 					}
-					return false;
+
+					mFetchCompleteEvent.SetSignaled();
+
+					for (unsigned i = 0; i < numWorld; i++)
+					{
+						mWorlds[i]->GetRS()->AfterFetch();
+					}
 				});
-				mEventRTNewWorldAssign.SetSignaled();
+
+				DuringFetch();
+
+				mFetchCompleteEvent.Wait();
 			}
 
-// 			if (mNewWorldToSet)
-// 			{
-// 				ULOG_MESSAGE("B");
-// 				mEventRTNewWorldAssign.Wait();
-// 				ULOG_MESSAGE("A");
-// 				mCurrentWorld = mNewWorldToSet;
-// 				mNewWorldToSet = nullptr;
-// 			}
+
+
 			gGameTickCounter++;
 
 			return result;
 		}
-		bool RTick()
+		//non-gfx dependent codes only
+		void DuringFetch()
 		{
-			bool result = true;
 
-
-			//GAssetSys()->Frame(mDelta);
-
-			if(mRenderer)
-			{
-				unsigned numWorld = mWorldsRS.Length();
-				for (unsigned i = 0; i < numWorld; i++)
-				{
-					 mRenderer->RenderWorld(mWorldsRS[i]);
-				}
-				
-			}
-
-			mCmdQueueG2R.InvokeAll();
-			mAssetCommands.InvokeAll();
-
-// 			if (mNewWorldToSet && mRenderer)
-// 			{
-// 				mRenderer->AttachWorld(mNewWorldToSet->CreateRS());
-// 				mEventRTNewWorldAssign.SetSignaled();
-// 			}
-
-			{
-				USCOPE_LOCK(mLockAddingWorld);
-				for (World* world : mWorlds)
-				{
-					if (world->GetRS() == nullptr)
-						mWorldsRS.Add(world->CreateRS());
-				}
-			}
-
-			if (mAnyWorldRemoved)
-			{
-				mWorldsRS.RemoveIf([](WorldRS* wrs) {
-					if (!wrs->mGS->mIsAlive)
-					{
-						delete wrs;
-						return true;
-					}
-					return false;
-				});
-				mEventRTNewWorldAssign.SetSignaled();
-				mEventRTNewWorldAssign.Wait();
-			}
-			gRenderTickCounter++;
-			return result;
 		}
 
+
 	} gEngine;
+
+
 
 	UAPI AssetCommendQueue* UGetAssetCommandQueue()
 	{
@@ -339,17 +279,12 @@ namespace UPO
 
 	void IEngineInterface::SetWorld(World* world)
 	{
-		 gEngine.mNewWorldToSet = world;
 	}
 
 	World* IEngineInterface::CreateWorld()
 	{
 		World* world = new World;
-		{
-			USCOPE_LOCK(gEngine.mLockAddingWorld);
-			gEngine.mWorlds.Add(world);
-		}
-		
+		gEngine.mWorlds.Add(world);
 		return world;
 	}
 
@@ -360,6 +295,16 @@ namespace UPO
 			world->mIsAlive = false;
 			gEngine.mAnyWorldRemoved = true;
 		}
+	}
+
+	GameWindow* IEngineInterface::CreateGameWindow(const GameWindowCreationParam& cp)
+	{
+		return GameWindow::Create(cp);
+	}
+
+	void IEngineInterface::DeleteGameWindow(GameWindow* gw)
+	{
+		GameWindow::Destroy(gw);
 	}
 
 	IEngineInterface* IEngineInterface::Get()

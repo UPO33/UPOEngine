@@ -42,7 +42,7 @@ namespace UPOEd
 		}
 		else
 		{
-			ULOG_ERROR("failed to load asset [%s]", assetEntry->GetName().CStr());
+			ULOG_ERROR("failed to load asset [%]", assetEntry->GetName());
 		}
 	}
 

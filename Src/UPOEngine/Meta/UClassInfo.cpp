@@ -291,12 +291,12 @@ namespace UPO
 
 	void ClassInfo::PrintLog()
 	{
-		ULOG_MESSAGE("----------------- %s --------------", GetName().CStr());
-		ULOG_MESSAGE("Parent %s", GetParentName().CStr());
-		ULOG_MESSAGE("Size %d  Align %d", GetSize(), GetAlign());
-		ULOG_MESSAGE("Header %s  Source %s  Line %d", GetHeaderFileName().CStr(), GetSourceFileName().CStr(), GetDefinitionLineNumber());
-		ULOG_MESSAGE("Num Attibues %d", GetAttributes().NumAttributes());
-		ULOG_MESSAGE("Properties %d", NumProperty());
+// 		ULOG_MESSAGE("----------------- %s --------------", GetName().CStr());
+// 		ULOG_MESSAGE("Parent %s", GetParentName().CStr());
+// 		ULOG_MESSAGE("Size %d  Align %d", GetSize(), GetAlign());
+// 		ULOG_MESSAGE("Header %s  Source %s  Line %d", GetHeaderFileName().CStr(), GetSourceFileName().CStr(), GetDefinitionLineNumber());
+// 		ULOG_MESSAGE("Num Attibues %d", GetAttributes().NumAttributes());
+// 		ULOG_MESSAGE("Properties %d", NumProperty());
 		for (size_t i = 0; i < NumProperty(); i++)
 		{
 			mProperties[i].PrintLog();

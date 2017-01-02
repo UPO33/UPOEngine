@@ -50,6 +50,9 @@ namespace UPO
 		static ObjectSys* Get();
 
 		Object* NewObject(const ClassInfo* classInfo);
+		//instead of taking size from class it uses 'classSize'
+		Object* NewObject(const ClassInfo* classInfo, size_t classSize);
+
 		void DeleteObject(Object* object);
 	};
 	inline ObjectSys* GObjectSys() { return ObjectSys::Get(); }

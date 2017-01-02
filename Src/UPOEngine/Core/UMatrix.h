@@ -178,6 +178,9 @@ namespace UPO
 		static void Mul(const Matrix4& a, const Matrix4& b, Matrix4& out);
 		Vec3 GetTranslation() const { return Vec3(mColumn[3]); }
 		Vec3 GetScale() const;
+
+		void RemoveScaling();
+
 		Vec3 GetRotationEuler() const;
 		void Invert3x3();
 		void InvertAffine();

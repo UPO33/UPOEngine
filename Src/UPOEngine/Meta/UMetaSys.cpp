@@ -135,7 +135,7 @@ namespace UPO
 		
 		mRegisteredTypes.Add(outClass);
 		outClass->mRegistered = true;
-		ULOG_SUCCESS("Class [%s] was Registered", crp->mTypeCheck.mClassName);
+		ULOG_SUCCESS("Class [%] was Registered", crp->mTypeCheck.mClassName);
 		RebakeTypes();
 		return true;
 	}
@@ -172,7 +172,7 @@ namespace UPO
 					registeredClass->mParentClass->mSubClasses.RemoveSwap(registeredClass);
 
 				mRegisteredTypes.RemoveAtSwap(index);
-				ULOG_SUCCESS("Class [%s] Unregistered", registeredClass->GetName().CStr());
+				ULOG_SUCCESS("Class [%] Unregistered", registeredClass->GetName());
 				RebakeTypes();
 				return true;
 			}
@@ -188,7 +188,7 @@ namespace UPO
 
 		if (FindType(erp->mEnumName))
 		{
-			ULOG_ERROR("failed to register enum [%s], currently there is a type with the same name", erp->mEnumName);
+			ULOG_ERROR("failed to register enum [%], currently there is a type with the same name", erp->mEnumName);
 			return false;
 		}
 
@@ -224,7 +224,7 @@ namespace UPO
 		}
 
 		mRegisteredTypes.Add(outEnum);
-		ULOG_SUCCESS("enum [%s] was Registered ", erp->mEnumName);
+		ULOG_SUCCESS("enum [%] was Registered ", erp->mEnumName);
 		return true;
 	}
 	//////////////////////////////////////////////////////////////////////////
@@ -236,7 +236,7 @@ namespace UPO
 			if (index != ~0)
 			{
 				mRegisteredTypes.RemoveAtSwap(index);
-				ULOG_SUCCESS("enum [%s] Unregistered", registeredEnum->GetName().CStr());
+				ULOG_SUCCESS("enum [%] Unregistered", registeredEnum->GetName());
 				return true;
 			}
 		}

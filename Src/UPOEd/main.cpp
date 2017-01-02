@@ -132,9 +132,6 @@ namespace UPOEd
 	//////////////////////////////////////////////////////////////////////////
 	int Main(int argc, char** argv)
 	{
-		UPO::String str = PathGetFileName("C:/asd/file.ext");
-		ULOG_ERROR("Strsssssssssssss %s", str.CStr());
-
 
 
 		gQApp = new QApplication(argc, argv);

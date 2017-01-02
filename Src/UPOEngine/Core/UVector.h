@@ -1,5 +1,6 @@
 #pragma once
 #include "UBasic.h"
+#include "UString.h"
 
 namespace UPO
 {
@@ -22,7 +23,7 @@ namespace UPO
 		float mX, mY;
 
 		inline Vec2() {}
-		inline Vec2(float xy) { mX = mY = xy; }
+		explicit inline Vec2(float xy) { mX = mY = xy; }
 		inline Vec2(float x, float y) { mX = x; mY = y; }
 		inline Vec2(const Vec2& xy) { mX = xy.mX;	mY = xy.mY; }
 		inline Vec2(const Vec3&);
@@ -122,8 +123,12 @@ namespace UPO
 		//get normalized
 		Vec2 operator ~ () const { return GetNormalizedSafe(); }
 
+		void ToString(char* outBuffer, unsigned bufferSize) const;
+		String ToString() const;
+
 		void MetaSerialize(Stream&);
 	};
+	
 
 	inline float Dot(const Vec2& a, const Vec2& b)
 	{
@@ -179,7 +184,7 @@ namespace UPO
 
 
 		inline Vec3() {}
-		inline Vec3(float xyz) { mX = mY = mZ = xyz; }
+		explicit inline Vec3(float xyz) { mX = mY = mZ = xyz; }
 		inline Vec3(float x, float y, float z) { mX = x; mY = y; mZ = z; }
 		inline Vec3(const Vec3& v3) { mX = v3.mX;		mY = v3.mY;		mZ = v3.mZ; }
 		inline Vec3(const Vec2& v2, float z) { mX = v2.mX;		mY = v2.mY;		mZ = z; }
@@ -404,6 +409,8 @@ namespace UPO
 			ret.GetNormalized();
 			return ret;
 		}
+		void ToString(char* outBuffer, unsigned bufferSize) const;
+		String ToString() const;
 		void MetaSerialize(Stream&);
 	};
 
@@ -460,7 +467,7 @@ namespace UPO
 
 
 		inline Vec4() {}
-		inline Vec4(float xyzw)
+		explicit inline Vec4(float xyzw)
 		{
 			mX = mY = mZ = mW = xyzw;
 		}
@@ -624,7 +631,14 @@ namespace UPO
 		}
 
 		void MetaSerialize(Stream&);
+		void ToString(char* outBuffer, unsigned bufferSize) const;
+		String ToString() const;
 	};
+
+	inline float Dot(const Vec4& a, const Vec4& b)
+	{
+		return a.mX * b.mX + a.mY * b.mY + a.mZ * b.mZ + a.mW * b.mW;
+	}
 	inline Vec4 Abs(const Vec4& v)
 	{
 		return Vec4(Abs(v.mX), Abs(v.mY), Abs(v.mZ), Abs(v.mW));
@@ -669,10 +683,13 @@ namespace UPO
 		UCLASS(Color, void)
 
 		inline Color(){}
-		inline Color(float rgba) { mR = mG = mB = mA = rgba; }
-		inline Color(float rgb, float a) { mR = mG = mB = rgb;	mA = a; }
+		explicit inline Color(float rgba) { mR = mG = mB = mA = rgba; }
+		explicit inline Color(float rgb, float a) { mR = mG = mB = rgb;	mA = a; }
 		inline Color(float r, float g, float b, float a) { mR = r;  mG = g;  mB = b;  mA = a; }
 		inline Color(const Color32& color);
+
+		void ToString(char* outBuffer, unsigned bufferSize) const;
+		String ToString() const;
 
 		void MetaSerialize(Stream&);
 	};
@@ -689,7 +706,7 @@ namespace UPO
 		};
 
 		Color32() { mColor = 0; }
-		Color32(uint8 rgba) 
+		explicit Color32(uint8 rgba) 
 		{
 			mRGBA[0] = rgba;	mRGBA[1] = rgba;	mRGBA[2] = rgba;	mRGBA[3] = rgba;
 		}
@@ -717,7 +734,11 @@ namespace UPO
 		static const Color32 BLUE;
 		static const Color32 YELLOW;
 
+		void ToString(char* outBuffer, unsigned bufferSize) const;
+		String ToString() const;
+
 		void MetaSerialize(Stream&);
+
 	};
 
 	//////////////////////////////////////////////////////////////////////////Vec2
@@ -744,17 +765,6 @@ namespace UPO
 
 
 
-	//////////////////////////////////////////////////////////////////////////
-	struct UAPI AABB
-	{
-		Vec3 mMin, mMax;
-
-		void InitMinMax(const Vec3& min, const Vec3& max)
-		{
-			mMin = min;		mMax = max;
-		}
-		
-	};
 
 
 	template <typename T> struct TVec2
@@ -762,7 +772,7 @@ namespace UPO
 		T mX, mY;
 
 		inline TVec2() {}
-		inline TVec2(T xy) { mX = mY = xy; }
+		explicit inline TVec2(T xy) { mX = mY = xy; }
 		inline TVec2(T x, T y) { mX = x; mY = y; }
 		inline TVec2(const TVec2& v) { mX = v.mX; mY = v.mY; }
 
@@ -808,9 +818,15 @@ namespace UPO
 		bool operator != (const TVec2& v) const { return !this->operator==(v); }
 
 		TVec2 operator - () const { return TVec2(-mX, -mY); }
-
 	};
 
 	typedef TVec2<int> Vec2I;
+	
+	UAPI StringStreamOut& operator << (StringStreamOut&, const Vec2&);
+	UAPI StringStreamOut& operator << (StringStreamOut&, const Vec3&);
+	UAPI StringStreamOut& operator << (StringStreamOut&, const Vec4&);
+	UAPI StringStreamOut& operator << (StringStreamOut&, const Color&);
+	UAPI StringStreamOut& operator << (StringStreamOut&, Color32);
+	UAPI StringStreamOut& operator << (StringStreamOut&, Vec2I);
 
 };

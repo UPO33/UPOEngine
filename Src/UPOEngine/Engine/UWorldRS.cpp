@@ -10,9 +10,15 @@
 namespace UPO
 {
 
-	WorldRS::WorldRS()
+
+	WorldRS::WorldRS(World* owner)
 	{
 		MemZero(this, sizeof(this));
+
+		mGS = owner;
+
+		mPendingAdd = new EntityArray;
+		mPendingDestroy = new EntityArray;
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -106,12 +112,6 @@ namespace UPO
 
 		void WorldRS::Present()
 		{
-			if (mCameras.Length() && mCameras[0])
-			{
-				mMainCamera = mCameras[0];
-			}
-			Matrix4 matrixWorldToCLip = mMainCamera->mView * mMainCamera->mProj;
-			
 
 		}
 
@@ -122,17 +122,55 @@ namespace UPO
 
 		void WorldRS::Frame()
 		{
-			Culling();
-			Present();
-			mGS->mTickEndEvent.Wait();	//wait for game tick to be finished, usually game tick is finished sooner so the is no wait
-			PerformFetch();
-			mGS->mFetchCompleted.SetSignaled();
-			Reintegrate();
+			//make view Data
+			{
+				mViewData = RenderViewData();
+
+				TArray<EntityCameraRS*> camerasToRender;
+				//extract renderable cameras
+				for (EntityCameraRS* camera : mCameras)
+				{
+					if (camera->mRender)
+					{
+						camera->Update();
+					}
+				}
+				//sort by less superiority
+				camerasToRender.BubbleSort([](EntityCameraRS* a, EntityCameraRS* b) { return a->mSuperiority < b->mSuperiority; });
+
+				unsigned numCamera = Min(RenderViewData::MaxActiveCamera, camerasToRender.Length());
+				for (unsigned i = 0; i < numCamera; i++)
+				{
+					camerasToRender[i]->GetFrustum(mViewData.mFrustum[i]);
+				}
+
+			}
+
+
+
 		}
 
 		void WorldRS::Culling()
 		{
+			//static mesh frustum cull
+			{
+				unsigned numStaticMesh = mStaticMeshesBounds.Length();
+				if (numStaticMesh)
+				{
+					MemZero(mStaticMeshesCullingState.Elements(), sizeof(unsigned) * numStaticMesh);
 
+					for (unsigned iStaticMesh = 0; iStaticMesh < numStaticMesh; iStaticMesh++)
+					{
+						for (unsigned iView = 0; iView < mViewData.mNum; iView++)
+						{
+							if (mViewData.mFrustum[iView].IsInside(mStaticMeshesBounds[iStaticMesh]))
+							{
+								mStaticMeshesCullingState[iStaticMesh] |= iView;
+							}
+						}
+					}
+				}
+			}
 		}
 
 		void WorldRS::RenderStaticMesh(unsigned index)
@@ -166,62 +204,103 @@ namespace UPO
 			
 		}
 
-		void WorldRS::Reintegrate()
-		{
-			for (Entity* ent : mPendingDestroy)
-			{
-				DestroyRS(ent);
-			}
-			mPendingDestroy.RemoveAll();
 
-			for (Entity* ent : mPendingAdd)
-			{
-				CreateRS(ent);
-			}
-			mPendingAdd.RemoveAll();
+		void WorldRS::Render()
+		{
+			Culling();
+			Present();
 		}
 
-		void WorldRS::DestroyRS(Entity* ent)
+		void WorldRS::Fetch()
 		{
-			if (auto sm = ent->Cast<EntityStaticMesh>())
+			mIsFetching = true;
+
+			//swaping
 			{
-				mStaticMeshes.RemoveAtSwap(ent->mRS->mPrivateIndex);
+				auto tmp0 = mGS->mEntitiesPendingAddToRS;
+				auto tmp1 = mGS->mEntitiesPendingDestroyFromRS;
+
+				mGS->mEntitiesPendingAddToRS = mPendingAdd;
+				mGS->mEntitiesPendingDestroyFromRS = mPendingDestroy;
+
+				mPendingAdd = tmp0;
+				mPendingDestroy = tmp1;
 			}
-			if (auto camera = ent->Cast<EntityCamera>())
+
+			//adding pending entities
 			{
-				mStaticMeshes.RemoveAtSwap(ent->mRS->mPrivateIndex);
+				for (Entity* ent : *mPendingAdd)
+				{
+					AddToScene(ent);
+				}
+				mPendingAdd->RemoveAll();
 			}
+
+			//fetching dirty entities
+			//TODO: make parallel
+			for (Entity* ent : mGS->mEntitiesRenderDataDirty)
+			{
+				if (ent->FlagTest(EEF_Alive | EEF_RenderDataDirty))
+				{
+					ent->GetRS()->OnFetch(ent->mEntityFlag);
+
+					ent->mEntityFlag.Clear(EEF_RenderDataDirty | EEF_RenderDataTransformDirty |EEF_RenderDataMiscDirty);
+				}
+			}
+			mGS->mEntitiesRenderDataDirty.RemoveAll();
+
+
+
+			//fetching cameras are done every frame
+			for (EntityCameraRS* camera : mCameras)
+			{
+				camera->OnFetch();
+			}
+			mIsFetching = false;
 		}
 
-		void WorldRS::CreateRS(Entity* from)
+
+
+		void WorldRS::RemoveRS(Entity* ent)
+		{
+			ent->GetRS()->~EntityRS();
+		}
+
+		void WorldRS::AddToScene(Entity* from)
 		{
 			if (auto sm = from->Cast<EntityStaticMesh>())
 			{
-				return Create_EntityStaticMeshRS(sm);
+				new (sm->GetRSMemory()) EntityStaticMeshRS(sm, this);
+				return;
 			}
 			if (auto camera = from->Cast<EntityCamera>())
 			{
-				return Create_EntityCameraRS(camera);
+				new (camera->GetRSMemory()) EntityCameraRS(camera, this);
+				return;
 			}
 		}
 
-		void WorldRS::Create_EntityStaticMeshRS(EntityStaticMesh* from)
-		{
-			EntityStaticMeshRS* rs = new EntityStaticMeshRS(from, this);
-			size_t index = mStaticMeshes.Add(rs);
-			rs->mPrivateIndex = index;
-		}
 
-		void WorldRS::Create_EntityCameraRS(EntityCamera* camera)
-		{
-			EntityCameraRS* rs = new EntityCameraRS(camera, this);
-			size_t index = mCameras.Add(rs);
-			rs->mPrivateIndex = index;
-		}
 
 		WorldRS::~WorldRS()
 		{
 
+		}
+
+		void WorldRS::AfterFetch()
+		{
+			//remove  rs of destroyed entities
+			{
+				for (Entity* ent : *mPendingDestroy)
+				{
+					RemoveRS(ent);
+				}
+				mPendingDestroy->RemoveAll();
+			}
+
+
+			for (EntityCameraRS* camera : mCameras)
+				camera->Update();
 		}
 
 };

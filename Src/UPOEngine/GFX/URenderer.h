@@ -22,11 +22,11 @@ namespace UPO
 		virtual bool Release() { return false; }
 		virtual void AttachWorld(WorldRS* world) {}
 
-		virtual bool RenderWorld(WorldRS*) { return false; }
 
 		static Renderer* New();
 		static void Delete(Renderer*);
 
+		virtual void RenderGameWin(GameWindow*);
 	};
 
 

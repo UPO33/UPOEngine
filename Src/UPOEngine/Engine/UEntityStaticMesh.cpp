@@ -1,55 +1,41 @@
 #include "UEntityStaticMesh.h"
 #include "../Meta/UMeta.h"
 
+#include "UWorldRS.h"
+
+
 namespace UPO
 {
-// 	template< class TEntityClass, class TRSData> class TEntityRS
-// 	{
-// 		TRSData			mData;
-// 		TEntityClass*	mGS;
-// 		Flag			mEntityFlag;
-// 		Flag			mRSFlag;
-// 		unsigned		mCullingMask;
-// 		unsigned		mPrivateIndex;
-// 		ClassInfo*		mClass;
-// 
-// 		template<typename T = Entity> T* Owner() const { return mGS; }
-// 
-// 		virtual void OnFetch() {}
-// 	};
-
-
-	
-
-	void EntityStaticMesh::RSMeshFinished(AStaticMeshRS*)
-	{
-
-	}
-
 	void EntityStaticMesh::SetMesh(AStaticMesh* mesh)
 	{
-		if (mMesh == mesh) return;
+		if (mMesh == mesh || !IsAlive()) return;
 
 		mMesh = mesh;
-		if (mesh == nullptr) 
-			FlagClear(EEF_RenderDataValid);
-		else if (!mesh->IsRSReady())
-		{
-			mesh->AddRSCompleteListener(this, &EntityStaticMesh::RSMeshFinished);
-			FlagClear(EEF_RenderDataValid);
-		}
 
-		TagRenderDataDirty(EEF_RenderDataMiscDirty);
+		OnCalcBound();
+
+		TagRenderDirty();
 	}
 
 	void EntityStaticMesh::SetMaterial(AMaterial* material)
 	{
-		if (mMaterial == material) return;
+		if (mMaterial == material || !IsAlive()) return;
 
 		mMaterial = material;
-		if (material == nullptr) FlagClear(EEF_RenderDataValid);
 
-		TagRenderDataDirty(EEF_RenderDataMiscDirty);
+		TagRenderMiscDirty();
+	}
+
+	void EntityStaticMesh::OnCalcBound()
+	{
+		if (mMesh)
+		{
+			
+		}
+		else
+		{
+			mBound = AABB(InitZero());
+		}
 	}
 
 	EntityStaticMesh::EntityStaticMesh()
@@ -67,29 +53,33 @@ namespace UPO
 	EntityStaticMeshRS::EntityStaticMeshRS(EntityStaticMesh* gs, WorldRS* wrs)
 	{
 		mGS = gs;
-		mEntityFlag = gs->mEntityFlag;
-		mWorldTransform = gs->GetInvWorldTransform();
+		mOwner = wrs;
 
+		mOwner->mStaticMeshesBounds.AddUnInit();
+		mOwner->mStaticMeshesCullingState.AddUnInit();
+		mPrivateIndex = mOwner->mStaticMeshes.Add(this);
+
+		OnFetch();
 	}
 
-
-	EntityStaticMesh* EntityStaticMeshRS::Owner() const
+	EntityStaticMeshRS::~EntityStaticMeshRS()
 	{
-		return (EntityStaticMesh*)mGS;
+		mOwner->mStaticMeshes.RemoveAtSwap(mPrivateIndex);
+		mOwner->mStaticMeshesBounds.RemoveAtSwap(mPrivateIndex);
+		mOwner->mStaticMeshesCullingState.RemoveAtSwap(mPrivateIndex);
 	}
 
-
-
-
-	void EntityStaticMeshRS::OnFetch()
+	void EntityStaticMeshRS::OnFetch(unsigned flag)
 	{
-		if (mEntityFlag.Test(EEF_RenderDataTransformDirty))
+		if (flag & EEF_RenderDataTransformDirty)
 		{
-
+			mWorldTransform = mGS->GetWorldTransform();
+			mOwner->mStaticMeshesBounds[mPrivateIndex] = mGS->GetBound();
 		}
+		else
 		{
-			mMesh = Owner()->mMesh ? Owner()->mMesh->GetRS() : nullptr;
-			mMaterial = Owner()->mMaterial ? Owner()->mMaterial->GetRS() : nullptr;
+			mMesh = GS()->mMesh ? GS()->mMesh->GetRS() : nullptr;
+			mMaterial = GS()->mMaterial ? GS()->mMaterial->GetRS() : nullptr;
 
 			if (mMesh && mMaterial)	mEntityFlag.Set(EEF_RenderDataValid);
 		}
@@ -97,7 +87,7 @@ namespace UPO
 
 	bool EntityStaticMeshRS::ShouldBeRendered(unsigned cullingmask)
 	{
-		return mEntityFlag.Test(EEF_RenderDataValid | EEF_Visible) && (mCullingMask & cullingmask);
+		return 0;
 	}
 
 

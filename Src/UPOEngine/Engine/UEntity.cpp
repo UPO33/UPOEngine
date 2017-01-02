@@ -8,9 +8,20 @@ namespace UPO
 
 	void Entity::UpdateChildrenTransform()
 	{
-		mWorldTransform = mParent->mWorldTransform * mLocalTransform;
-		mIsWorldTransformInvDirty = true;
-		TagRenderDataDirty(ERD_Transform);
+		unsigned numChild = mChildren.Length();
+		for (unsigned i = 0; i < numChild; i++)
+		{
+			Entity* child = mChildren[i];
+			if(child->IsAlive())
+			{
+				child->mWorldTransform = mWorldTransform * child->mLocalTransform;
+				child->mIsWorldTransformInvDirty = true;
+				child->TagRenderTransformDirty();
+				child->OnCalcBound();
+
+				child->UpdateChildrenTransform();
+			}
+		}
 	}
 
 	void Entity::CalcLocalTrsFromWorldAndParent()
@@ -24,6 +35,7 @@ namespace UPO
 			mLocalTransform = mParent->GetInvWorldTransform() * mWorldTransform;
 		}
 	}
+
 
 	//////////////////////////////////////////////////////////////////////////
 	Entity::Entity()
@@ -49,15 +61,38 @@ namespace UPO
 		mIsWorldTransformInvDirty = false;
 
 		mWorldTransform = mLocalTransform = mWorldTransformInv = Transform::IDENTITY;
+		mBound = AABB(InitZero());
+		mRS = nullptr;
+
 	}
 
-	void Entity::TagRenderDataDirty(unsigned flag)
-	{
-		UASSERT(flag == EEF_RenderDataDirty || flag == EEF_RenderDataTransformDirty);
 
-		if (!FlagTest(EEF_RenderDataDirty))
-			mWorld->mEntitiesRenderDataDirty.Add(this);
-		FlagSet(flag);
+	void Entity::TagRenderDirty(unsigned flags)
+	{
+		if (mRS == nullptr) return;
+
+		if (FlagTest(EEF_Visible | EEF_Alive))
+		{
+			if (!FlagTest(EEF_RenderDataDirty))
+				mWorld->mEntitiesRenderDataDirty.Add(this);
+		}
+		FlagSet(flags);
+	}
+
+
+	void Entity::TagRenderDirty()
+	{
+		TagRenderDirty(EEF_RenderDataDirty | EEF_RenderDataTransformDirty | EEF_RenderDataMiscDirty);
+	}
+
+	void Entity::TagRenderTransformDirty()
+	{
+		TagRenderDirty(EEF_RenderDataDirty | EEF_RenderDataTransformDirty);
+	}
+
+	void Entity::TagRenderMiscDirty()
+	{
+		TagRenderDirty(EEF_RenderDataDirty | EEF_RenderDataMiscDirty);
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -110,7 +145,7 @@ namespace UPO
 			{
 				if (newParent->IsSubsetOf(this))
 				{
-					ULOG_ERROR("Entity [%s] cant be attachet to its child", mName.CStr());
+					ULOG_ERROR("Entity [%] cant be attachet to its child", mName);
 					return;
 				}
 
@@ -138,6 +173,10 @@ namespace UPO
 		}
 		return false;
 	}
+
+
+
+
 	//////////////////////////////////////////////////////////////////////////
 	const Matrix4& Entity::GetInvWorldTransform()
 	{
@@ -148,6 +187,12 @@ namespace UPO
 		}
 		return mWorldTransformInv;
 	}
+
+	const AABB& Entity::GetBound() const
+	{
+		mBound;
+	}
+
 	//////////////////////////////////////////////////////////////////////////
 	void Entity::SetLocalTransform(const Transform& localTrs)
 	{
@@ -161,16 +206,18 @@ namespace UPO
 			mWorldTransform = mParent->mWorldTransform * localTrs;
 		}
 		mIsWorldTransformInvDirty = true;
-		TagRenderDataDirty(ERD_Transform);
+		TagRenderTransformDirty();
+		OnCalcBound();
 		UpdateChildrenTransform();
 	}
 	//////////////////////////////////////////////////////////////////////////
 	void Entity::SetWorldTransform(const Transform& worldTrs)
 	{
-		mWorldTransform = worldTrs;
+		mWorldTransform = worldTrs;		
 		mIsWorldTransformInvDirty = true;
 		CalcLocalTrsFromWorldAndParent();
-		TagRenderDataDirty(ERD_Transform);
+		TagRenderTransformDirty();
+		OnCalcBound();
 		UpdateChildrenTransform();
 	}
 
@@ -317,7 +364,7 @@ namespace UPO
 
 			mWorld->mOnEntityDestroyed.InvokeAll(this);
 
-			ULOG_MESSAGE("Entity [%s] Destroyed", mName.CStr());
+			ULOG_MESSAGE("Entity [%] Destroyed", mName);
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////

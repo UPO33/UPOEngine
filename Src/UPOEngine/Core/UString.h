@@ -138,7 +138,7 @@ namespace UPO
 		{
 			return mChars.Length() == 0;
 		}
-		operator bool() const { return !IsEmpty(); }
+		explicit operator bool() const { return !IsEmpty(); }
 
 		unsigned FindN(char chr, unsigned n = 0, bool caseSensitive = true) const;
 		unsigned FindRN(char chr, unsigned n = 0, bool caseSensitive = true) const;

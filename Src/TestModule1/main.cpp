@@ -22,13 +22,13 @@ extern "C"
 	{
 		return;
 
-		ULOG_WARN("m2 num types %d", UPO::MetaSys::Get()->GetAllTypes().Length());
+		ULOG_WARN("m2 num types %", UPO::MetaSys::Get()->GetAllTypes().Length());
 		auto types = UPO::MetaSys::Get()->GetAllTypes();
 		for (size_t i = 0; i < types.Length(); i++)
 		{
 			if (types[i]->IsClass())
 			{
-				ULOG_WARN("Class %s", types[i]->Cast<UPO::ClassInfo>()->GetName().CStr());
+				ULOG_WARN("Class %", types[i]->Cast<UPO::ClassInfo>()->GetName());
 			}
 		}
 	}

@@ -23,12 +23,14 @@
     <ClInclude Include="Core\UAtomic.h" />
     <ClInclude Include="Core\UBasic.h" />
     <ClInclude Include="Core\UBitArray.h" />
+    <ClInclude Include="Core\UBound.h" />
     <ClInclude Include="Core\UBuffer.h" />
     <ClInclude Include="Core\UCommandQueue.h" />
     <ClInclude Include="Core\UCore.h" />
     <ClInclude Include="Core\UDelegate.h" />
     <ClInclude Include="Core\UEngineConfig.h" />
     <ClInclude Include="Core\UFileSys.h" />
+    <ClInclude Include="Core\UFrustum.h" />
     <ClInclude Include="Core\UHash.h" />
     <ClInclude Include="Core\UConfig.h" />
     <ClInclude Include="Core\UInstruction.h" />
@@ -40,6 +42,7 @@
     <ClInclude Include="Core\UModule.h" />
     <ClInclude Include="Core\UName.h" />
     <ClInclude Include="Core\UFreeListAllocator.h" />
+    <ClInclude Include="Core\UPlane.h" />
     <ClInclude Include="Core\UQueue.h" />
     <ClInclude Include="Core\URefCount.h" />
     <ClInclude Include="Core\USparseArray.h" />
@@ -54,6 +57,7 @@
     <ClInclude Include="Engine\Physx.h" />
     <ClInclude Include="Engine\UAsset.h" />
     <ClInclude Include="Engine\UAssetSys.h" />
+    <ClInclude Include="Engine\UCanvas.h" />
     <ClInclude Include="Engine\UComponent.h" />
     <ClInclude Include="Engine\UEngine.h" />
     <ClInclude Include="Engine\UEngineBase.h" />
@@ -64,6 +68,7 @@
     <ClInclude Include="Engine\UEntityTest.h" />
     <ClInclude Include="Engine\UGameInstance.h" />
     <ClInclude Include="Engine\UGameWindow.h" />
+    <ClInclude Include="Engine\UGameWindow_Win.h" />
     <ClInclude Include="Engine\UMaterial.h" />
     <ClInclude Include="Engine\UPhysMaterial.h" />
     <ClInclude Include="Engine\UStaticMesh.h" />
@@ -89,11 +94,13 @@
     <ClInclude Include="GFXCore\UGFXUniform.h" />
     <ClInclude Include="GFXCore\UGlobalShader.h" />
     <ClInclude Include="GFXCore\UShaderMgr.h" />
+    <ClInclude Include="GFX\UForwardRenderTargets.h" />
     <ClInclude Include="GFX\UGFX.h" />
     <ClInclude Include="GFX\UMeshDrawer.h" />
     <ClInclude Include="GFX\UPrimitiveBatch.h" />
     <ClInclude Include="GFX\UPrimitiveDrawer.h" />
     <ClInclude Include="GFX\URenderer.h" />
+    <ClInclude Include="GFX\UDefferdRenderTargets.h" />
     <ClInclude Include="GFX\UScreenDrawer.h" />
     <ClInclude Include="GFX\UTestQuad.h" />
     <ClInclude Include="Meta\UClassInfo.h" />
@@ -112,6 +119,9 @@
     <ClInclude Include="UPOEngine.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Core\UBound.cpp" />
+    <ClCompile Include="Core\UFrustum.cpp" />
+    <ClCompile Include="Core\UPlane.cpp" />
     <ClCompile Include="Core\UArray.cpp" />
     <ClCompile Include="Core\UBasic.cpp" />
     <ClCompile Include="Core\UBitArray.cpp" />
@@ -135,6 +145,7 @@
     <ClCompile Include="Core\UVector.cpp" />
     <ClCompile Include="Engine\UAsset.cpp" />
     <ClCompile Include="Engine\UAssetSys.cpp" />
+    <ClCompile Include="Engine\UCanvas.cpp" />
     <ClCompile Include="Engine\UComponent.cpp" />
     <ClCompile Include="Engine\UEngine.cpp" />
     <ClCompile Include="Engine\UEngineBase.cpp" />
@@ -145,6 +156,7 @@
     <ClCompile Include="Engine\UEntityTest.cpp" />
     <ClCompile Include="Engine\UGameInstance.cpp" />
     <ClCompile Include="Engine\UGameWindow.cpp" />
+    <ClCompile Include="Engine\UGameWindow_Win.cpp" />
     <ClCompile Include="Engine\UMaterial.cpp" />
     <ClCompile Include="Engine\UPhysMaterial.cpp" />
     <ClCompile Include="Engine\UStaticMesh.cpp" />
@@ -168,10 +180,12 @@
     <ClCompile Include="GFXCore\UGlobalShader.cpp" />
     <ClCompile Include="GFXCore\UShaderMgr.cpp" />
     <ClCompile Include="GFXCore\UShaderMgr_DX.cpp" />
+    <ClCompile Include="GFX\UForwardRenderTargets.cpp" />
     <ClCompile Include="GFX\UMeshDrawer.cpp" />
     <ClCompile Include="GFX\UPrimitiveBatch.cpp" />
     <ClCompile Include="GFX\UPrimitiveDrawer.cpp" />
     <ClCompile Include="GFX\URenderer.cpp" />
+    <ClCompile Include="GFX\UDefferdRenderTargets.cpp" />
     <ClCompile Include="GFX\UScreenDrawer.cpp" />
     <ClCompile Include="GFX\UTestQuad.cpp" />
     <ClCompile Include="Meta\UClassInfo.cpp" />

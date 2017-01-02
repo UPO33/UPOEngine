@@ -6,7 +6,6 @@ namespace UPO
 	ATest::ATest()
 	{
 		mFloat = 1;
-		ULOG_MESSAGE("%p", this);
 	}
 
 	ATest::~ATest()

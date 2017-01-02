@@ -1,3 +1,4 @@
+#if 0
 #pragma once
 
 #include "UGFXDeviceDX.h"
@@ -63,3 +64,4 @@ namespace UPO
 		static LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 	};
 };
+#endif

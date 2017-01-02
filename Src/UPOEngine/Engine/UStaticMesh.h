@@ -1,6 +1,7 @@
 #pragma once
 
 #include "UAsset.h"
+#include "../Core/UBound.h"
 
 namespace UPO
 {

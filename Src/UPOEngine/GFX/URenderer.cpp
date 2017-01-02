@@ -3,9 +3,12 @@
 #include "UScreenDrawer.h"
 #include "UTestQuad.h"
 #include "UPrimitiveBatch.h"
+#include "UDefferdRenderTargets.h"
+
 
 #include "../Engine/UGameWindow.h"
 #include "../Engine/UWorldRS.h"
+#include "../Engine/UWorld.h"
 
 
 namespace UPO
@@ -59,16 +62,7 @@ namespace UPO
 // 			mContext->PresentSwapChain();
 			return true;
 		}
-		bool RenderWorld(WorldRS* wrs) override
-		{
-			if (wrs)
-			{
-				if (wrs->mMainWindow)
-				{
-					
-				}
-			}
-		}
+
 		//////////////////////////////////////////////////////////////////////////
 		void ChekingResize()
 		{
@@ -78,7 +72,7 @@ namespace UPO
 
 			if (curSize != newSize)
 			{
-				ULOG_MESSAGE("resizing render target, new size : %dx%d", newSize.mX, newSize.mY);
+				ULOG_MESSAGE("resizing render target, new size : %", newSize);
 
 // 				mContext->Resize(newSize);
 				//resizing other render targets...
@@ -106,6 +100,37 @@ namespace UPO
 	void Renderer::Delete(Renderer* renderer)
 	{
 		delete renderer;
+	}
+
+// 	struct RenderTask
+// 	{
+// 		GameWindow* mGameWnd;
+// 		GFXSwapChain* mSwapChain;
+// 		WorldRS*	mWorldRS;
+// 		PrimitiveBatch* mPrimitiveBatch;
+// 		Canvas* mCanvas;
+// 		DefferdRenderTargets* mRenderTarget;
+// 		
+// 	};
+
+	void Renderer::RenderGameWin(GameWindow* gw)
+	{
+		if (gw && gw->mSwapchain && gw->mWorld && gw->mWorld->GetRS())
+		{
+			WorldRS* rsToRender = gw->mWorld->GetRS();
+			rsToRender->Render();
+
+// 			ResizeIfRequired();
+
+// 			ClearRenderTargets();
+// 
+// 			rsToRender->Render(gw);
+// 
+// 			if (gw->mPrimitiveBatch) gw->mPrimitiveBatch->Render();
+// 			if (gw->mCanvas) gw->mCanvas->Render();
+// 
+// 			gw->mSwapchain->Swap();
+		}
 	}
 
 };

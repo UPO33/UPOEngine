@@ -7,6 +7,7 @@
 #include <functional>
 #include <memory.h>
 #include <cstdint>
+#include <sstream>
 
 #pragma region platforms compilers and api
 
@@ -59,30 +60,26 @@ UAPI void UOutputDebugString(const char* str);
 
 #pragma region Log and assert
 
-#define ULOG_MESSAGE(format, ...) UPO::Log::Get()->Add(UPO::ELogType::ELT_Message, __FILE__, __FUNCTION__, __LINE__, format, __VA_ARGS__)
-#define ULOG_SUCCESS(format, ...) UPO::Log::Get()->Add(UPO::ELogType::ELT_Success, __FILE__, __FUNCTION__, __LINE__, format, __VA_ARGS__)
-#define ULOG_ERROR(format, ...) UPO::Log::Get()->Add(UPO::ELogType::ELT_Error, __FILE__, __FUNCTION__, __LINE__, format, __VA_ARGS__)
-#define ULOG_WARN(format, ...) UPO::Log::Get()->Add(UPO::ELogType::ELT_Warn, __FILE__, __FUNCTION__, __LINE__, format, __VA_ARGS__)
+#define ULOG_MESSAGE(format, ...) UPO::GLog()->Add(UPO::ELogType::ELT_Message, __FILE__, __FUNCTION__, __LINE__, format, __VA_ARGS__)
+#define ULOG_SUCCESS(format, ...) UPO::GLog()->Add(UPO::ELogType::ELT_Success, __FILE__, __FUNCTION__, __LINE__, format, __VA_ARGS__)
+#define ULOG_ERROR(format, ...) UPO::GLog()->Add(UPO::ELogType::ELT_Error, __FILE__, __FUNCTION__, __LINE__, format, __VA_ARGS__)
+#define ULOG_WARN(format, ...) UPO::GLog()->Add(UPO::ELogType::ELT_Warn, __FILE__, __FUNCTION__, __LINE__, format, __VA_ARGS__)
 
 #ifdef NDEBUG
 #define ULOG_FATAL(format, ...)
-#define UASSERT(expression)
+#define UASSERT(expression, ...)
 #else
 
 #define ULOG_FATAL(format, ...)\
 	{\
-	UPO::Log::Get()->Add(UPO::ELogType::ELT_Fatal, __FILE__, __FUNCTION__, __LINE__, format, __VA_ARGS__);\
+	UPO::GLog()->Add(UPO::ELogType::ELT_Fatal, __FILE__, __FUNCTION__, __LINE__, format, __VA_ARGS__);\
 	UBREAK_DEBUGGER();\
 	}\
 
-
-#define UASSERT(expression)\
+#define UASSERT(expression, ...)\
 	{\
 		if(!(expression)){\
-			char DebugMessage[1024];\
-			sprintf_s(DebugMessage, "Assertaion Failed  [%s] ", #expression);\
-			UOutputDebugString(DebugMessage);\
-			UPO::Log::Get()->Add(UPO::ELogType::ELT_Assert, __FILE__, __FUNCTION__, __LINE__, DebugMessage);\
+			UPO::Log::Get()->Add(UPO::ELogType::ELT_Assert, __FILE__, __FUNCTION__, __LINE__, "Assertaion Failed [" #expression "]  " __VA_ARGS__ );\
 			UBREAK_DEBUGGER(); /*break  debugger*/ \
 		}\
 	}\
@@ -196,6 +193,9 @@ namespace UPO
 	using VoidFuncPtr = void(*)();
 	using VoidMemFuncPtr = void(Void::*)();
 
+	enum InitDefault {};
+	enum InitConfig {};
+	enum InitZero {};
 
 	//////////////////////////////////////////////////////////////////////////
 	UAPI bool IsGameThread();
@@ -284,8 +284,57 @@ namespace UPO
 
 #pragma endregion
 
+
+	
 #pragma region log
 
+	typedef std::ostringstream StringStreamOut;
+	typedef std::istringstream StringStreamIn;
+
+	static const unsigned LogArgPrintableMaxLen = 60;
+
+// 	auto GetArgPrintable(char v, char* out) { return v; };
+// 	auto GetArgPrintable(unsigned char v, char* out) { return v; };
+// 	auto GetArgPrintable(short v, char* out) { return v; };
+// 	auto GetArgPrintable(unsigned short v, char* out) { return v; };
+// 	auto GetArgPrintable(int v, char* out) { return v; };
+// 	auto GetArgPrintable(unsigned int v, char* out) { return v; };
+// 	auto GetArgPrintable(long long v, char* out) { return v; };
+// 	auto GetArgPrintable(unsigned long long v, char* out) { return v; };
+// 	auto GetArgPrintable(const char* v, char* out) { return v; };
+// 	auto GetArgPrintable(bool v, char* out) { return v; };
+// 	auto GetArgPrintable(float v, char* out) { return v; };
+// 	auto GetArgPrintable(double v, char* out) { return v; };
+// 	auto GetArgPrintable(std::nullptr_t, char* out) { return (void*)0; };
+// 
+// 	const void* GetArgPrintable(const void* v, char* out) { return v; };
+
+
+	inline void SPrintAuto(StringStreamOut& out, const char *format)
+	{
+		while (*format)
+		{
+			if (*format == '%')
+			{
+				throw std::runtime_error("invalid format string: missing arguments");
+			}
+			out << *format++;
+		}
+	}
+	template<typename T, typename... TArgs> void SPrintAuto(StringStreamOut& out, const char* format, T value, TArgs... args)
+	{
+		while (*format)
+		{
+			if (*format == '%')
+			{
+				out << value;
+				format++;
+				SPrintAuto(out, format, args...);
+				return;
+			}
+			out << *format++;
+		}
+	}
 	//////////////////////////////////////////////////////////////////////////
 	enum  ELogType
 	{
@@ -313,9 +362,20 @@ namespace UPO
 	public:
 		static Log* Get();
 
-		void Add(ELogType type, const char* file, const char* funcName, unsigned line, const char* format, ...);
+		void AddVariadic(ELogType type, const char* file, const char* funcName, unsigned line, const char* format, ...);
+		void AddRaw(ELogType type, const char* file, const char* funcName, unsigned line, const char* message);
+
+		template<typename... TArgs> void Add(ELogType type, const char* file, const char* funcName, unsigned line, const char* format, TArgs... args)
+		{
+			StringStreamOut streamMessage;
+			SPrintAuto(streamMessage, format, args...);
+			std::string str = streamMessage.str();
+			AddRaw(type, file, funcName, line, str.c_str());
+		}
 		bool AddListener(TFP<void, const LogEntry&> function);
 	};
+	inline Log* GLog() { return Log::Get(); }
+
 #pragma endregion
 
 #pragma region

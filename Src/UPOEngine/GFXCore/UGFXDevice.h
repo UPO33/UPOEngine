@@ -700,10 +700,28 @@ namespace UPO
 	{
 
 	};
+	struct GFXSwapChain_Desc
+	{
+		bool	mVSyncEnable;
+		int		mSampleCount;
+		GameWindow*	mGameWindow;
+
+		GFXSwapChain_Desc() : mVSyncEnable(false), mSampleCount(1), mGameWindow(nullptr) {}
+		GFXSwapChain_Desc(InitConfig)
+		{
+			mVSyncEnable = GEngineConfig()->AsBool("GFX.VSync");
+			mSampleCount = Max(GEngineConfig()->AsNumber("GFX.MultiSample"), 1.0f);
+		}
+	};
+
 	//////////////////////////////////////////////////////////////////////////
 	class UAPI GFXSwapChain : public GFXResource
 	{
+	protected:
+		GFXSwapChain_Desc mDesc;
 	public:
+		const GFXSwapChain_Desc& GetDesc() { return mDesc; }
+
 		virtual bool Present() { return false; };
 		virtual GFXTexture2D* GetBackBuffer() { return nullptr; }
 		virtual void GetBackBufferSize(Vec2I& out) {}
@@ -720,7 +738,7 @@ namespace UPO
 
 		//////////////////////////////////////////////////////////////////////////
 		//creates a swap chain from a game window
-		virtual GFXSwapChain* CreateSwapChain(GameWindow*) = 0;
+		virtual GFXSwapChain* CreateSwapChain(const GFXSwapChain_Desc& param) = 0;
 
 		//////////////////////////////////////////////////////////////////////////buffers
 		virtual GFXIndexBuffer* CreateIndexBuffer(const GFXIndexBuffer_Desc&) = 0;

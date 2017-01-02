@@ -34,7 +34,7 @@ namespace UPO
 		AMaterial* GetMaterial() const { return mMaterial; }
 		
 		
-		void CalcWorldBound(AABB& out);
+		void OnCalcBound() override;
 
 		EntityStaticMesh();
 		~EntityStaticMesh();
@@ -46,15 +46,14 @@ namespace UPO
 	public:
 		AStaticMeshRS*	mMesh;
 		AMaterialRS*	mMaterial;
-		AABB			mBound;
 		Matrix4			mWorldTransform;
 
-		static const unsigned EEF_RenderDirtyFlags = 0;
 
 		EntityStaticMeshRS(EntityStaticMesh* gs, WorldRS* wrs);
-		EntityStaticMesh* Owner() const;
+		~EntityStaticMeshRS();
+		EntityStaticMesh* GS() const { return (EntityStaticMesh*)mGS; }
 
-		void OnFetch() override;
+		void OnFetch(unsigned flag) override;
 		bool ShouldBeRendered(unsigned cullingmask);
 	};
 

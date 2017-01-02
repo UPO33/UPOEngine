@@ -1,6 +1,7 @@
 #pragma once
 
-#include "../Core/UCore.h"
+#include "UWorld.h"
+#include "../Core/UFrustum.h"
 
 namespace UPO
 {
@@ -17,51 +18,86 @@ namespace UPO
 	class World;
 	class Renderer;
 
+	struct RenderViewData
+	{
+		static const unsigned MaxActiveCamera = 32;
+		
+		Frustum		mFrustum[MaxActiveCamera];
+		Matrix4		mProjection[MaxActiveCamera];
+		Matrix4		mView[MaxActiveCamera];
+		Vec4		mWorldPosition;
+		Vec4		mForward;
+		unsigned	mNum;
+	};
+
+	struct RenderViewDataSingle
+	{
+		Frustum		mFrustum;
+		unsigned	mCullingMask;	//layer0, layer1, ...
+	};
+
 	class UAPI WorldRS
 	{
 		friend World;
 		friend class EngineImpl;
 		friend Renderer;
 
+		friend EntityStaticMeshRS;
+		friend EntityCameraRS;
+
 		Flag					mFlag;
 		World*					mGS;
-		TArray<Entity*>			mPendingAdd;
-		TArray<Entity*>			mPendingDestroy;
+		EntityArray*			mPendingAdd;
+		EntityArray*			mPendingDestroy;
 
-		TArray<AABB>					mStaticMeshesBounds;
-		BitArray						mStaticMeshesCullingState;
+		RenderViewData	mViewData;
+
+		struct StaticMeshBounData
+		{
+			unsigned	mFlag;
+			unsigned	mLayer;	//the layers of the entity
+			AABB		mBound;
+		};
+		
+
+		TArray<AABB>		mStaticMeshesBounds;
+		TArray<unsigned>	mStaticMeshesCullingState;
 
 		TArray<EntityStaticMeshRS*>		mStaticMeshes;
 		TArray<EntityCameraRS*>			mCameras;
-
+		
 		EntityCameraRS*					mMainCamera;
 
 	public:
 		Renderer*		mRenderer = nullptr;
 		GameWindow*		mMainWindow = nullptr;
-		GFXSwapChain*	mMainWndSwapChain = nullptr;
-
+		bool			mIsFetching = false;
 		/*
 		TArray<EntityCameraRS*>			mCameras;
 		TArray<EntityLishtRS*>			mLights;
 		*/
-		WorldRS();
+		WorldRS(World* world);
 		~WorldRS();
 
-
+		void Render();
+		void Fetch();
+		void AfterFetch();
 		void Frame();
+
 	private:
 		void Present();
 		void WaitForGameTickEnd();
 		void Culling();
 		void RenderStaticMesh(unsigned index);
-		void Reintegrate();
-		void DestroyRS(Entity* ent);
-		void CreateRS(Entity* from);
-		void Create_EntityStaticMeshRS(EntityStaticMesh* from);
-		void Create_EntityCameraRS(EntityCamera* camera);
+
+		void RemoveRS(Entity* ent);
+		void AddToScene(Entity* from);
+
+
 		void PerformFetch();
 		void CollectMeshesForRender();
+
 	};
+
 
 };

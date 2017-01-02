@@ -141,7 +141,7 @@ namespace UPO
 		Name nameAssetName = strAssetName;
 		if (FindAsset(nameAssetName))
 		{
-			ULOG_ERROR("failed to create asset file [%s], currently exist", strAssetName.CStr());
+			ULOG_ERROR("failed to create asset file [%], currently exist", strAssetName);
 			return nullptr;
 		}
 		AssetEntry* newAssetEntry = new AssetEntry;
@@ -552,7 +552,7 @@ namespace UPO
 
 		if (const ClassInfo* assetClass = GMetaSys()->FindClass(mClassName))
 		{
-			ULOG_MESSAGE("start loading asset [%s] ...", mAssetName.CStr());
+			ULOG_MESSAGE("start loading asset [%] ...", mAssetName);
 
 			Object* assetObject = ObjectArchive::Load(OpenStreamForLoading());
 			CloseStream();
@@ -567,7 +567,7 @@ namespace UPO
 
 				mInstance = asset;
 			
-				ULOG_SUCCESS("asset [%s] loaded", GetName());
+				ULOG_SUCCESS("asset [%] loaded", GetName());
 
 				asset->OnInit();
 
@@ -582,7 +582,7 @@ namespace UPO
 		}
 		else
 		{
-			ULOG_ERROR("failed to load asset [%s], class [%s] is unknown", mAssetName.CStr(), mClassName.CStr());
+			ULOG_ERROR("failed to load asset [%], class [%] is unknown", mAssetName, mClassName);
 			return false;
 		}
 
@@ -602,7 +602,7 @@ namespace UPO
 		}
 		else
 		{
-			ULOG_ERROR("failed to rename asset [%s]", mFullFilename.CStr());
+			ULOG_ERROR("failed to rename asset [%]", mFullFilename);
 			return false;
 		}
 	}

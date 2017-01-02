@@ -200,7 +200,7 @@ namespace UPO
 
 
 	//////////////////////////////////////////////////////////////////////////
-	void Log::Add(ELogType type, const char* file, const char* funcName, unsigned line, const char* format, ...)
+	void Log::AddVariadic(ELogType type, const char* file, const char* funcName, unsigned line, const char* format, ...)
 	{
 		char buffer[1024];
 		va_list args;
@@ -210,6 +210,12 @@ namespace UPO
 
 		((LogImpl*)this)->Add(type, file, funcName, line, buffer);
 	}
+	//////////////////////////////////////////////////////////////////////////
+	void Log::AddRaw(ELogType type, const char* file, const char* funcName, unsigned line, const char* message)
+	{
+		((LogImpl*)this)->Add(type, file, funcName, line, message);
+	}
+
 	//////////////////////////////////////////////////////////////////////////
 	bool Log::AddListener(TFP<void, const LogEntry&> function)
 	{

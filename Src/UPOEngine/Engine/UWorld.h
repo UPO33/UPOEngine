@@ -42,6 +42,9 @@ namespace UPO
 			: mClass(theClass), mParent(parent), mWorldTransform(Transform::IDENTITY) {}
 
 	};
+
+	typedef TArray<Entity*>	EntityArray;
+
 	//////////////////////////////////////////////////////////////////////////
 	class UAPI World : public Asset
 	{
@@ -51,13 +54,11 @@ namespace UPO
 		friend WorldRS;
 
 	private:
-		TArray<Entity*>			mEntities;
+		EntityArray				mEntities;
 		bool					mIsPlaying = false;
 		bool					mIsPaused = false;
 		bool					mIsFirstTick = false;
-		WorldTickResult			mCurTickResult;
 		float					mSecondsSincePlay = 0;
-		ChronometerAccurate		mTimerSincePlay;
 		bool					mIsInTick = false;
 		bool					mDoExitPlay = false;
 		AWorldSetting*			mWorldSetting = nullptr;
@@ -71,7 +72,6 @@ namespace UPO
 		
 		Entity*		mRootEntity;
 
-		TArray<Entity*>		mStaticEntities;
 
 		unsigned MAX_DESTROYED_ENTITY = 16;
 
@@ -84,31 +84,32 @@ namespace UPO
 		bool	mIsGamePaused = false;
 
 		TArray<Entity*>		mEntitiesPendingKill;
-		TArray<Entity*>		mEntitiesRenderDataDirty;
+		
 		WorldRS*			mRS = nullptr;
 		
-		TArray<Entity*>		mEntitiesPendingAddToRS;
-		TArray<Entity*>		mEntitiesPendingDestroyFromRS;
+
+		EntityArray*		mEntitiesPendingAddToRS;
+		EntityArray*		mEntitiesPendingDestroyFromRS;
+		EntityArray			mEntitiesRenderDataDirty;
 
 		volatile long		mPendingIndex;	//world uses mPendingIndex, rs uses mPendingIndex ^ 1;
 		Event				mFetchCompleted;
 		Event				mTickEndEvent;
-		CriticalSection		mIntersection;
-
 		EntityCamera*		mEditorCamera;
 		
+
 	public:
 		TDelegateMulti<void, Entity*>	mOnEntityCreated;
 		TDelegateMulti<void, Entity*>	mOnEntityDestroyed;
 		bool							mIsAlive = true;
 		int								mPriority = 1;
 		GameWindow*						mMainWindow = nullptr;
+		TArray<GameWindow*>				mGameWindows;	//game windows that are using this world, a world can be shared
 
 	public:
 		void PushToPendingAddToRS(Entity* ent);
 		void PushToPendingDestroyFromRS(Entity* ent);
 
-		void Intersection();
 
 		void KillEntity(Entity*);
 		void CheckPendingKills();
@@ -161,9 +162,13 @@ namespace UPO
 
 		void Release();
 
-		WorldRS* CreateRS();
+		void CreateRS();
+		void DestroyRS();
 
 		World* Duplicate();
+
+		bool ProjectWorldToScreen(const Vec3& worldPos, Vec2& outScreenPos, EntityCamera* camera);
+		bool ProjectScreenToWorld(const Vec2& screenPos, Vec3& outWorldPos, EntityCamera* camera);
 	};
 	//////////////////////////////////////////////////////////////////////////
 

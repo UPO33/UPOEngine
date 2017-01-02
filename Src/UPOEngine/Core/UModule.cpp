@@ -70,7 +70,7 @@ namespace UPO
 		mCurrentLoadingModule = new Module;
 		mCurrentLoadingModule->mName = moduleName;
 
-		ULOG_MESSAGE("loading module [%s] started...", moduleName);
+		ULOG_MESSAGE("loading module [%] started...", moduleName);
 
 
 		if (void* handle = ULoadModule(moduleName))
@@ -83,7 +83,7 @@ namespace UPO
 			mLoadedModules.Add(mCurrentLoadingModule);
 			Module* ret = mCurrentLoadingModule;
 			mCurrentLoadingModule = nullptr;
-			ULOG_SUCCESS("Module [%s] successfully loaded", moduleName);
+			ULOG_SUCCESS("Module [%] successfully loaded", moduleName);
 			return ret;
 		}
 		else
@@ -91,7 +91,7 @@ namespace UPO
 			delete mCurrentLoadingModule;
 			mCurrentLoadingModule = nullptr;
 
-			ULOG_ERROR("Failed to load modue [%s]", moduleName);
+			ULOG_ERROR("Failed to load modue [%]", moduleName);
 			return nullptr;
 		}
 
@@ -115,14 +115,14 @@ namespace UPO
 		if (UFreeModule(module->mHandle))
 		{
 			mLoadedModules.RemoveAtSwap(findIndex);
-			ULOG_SUCCESS("Module %s unloaded successfully", module->mName.CStr());
+			ULOG_SUCCESS("Module % unloaded successfully", module->mName.CStr());
 			delete module;
 			mCurrentUnloadingModule = nullptr;
 			return true;
 		}
 		else
 		{
-			ULOG_ERROR("Failed to unload module %s", module->mName.CStr());
+			ULOG_ERROR("Failed to unload module %", module->mName.CStr());
 			mCurrentUnloadingModule = nullptr;
 			return false;
 		}

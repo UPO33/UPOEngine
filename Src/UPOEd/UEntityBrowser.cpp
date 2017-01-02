@@ -61,7 +61,7 @@ namespace UPOEd
 		connect(mTree, &QTreeWidget::customContextMenuRequested, this, &EntityBrowserWidget::EVContextMenuRequested);
 		
 		connect(mTree, &QTreeWidget::itemSelectionChanged, this, [this]() {
-			ULOG_MESSAGE("n %i", mTree->selectedItems().length());
+			ULOG_MESSAGE("n %", mTree->selectedItems().length());
 		});
 
 		connect(mTree, &QTreeWidget::itemClicked, this, [this](QTreeWidgetItem* item, int)
@@ -118,7 +118,7 @@ namespace UPOEd
 			entity = mAttachedWorld->GetRootEntity();
 		
 
-		ULOG_MESSAGE("nchild %i", entity->NumChild());
+		ULOG_MESSAGE("nchild %", entity->NumChild());
 		for (unsigned iChild = 0; iChild < entity->NumChild(); iChild++)
 		{
 			Entity* child = entity->GetChild(iChild);

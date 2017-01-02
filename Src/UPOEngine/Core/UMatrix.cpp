@@ -2,6 +2,8 @@
 #include "../Meta/UMeta.h"
 
 #include <DirectXMath.h>
+// #include <SimpleMath.h>
+// #include <DirectXCollision.h>
 
 namespace UPO
 {
@@ -370,9 +372,18 @@ namespace UPO
 	{
 		return Vec3(mColumn[0].Length3(), mColumn[1].Length3(), mColumn[2].Length3());
 	}
+	void Matrix4::RemoveScaling()
+	{
+		((Vec3*)mColumn + 0)->NormalizeSafe();
+		((Vec3*)mColumn + 1)->NormalizeSafe();
+		((Vec3*)mColumn + 2)->NormalizeSafe();
+	}
+
+
 	bool closeEnough(const float& a, const float& b, const float& epsilon = 0.00001f /*std::numeric_limits<float>::epsilon()*/) {
 		return (epsilon > std::abs(a - b));
 	}
+
 	Vec3 Matrix4::GetRotationEuler() const
 	{
 		return GetRotationEuler0();

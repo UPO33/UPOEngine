@@ -8,13 +8,12 @@
 
 #include "Misc/UMisc.h"
 
-#define ULOGVAR_VEC3(v3) ULOG_WARN("%s %f  %f  %f", #v3, v3.mX, v3.mY, v3.mZ)
-#define ULOGVAR_STR(str) ULOG_WARN("%s %s", #str, str.CStr() ? str.CStr() : "")
 
 #include "Engine/UWorldTimer.h"
 #include "Core/USparseArray.h"
 #include "Core/UMatrix.h"
 #include "core/UDelegate.h"
+#include "core/UPlane.h"
 
 namespace UPO
 {
@@ -53,11 +52,7 @@ namespace UPO
 		}
 		void Print()
 		{
-			ULOG_WARN("---------------------------");
-			ULOGVAR_VEC3(v0);
-			ULOGVAR_VEC3(v1);
-			ULOGVAR_VEC3(v2);
-			ULOGVAR_STR(mStr);
+
 			
 			mMetaClass.Print();
 		}
@@ -80,49 +75,42 @@ namespace UPO
 	class EngineLauncher : public IEngineInterface
 	{
 		GameWindow* mGameWnd = nullptr;
-
+		World*		mStartupWorld = nullptr;
 
 		virtual bool OnInit() override
 		{
 			AssetSys::Get()->CollectAssetEntries();
 
+			GameWindowCreationParam gwcp = InitConfig();
+			mGameWnd = GEngine()->CreateGameWindow(gwcp);
+
+			UASSERT(mGameWnd);
+
+
+			mStartupWorld = GEngine()->CreateWorld();
+
+			mGameWnd->SetWorld(mStartupWorld);
+
 			return true;
 		}
 
-		virtual bool OnTick() override
+		virtual bool OnBeforeWorldsTick() override
 		{
-			return mGameWnd->Tick();
+			return true;
+		}
+		virtual bool OnAfterWorldsTick() override
+		{
+			return true;
 		}
 
 		virtual bool OnRelease() override
 		{
+			GEngine()->DeleteWorld(mStartupWorld);
+			GameWindow::Instances.ForEach([](GameWindow* gw) { GameWindow::Destroy(gw); });
+			mStartupWorld = nullptr;
+			mGameWnd = nullptr;
 			return true;
 		}
-
-		virtual GameWindow* OnCreateGameWindow() override
-		{
-			mGameWnd = GameWindow::New();
-			mGameWnd->Init();
-			return mGameWnd;
-		}
-
-		virtual void OnReleaseGameWindow() override
-		{
-			mGameWnd->Release();
-			mGameWnd = nullptr;
-			delete mGameWnd;
-		}
-
-		virtual void OnAfterDeviceCreation() override
-		{
-// 			UGlobalShader_CompileAll();
-		}
-
-		virtual void OnBeforeRendererRelease() override
-		{
-// 			UGlobalShader_ReleaseAll();
-		}
-
 	};
 
 	//////////////////////////////////////////////////////////////////////////
@@ -136,8 +124,6 @@ namespace UPO
 			String strExePath = argv[0];
 			GApp()->mEnginePath = strExePath.SubStr(0, strExePath.FindRN(PATH_SEPARATOR_CHAR, 1));
 			GApp()->mEngineAssetsPath = GApp()->mEnginePath + PATH_SEPARATOR_CHAR + "Assets";
-
-			ULOG_MESSAGE("engine path %s", gEnginePath.CStr());
 		}
 
 		String argValue;
@@ -148,14 +134,27 @@ namespace UPO
 			argValue = argv[i];
 			if (argValue.BeginsWith(ProjDir))
 			{
-				gProjectPath = argValue.SubStr(ProjDir.Length(), argValue.Length() - ProjDir.Length());
-				ULOG_MESSAGE("Project directory %s", gProjectPath.CStr());
+				GApp()->mProjectPath = argValue.SubStr(ProjDir.Length(), argValue.Length() - ProjDir.Length());
+				GApp()->mProjectAssetsPath = GApp()->mProjectPath + PATH_SEPARATOR_CHAR + "Assets";
 			}
 		}
 
 	}
 
-#define VECPRINT(v) ULOG_WARN(#v "  %f  %f  %f", v.mX, v.mY, v.mZ)
+	struct SVec2
+	{
+		float x, y;
+
+		SVec2() {}
+		SVec2(float, float) {}
+		SVec2(Vec2) {}
+		explicit SVec2(float) { x = y = 0; }
+		
+
+	};
+
+	
+
 
 	float AngleEq(Vec3 a, Vec3 b)
 	{
@@ -164,24 +163,34 @@ namespace UPO
 		m1.MakeRotationXYZ(b);
 		return (Dot(m0.GetColumn(2) , m1.GetColumn(2)));
 	}
-	void DebugTest()
+	void Test(SVec2 f)
 	{
 
-		Matrix4 rotation;
-		for (size_t i = 0; i < 10; i++)
-		{
-			Vec3 ang = Vec3(i * 10, 90 , 0);
-			rotation.MakeRotationXYZ(ang);
-			Vec3 v0 = rotation.GetRotationEuler1();
-			VECPRINT(ang);
-			VECPRINT(v0);
-			ULOG_WARN("eq : %f\n", AngleEq(ang, v0 ));
-		}
+	}
+	float PointPlaneDist(const Vec3& planeNormal, const Vec3& planePoint, const Vec3& point)
+	{
+		return Dot(planeNormal, point - planePoint);
+	}
 
+	void DebugTest()
+	{
+// 		Matrix4 rotation;
+// 		for (size_t i = 0; i < 10; i++)
+// 		{
+// 			Vec3 ang = Vec3(i * 10, 90 , 0);
+// 			rotation.MakeRotationXYZ(ang);
+// 			Vec3 v0 = rotation.GetRotationEuler1();
+// 		}
 
-
-		int tmp = 0;
-		std::cin >> tmp;
+		UPO::Plane p0(Vec3(0, 0, 0), Vec3(0,1,0));
+		Vec3 pos = Vec3(123, -23, 55);
+		Vec3 p1 = p0.ProjectPoint(pos);
+		
+// 		String s = "sdfsd";
+// 		ULOG_MESSAGE("%", s);
+// 		ULOG_WARN("% % %", (p1 - pos).Length(), p0.DotCoord(pos), PointPlaneDist(Vec3(0, 1, 0), Vec3(0, 0, 0), pos) );
+// 		int tmp = 0;
+// 		std::cin >> tmp;
 	}
 
 
@@ -191,20 +200,6 @@ namespace UPO
 
 		DebugTest();
 
-// 		BitArray ba;
-// 		ba.Add(true);
-// 		ba.Add(false);
-// 		ba.Add(false);
-// 		if (ba[0])
-// 		{
-// 			ba[1] = true;
-// 		}
-// 		ba.RemoveAtSwap(0);
-// 		ba.ForEach([](bool b)
-// 		{
-// 			ULOG_MESSAGE("%i", b ? 1 : 0);
-// 		});
-		//////
 
 		ParseCommandLine(argc, argv);
 

@@ -40,7 +40,7 @@ namespace UPOEd
 	
 	void TestObject::MetaPropertyChanged(const PropertyInfo* prp)
 	{
-		ULOG_MESSAGE("%s", prp->GetName().CStr());
+		ULOG_MESSAGE("%", prp->GetName());
 	}
 
 	void TestObject::Tick()
@@ -55,7 +55,7 @@ namespace UPOEd
 	{
 		mStr.mPosition = Vec3(1, 1, 1);
 		mStr.mStringHello = " hello";
-		ULOG_WARN("%d", this);
+		ULOG_WARN("%", this);
 	}
 
 	StructStr::~StructStr()
@@ -65,7 +65,7 @@ namespace UPOEd
 
 	void StructStr::MetaPropertyChanged(const PropertyInfo* prp)
 	{
-		ULOG_MESSAGE("%s", prp->GetName().CStr());
+		ULOG_MESSAGE("%", prp->GetName().CStr());
 	}
 	//////////////////////////////////////////////////////////////////////////
 	void MainWindow::EVOpenProject(bool)

@@ -11,7 +11,7 @@ namespace UPO
 
 	void TestMyStruct::MetaPropertyChanged(const PropertyInfo* prp)
 	{
-		ULOG_MESSAGE("%s", prp->GetName().CStr());
+		ULOG_MESSAGE("%", prp->GetName());
 	}
 
 	UCLASS_BEGIN_IMPL(TestMyStruct2)
@@ -22,7 +22,7 @@ namespace UPO
 
 	void TestMyStruct2::MetaPropertyChanged(const PropertyInfo* prp)
 	{
-		ULOG_MESSAGE("%s", prp->GetName().CStr());
+		ULOG_MESSAGE("%", prp->GetName());
 	}
 
 	UCLASS_BEGIN_IMPL(TestMetaClass)
@@ -103,51 +103,11 @@ namespace UPO
 
 		void TestMetaClass::Print()
 		{
-
-#define ULOGVAR_VEC2(v2) ULOG_WARN("%s %f  %f", #v2, v2.mX, v2.mY)
-#define ULOGVAR_VEC3(v3) ULOG_WARN("%s %f  %f  %f", #v3, v3.mX, v3.mY, v3.mZ)
-#define ULOGVAR_VEC4(v4) ULOG_WARN("%s %f  %f  %f  %f", #v4, v4.mX, v4.mY, v4.mZ, v4.mW)
-#define ULOGVAR_COLOR32(c) ULOG_WARN("%s %p", #c, c.mColor)
-#define ULOGVAR_STR(str) ULOG_WARN("%s %s", #str, str.CStr() ? str.CStr() : "")
-#define ULOGVAR_NAME(name) ULOG_WARN("%s %s", #name, name.CStr() ? name.CStr() : "")
-
-			ULOG_WARN("mBool %d  mChar %d  mUChar %d mShort %d  mUShort %d", mBool, mChar, mUChar, mShort, mUShort);
-			ULOG_WARN("mInt %d, mUInt %d  mInt64 %i64 mUInt64  %ull", mInt, mUInt, mInt64, mUInt64);
-			
-			ULOGVAR_VEC2(mVec2);
-			ULOGVAR_VEC3(mVec3);
-			ULOGVAR_VEC4(mVec4);
-			ULOGVAR_VEC4(mColor);
-			ULOGVAR_COLOR32(mColor32);
-			ULOGVAR_STR(mString);
-			ULOGVAR_NAME(mName);
-			ULOGVAR_VEC3(mMyStruct.mPosition);
-			ULOGVAR_VEC3(mMyStruct.mDirection);
-			ULOGVAR_STR(mMyStruct.mStringHello);
-			ULOGVAR_NAME(mMyStruct.mName);
-			ULOGVAR_VEC3(mMyStruct2.mPosition);
-			ULOGVAR_VEC3(mMyStruct2.mDirection);
-			ULOGVAR_STR(mMyStruct2.mStringHello);
-			ULOGVAR_NAME(mMyStruct2.mName);
-			ULOGVAR_VEC4(mMyStruct2.mColor);
-			ULOG_WARN("mMyStruct2.mEnum %d", mMyStruct2.mEnum);
-			for (size_t i = 0; i < mTArrayVec3.Length(); i++)
-			{
-				ULOGVAR_VEC3(mTArrayVec3[i]);
-			}
-			for (size_t i = 0; i < mTArrayInt.Length(); i++)
-			{
-				ULOG_WARN("mTArray[%d] %d", i, mTArrayInt[i]);
-			}
-			for (size_t i = 0; i < mTArrayString.Length(); i++)
-			{
-				ULOGVAR_STR(mTArrayString[i]);
-			}
 		}
 
 	void TestMetaClass::MetaPropertyChanged(const PropertyInfo* prp)
 	{
-		ULOG_MESSAGE("%s", prp->GetName().CStr());
+		ULOG_MESSAGE("%", prp->GetName());
 	}
 
 };

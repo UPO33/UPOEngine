@@ -18,6 +18,7 @@ namespace UPO
 
 		alignas(64)	volatile unsigned		mHead = 0;
 		volatile bool						mRuning = false;
+		Event								mWaitEvent;
 		alignas(64) volatile unsigned		mTail = 0;
 		alignas(64)	ICMD					mElements[MaxCommand];
 
@@ -25,7 +26,7 @@ namespace UPO
 
 
 		bool IsEmpty() const { return mHead == mTail; }
-		bool IsFull() const { ((mTail + 1) % MaxCommand) == mHead; }
+		bool IsFull() const { return ((mTail + 1) % MaxCommand) == mHead; }
 
 		ICMD* BeginEnqueue()
 		{
@@ -53,6 +54,7 @@ namespace UPO
 		TCommandQueueSPSC(const TCommandQueueSPSC&) = delete;
 		TCommandQueueSPSC& operator = (const TCommandQueueSPSC&) = delete;
 
+		TCommandQueueSPSC() : mWaitEvent(false, false) {}
 
 		template<typename Lambda> void Enqueue(Lambda& proc)
 		{
@@ -70,12 +72,26 @@ namespace UPO
 			new (cmd) NewCMD(proc);
 			EndEnqueue();
 		}
-		template<typename Lambda> TCommandPool& operator << (Lambda& proc)
+		template<typename Lambda> void EnqueueAndWait(Lambda& proc)
 		{
-			Enqueue(proc);
-			return *this;
+			struct alignas(sizeof(void*)) NewCMD : public ICMD
+			{
+				Lambda mProc;
+				TCommandQueueSPSC*	mOwner;
+				NewCMD(Lambda& p, TCommandQueueSPSC* owner) : mProc(p), mOwner(owner) {}
+				~NewCMD()
+				{
+					mProc();
+					mOwner->mWaitEvent.SetSignaled();
+				}
+			};
+			static_assert(sizeof(NewCMD) <= CMDSize, "");
+			ICMD* cmd = BeginEnqueue();
+			new (cmd) NewCMD(proc, this);
+			EndEnqueue();
+			mWaitEvent.Wait();
 		}
-		void RunTillQuite()
+		void RunTillQuit()
 		{
 			mRuning = true;
 
@@ -93,6 +109,7 @@ namespace UPO
 			}
 		}
 		void Quit() { mRuning = false; }
+		volatile bool IsRuning() const { return mRuning; }
 	};
 
 	//////////////////////////////////////////////////////////////////////////

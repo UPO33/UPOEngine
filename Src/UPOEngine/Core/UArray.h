@@ -498,19 +498,18 @@ namespace UPO
 		}
 		template<typename TFunctor> void BubbleSort(TFunctor func)
 		{
-			int len = (int)Length();
-			for (int i = len - 1; i >= 0; i--)
+			int n = ((int)Length()) - 1;
+			for (int i = 0; i < n; i++)
 			{
-				for (int j = 0; j <= i; j++)
+				for (int j = 0; j < n - i; j++)
 				{
-					if(func(mElements[j], mElements[j + 1]))
+					if (func(mElements[j], mElements[j + 1]))
 					{
-						auto temp = mElements[j];
+						auto swap = mElements[j];
 						mElements[j] = mElements[j + 1];
-						mElements[j + 1] = temp;
+						mElements[j + 1] = swap;
 					}
 				}
-
 			}
 		}
 	};

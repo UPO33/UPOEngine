@@ -3,7 +3,7 @@
 #include "../Core/UCore.h"
 #include "../Object/UObject.h"
 #include "../Core/UCommandQueue.h"
-
+#include "../Core/UBound.h"
 
 namespace UPOEd
 {

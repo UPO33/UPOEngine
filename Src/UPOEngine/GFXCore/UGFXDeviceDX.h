@@ -431,10 +431,43 @@ namespace UPO
 	{
 
 	};
-	class GFXSwapChainDX
+	class UAPI GFXSwapChainDX : public GFXSwapChain
 	{
+		friend GFXDeviceDX;
 
+		HWND mHWND = nullptr;
+		IDXGISwapChain* mSwapchain = nullptr;
+
+		ID3D11RenderTargetView* mBackBufferView = nullptr;
+		ID3D11Texture2D* mBackBuffer = nullptr;
+
+		GFXTexture2DDX* mBackBufferTexture2D = nullptr;
+
+		Vec2I mBackBufferSize;
+
+	public:
+		GFXSwapChainDX(const GFXSwapChain_Desc& param)
+		{
+			mDesc = param;
+			Init();
+		}
+		bool Init();
+		//////////////////////////////////////////////////////////////////////////
+		bool Resize(const Vec2I& newSize) override;
+		//////////////////////////////////////////////////////////////////////////
+		bool Release();
+		//////////////////////////////////////////////////////////////////////////
+		bool Present() override;
+		GFXTexture2D* GetBackBuffer() override { return mBackBufferTexture2D; }
+		GameWindow* GetGameWindow() override { return mDesc.mGameWindow; }
+		void GetBackBufferSize(Vec2I& out) override { out = mBackBufferSize; }
+
+		~GFXSwapChainDX()
+		{
+			Release();
+		}
 	};
+
 	//////////////////////////////////////////////////////////////////////////
 	class GFXDeviceDX : public GFXDevice
 	{
@@ -455,7 +488,7 @@ namespace UPO
 		ID3D11DeviceContext* GetDXDeviceContext() const { return mImmediateContext; }
 
 		//////////////////////////////////////////////////////////////////////////
-		GFXSwapChain* CreateSwapChain(GameWindow* wnd) override;
+		GFXSwapChain* CreateSwapChain(const GFXSwapChain_Desc& param) override;
 
 		//////////////////////////////////////////////////////////////////////////
 		virtual void ClearRenderTarget(const GFXTexture2D* renderTarget, const Color& color) override
@@ -944,17 +977,17 @@ namespace UPO
 
 			if (!ShaderMgr::Get()->GetShaderCode(param, byteCodes))
 			{
-				ULOG_ERROR("failed to get shader [%s] bytecodes", param.mFileName);
+				ULOG_ERROR("failed to get shader [%] bytecodes", param.mFileName);
 				return nullptr;
 			}
 
 			GFXShader* ret = CreateShaderFromBytecode(byteCodes, param.mType);
 			if (ret == nullptr)
 			{
-				ULOG_ERROR("failed to create shader; name: [%s], entryPoint: [%s], type: [%s]", param.mFileName, param.mEntryPoint, EnumToStr(param.mType));
+				ULOG_ERROR("failed to create shader; name: [%], entryPoint: [%], type: [%]", param.mFileName, param.mEntryPoint, EnumToStr(param.mType));
 				return nullptr;
 			}
-			ULOG_SUCCESS("shader created. name: [%s], type: [%s]", param.mFileName, EnumToStr(param.mType));
+			ULOG_SUCCESS("shader created. name: [%], type: [%]", param.mFileName, EnumToStr(param.mType));
 			return ret;
 		}
 

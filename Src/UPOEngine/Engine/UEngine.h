@@ -21,7 +21,8 @@ namespace UPO
 	{
 	public:
 		virtual bool OnInit() { return true; }
-		virtual bool OnTick() { return true; }
+		virtual bool OnBeforeWorldsTick() { return true; }
+		virtual bool OnAfterWorldsTick() { return true; }
 		virtual bool OnRelease() { return true; }
 
 		virtual GameWindow* OnCreateGameWindow() { return nullptr; }
@@ -37,10 +38,14 @@ namespace UPO
 
 		World* CreateWorld();
 		void DeleteWorld(World*);
+		
+		GameWindow* CreateGameWindow(const GameWindowCreationParam&);
+		void DeleteGameWindow(GameWindow*);
 
 		static IEngineInterface* Get();
 	};
 
+	inline IEngineInterface* GEngine() { return IEngineInterface::Get(); }
 	
 	UAPI void LaunchEngine(IEngineInterface* itf);
 }

@@ -38,12 +38,12 @@ namespace UPOEd
 				{
 					mPendingCreationAssetItem->AttachAsset(newAsset);
 					mPendingCreationAssetClass = nullptr;
-					ULOG_SUCCESS("asset [%s] created", nameOfNewAsset.CStr());
+					ULOG_SUCCESS("asset [%] created", nameOfNewAsset);
 					return;
 				}
 			}
 
-			ULOG_ERROR("failed to create new asset [%s]", nameOfNewAsset.CStr());
+			ULOG_ERROR("failed to create new asset [%]", nameOfNewAsset);
 			delete mPendingCreationAssetItem;
 			mPendingCreationAssetItem = nullptr;
 			mPendingCreationAssetClass = nullptr;
@@ -263,7 +263,7 @@ namespace UPOEd
 		foreach(const QUrl &url, e->mimeData()->urls()) {
 			QString fileName = url.toLocalFile();
 			qDebug() << "Dropped file:" << fileName;
-			ULOG_MESSAGE("dropped file %s", fileName.toStdString().c_str());
+			ULOG_MESSAGE("dropped file %", fileName.toStdString().c_str());
 			
 		}
 	}
