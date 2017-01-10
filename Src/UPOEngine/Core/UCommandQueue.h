@@ -5,7 +5,7 @@
 
 namespace UPO
 {
-	template<unsigned MaxCommand = 1000> class alignas(UCACHE_ALIGN) TCommandQueueSPSC
+	template<unsigned MaxCommand = 1000> class TCommandQueueSPSC
 	{
 		static const unsigned MaxLambdaSize = sizeof(void*) * 7;
 
