@@ -4,7 +4,7 @@
 #include "UEntityCamera.h"
 #include "UEntityStaticMesh.h"
 #include "UWorldRS.h"
-
+#include "UGameWindow.h"
 #include "../Meta/UMeta.h"
 
 namespace UPO
@@ -45,19 +45,16 @@ namespace UPO
 			size_t rsOffset = entityClass->GetSize() + UCACHE_ALIGN;
 			newEntity = (Entity*)GObjectSys()->NewObject(entityClass, rsOffset + rsSize);
 			newEntity->mRS = (void*)(((size_t)newEntity) + rsOffset);
+
 		}
 		else
 		{
 			newEntity = NewObject<Entity>(entityClass);
 		}
-		
+		UASSERT(newEntity);
+
 		newEntity->Init(param.mParent, this);
 		newEntity->OnConstruct();
-
-		if (rsSize)
-		{
-			newEntity->OnCreateRS();
-		}
 
 		if (mIsPlaying)
 		{
@@ -232,6 +229,12 @@ namespace UPO
 	World* World::Duplicate()
 	{
 		return new World;
+	}
+
+	Canvas* World::GetCanvas() const
+	{
+		if (mMainWindow && mMainWindow->mCanvas) return mMainWindow->mCanvas;
+		return nullptr;
 	}
 
 	void World::PushToPendingAddToRS(Entity* ent)

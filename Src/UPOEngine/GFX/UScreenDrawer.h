@@ -4,6 +4,7 @@
 
 namespace UPO
 {
+#if 0
 	//////////////////////////////////////////////////////////////////////////fwd decl
 	class Renderer;
 
@@ -43,4 +44,5 @@ namespace UPO
 		GFXBlendStateRef				mAlphaBlend = nullptr;
 		GFXConstantBufferRef			mCBPerObject = nullptr;
 	};
+#endif
 };

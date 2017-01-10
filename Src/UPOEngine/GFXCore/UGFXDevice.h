@@ -11,12 +11,23 @@ namespace UPO
 
 	//////////////////////////////////////////////////////////////////////////
 	class GFXDevice;
+	class GFXDepthStencilState;
+	class GFXBlendState;
+	class GFXRasterizerState;
+	class GFXInputLayout;
+	class GFXVertexBuffer;
+	class GFXIndexBuffer;
+	class GFXShaderResourceView;
+	class GFXRenderTargetView;
+	class GFXDepthStencilView;
+	
 
 	//////////////////////////////////////////////////////////////////////////
 	enum class EResourceUsage
 	{
-		EDefault, EImmutable, EDynamic,
+		EDefault, ECPURead, ECPUWrite, ECPUReadWrite, EImmutable,
 	};
+
 	//////////////////////////////////////////////////////////////////////////
 	enum class EIndexBufferType
 	{
@@ -37,39 +48,38 @@ namespace UPO
 	};
 
 	//////////////////////////////////////////////////////////////////////////
-	//TODO
 	enum class EStencilOP
 	{
 		EKeep = 1,
 		EZero = 2,
 		EReplace = 3,
-		ESO_INCR_SAT = 4,
-		ESO_DECR_SAT = 5,
-		ESO_INVERT = 6,
-		ESO_INCR = 7,
-		ESO_DECR = 8
+		EIncClamp = 4,	//Increment the stencil value by 1, and clamp the result.
+		EDecClamp = 5,	//Decrement the stencil value by 1, and clamp the result.
+		EInvert = 6,
+		EInc = 7,
+		EDec = 8
 	};
 	//////////////////////////////////////////////////////////////////////////
-	enum ETextureFilter
+	enum class ETextureFilter
 	{
-		ETF_MIN_MAG_MIP_POINT = 0,
-		ETF_MIN_MAG_POINT_MIP_LINEAR = 0x1,
-		ETF_MIN_POINT_MAG_LINEAR_MIP_POINT = 0x4,
-		ETF_MIN_POINT_MAG_MIP_LINEAR = 0x5,
-		ETF_MIN_LINEAR_MAG_MIP_POINT = 0x10,
-		ETF_MIN_LINEAR_MAG_POINT_MIP_LINEAR = 0x11,
-		ETF_MIN_MAG_LINEAR_MIP_POINT = 0x14,
-		ETF_MIN_MAG_MIP_LINEAR = 0x15,
-		ETF_ANISOTROPIC = 0x55,
-		ETF_COMPARISON_MIN_MAG_MIP_POINT = 0x80,
-		ETF_COMPARISON_MIN_MAG_POINT_MIP_LINEAR = 0x81,
-		ETF_COMPARISON_MIN_POINT_MAG_LINEAR_MIP_POINT = 0x84,
-		ETF_COMPARISON_MIN_POINT_MAG_MIP_LINEAR = 0x85,
-		ETF_COMPARISON_MIN_LINEAR_MAG_MIP_POINT = 0x90,
-		ETF_COMPARISON_MIN_LINEAR_MAG_POINT_MIP_LINEAR = 0x91,
-		ETF_COMPARISON_MIN_MAG_LINEAR_MIP_POINT = 0x94,
-		ETF_COMPARISON_MIN_MAG_MIP_LINEAR = 0x95,
-		ETF_COMPARISON_ANISOTROPIC = 0xd5
+		EMinMagMipPoint = 0,
+		EMinMagPointMipLinear = 0x1,
+		EMinPointMagLinearMipPoint = 0x4,
+		EMinPointMagMipLinear = 0x5,
+		EMinLinearMagMipPoint = 0x10,
+		EMinLinearMagPointMipLinear = 0x11,
+		EMinMagLinearMipPoint = 0x14,
+		EMinMagMipLinear = 0x15,
+		EAnisotropic = 0x55,
+		EComparisonMinMagMipPoint = 0x80,
+		EComparisonMinMagPointMipLinear = 0x81,
+		EComparisonMinPointMagLinearMipPoint = 0x84,
+		EComparisonMinPointMagMipLinear = 0x85,
+		EComparisonMinLinearMagMipPoint = 0x90,
+		EComparisonMinLinearMagPointMipLinear = 0x91,
+		EComparisonMinMagLinearMipPoint = 0x94,
+		EComparisonMinMagMipLinear = 0x95,
+		EComparisonAnisotropic = 0xd5
 	};
 	//////////////////////////////////////////////////////////////////////////
 	enum class ETextureAddress
@@ -87,138 +97,141 @@ namespace UPO
 		EBack = 3
 	};
 	//////////////////////////////////////////////////////////////////////////
-	enum EPrimitiveTopology
+	enum class EPrimitiveTopology
 	{
-		EPT_UNDEFINED = 0,
-		EPT_POINTLIST = 1,
-		EPT_LINELIST = 2,
-		EPT_LINESTRIP = 3,
-		EPT_TRIANGLELIST = 4,
-		EPT_TRIANGLESTRIP = 5,
-		EPT_LINELIST_ADJ = 10,
-		EPT_LINESTRIP_ADJ = 11,
-		EPT_TRIANGLELIST_ADJ = 12,
-		EPT_TRIANGLESTRIP_ADJ = 13,
+		EUndefined = 0,
+
+		EPointList = 1,
+
+		ELineList = 2,
+		ELineStrip = 3,
+		ETriangleList = 4,
+		ETriangleStrip = 5,
+
+		ELineListAdj = 10,
+		ELineStripAdj = 11,
+		ETriangleListAdj = 12,
+		ETriangleStripAdj = 13,
 	};
 	//////////////////////////////////////////////////////////////////////////
-	enum EPixelFormat
+	enum class EPixelFormat
 	{
-		EPT_UNKNOWN = 0,
+		UNKNOWN = 0,
 
-		EPT_R32G32B32A32_TYPELESS = 1,
-		EPT_R32G32B32A32_FLOAT = 2,
-		EPT_R32G32B32A32_UINT = 3,
-		EPT_R32G32B32A32_SINT = 4,
+		R32G32B32A32_TYPELESS = 1,
+		R32G32B32A32_FLOAT = 2,
+		R32G32B32A32_UINT = 3,
+		R32G32B32A32_SINT = 4,
 
-		EPT_R32G32B32_TYPELESS = 5,
-		EPT_R32G32B32_FLOAT = 6,
-		EPT_R32G32B32_UINT = 7,
-		EPT_R32G32B32_SINT = 8,
+		R32G32B32_TYPELESS = 5,
+		R32G32B32_FLOAT = 6,
+		R32G32B32_UINT = 7,
+		R32G32B32_SINT = 8,
 
-		EPT_R16G16B16A16_TYPELESS = 9,
-		EPT_R16G16B16A16_FLOAT = 10,
-		EPT_R16G16B16A16_UNORM = 11,
-		EPT_R16G16B16A16_UINT = 12,
-		EPT_R16G16B16A16_SNORM = 13,
-		EPT_R16G16B16A16_SINT = 14,
+		R16G16B16A16_TYPELESS = 9,
+		R16G16B16A16_FLOAT = 10,
+		R16G16B16A16_UNORM = 11,
+		R16G16B16A16_UINT = 12,
+		R16G16B16A16_SNORM = 13,
+		R16G16B16A16_SINT = 14,
 
-		EPT_R32G32_TYPELESS = 15,
-		EPT_R32G32_FLOAT = 16,
-		EPT_R32G32_UINT = 17,
-		EPT_R32G32_SINT = 18,
+		R32G32_TYPELESS = 15,
+		R32G32_FLOAT = 16,
+		R32G32_UINT = 17,
+		R32G32_SINT = 18,
 
-		EPT_R32G8X24_TYPELESS = 19,
-		EPT_D32_FLOAT_S8X24_UINT = 20,
-		EPT_R32_FLOAT_X8X24_TYPELESS = 21,
-		EPT_X32_TYPELESS_G8X24_UINT = 22,
-		EPT_R10G10B10A2_TYPELESS = 23,
-		EPT_R10G10B10A2_UNORM = 24,
-		EPT_R10G10B10A2_UINT = 25,
-		EPT_R11G11B10_FLOAT = 26,
+		R32G8X24_TYPELESS = 19,
+		D32_FLOAT_S8X24_UINT = 20,
+		R32_FLOAT_X8X24_TYPELESS = 21,
+		X32_TYPELESS_G8X24_UINT = 22,
+		R10G10B10A2_TYPELESS = 23,
+		R10G10B10A2_UNORM = 24,
+		R10G10B10A2_UINT = 25,
+		R11G11B10_FLOAT = 26,
 
-		EPT_R8G8B8A8_TYPELESS = 27,
-		EPT_R8G8B8A8_UNORM = 28,
-		EPT_R8G8B8A8_UNORM_SRGB = 29,
-		EPT_R8G8B8A8_UINT = 30,
-		EPT_R8G8B8A8_SNORM = 31,
-		EPT_R8G8B8A8_SINT = 32,
+		R8G8B8A8_TYPELESS = 27,
+		R8G8B8A8_UNORM = 28,
+		R8G8B8A8_UNORM_SRGB = 29,
+		R8G8B8A8_UINT = 30,
+		R8G8B8A8_SNORM = 31,
+		R8G8B8A8_SINT = 32,
 
-		EPT_R16G16_TYPELESS = 33,
-		EPT_R16G16_FLOAT = 34,
-		EPT_R16G16_UNORM = 35,
-		EPT_R16G16_UINT = 36,
-		EPT_R16G16_SNORM = 37,
-		EPT_R16G16_SINT = 38,
+		R16G16_TYPELESS = 33,
+		R16G16_FLOAT = 34,
+		R16G16_UNORM = 35,
+		R16G16_UINT = 36,
+		R16G16_SNORM = 37,
+		R16G16_SINT = 38,
 
-		EPT_R32_TYPELESS = 39,
-		EPT_D32_FLOAT = 40,	//valid for depth
-		EPT_R32_FLOAT = 41,
-		EPT_R32_UINT = 42,
-		EPT_R32_SINT = 43,
+		R32_TYPELESS = 39,
+		D32_FLOAT = 40,	//valid for depth
+		R32_FLOAT = 41,
+		R32_UINT = 42,
+		R32_SINT = 43,
 
-		EPT_R24G8_TYPELESS = 44,
-		EPT_D24_UNORM_S8_UINT = 45,	//valid for depth
-		EPT_R24_UNORM_X8_TYPELESS = 46,
-		EPT_X24_TYPELESS_G8_UINT = 47,
+		R24G8_TYPELESS = 44,
+		D24_UNORM_S8_UINT = 45,	//valid for depth
+		R24_UNORM_X8_TYPELESS = 46,
+		X24_TYPELESS_G8_UINT = 47,
 
-		EPT_R8G8_TYPELESS = 48,
-		EPT_R8G8_UNORM = 49,
-		EPT_R8G8_UINT = 50,
-		EPT_R8G8_SNORM = 51,
-		EPT_R8G8_SINT = 52,
+		R8G8_TYPELESS = 48,
+		R8G8_UNORM = 49,
+		R8G8_UINT = 50,
+		R8G8_SNORM = 51,
+		R8G8_SINT = 52,
 
-		EPT_R16_TYPELESS = 53,
-		EPT_R16_FLOAT = 54,
-		EPT_D16_UNORM = 55, //valid for depth
-		EPT_R16_UNORM = 56,
-		EPT_R16_UINT = 57,
-		EPT_R16_SNORM = 58,
-		EPT_R16_SINT = 59,
+		R16_TYPELESS = 53,
+		R16_FLOAT = 54,
+		D16_UNORM = 55, //valid for depth
+		R16_UNORM = 56,
+		R16_UINT = 57,
+		R16_SNORM = 58,
+		R16_SINT = 59,
 
-		EPT_R8_TYPELESS = 60,
-		EPT_R8_UNORM = 61,
-		EPT_R8_UINT = 62,
-		EPT_R8_SNORM = 63,
-		EPT_R8_SINT = 64,
+		R8_TYPELESS = 60,
+		R8_UNORM = 61,
+		R8_UINT = 62,
+		R8_SNORM = 63,
+		R8_SINT = 64,
 
-		EPT_A8_UNORM = 65,
-		EPT_R1_UNORM = 66,
-		EPT_R9G9B9E5_SHAREDEXP = 67,
-		EPT_R8G8_B8G8_UNORM = 68,
-		EPT_G8R8_G8B8_UNORM = 69,
-		EPT_BC1_TYPELESS = 70,
-		EPT_BC1_UNORM = 71,
-		EPT_BC1_UNORM_SRGB = 72,
-		EPT_BC2_TYPELESS = 73,
-		EPT_BC2_UNORM = 74,
-		EPT_BC2_UNORM_SRGB = 75,
-		EPT_BC3_TYPELESS = 76,
-		EPT_BC3_UNORM = 77,
-		EPT_BC3_UNORM_SRGB = 78,
-		EPT_BC4_TYPELESS = 79,
-		EPT_BC4_UNORM = 80,
-		EPT_BC4_SNORM = 81,
-		EPT_BC5_TYPELESS = 82,
-		EPT_BC5_UNORM = 83,
-		EPT_BC5_SNORM = 84,
-		EPT_B5G6R5_UNORM = 85,
-		EPT_B5G5R5A1_UNORM = 86,
-		EPT_B8G8R8A8_UNORM = 87,
-		EPT_B8G8R8X8_UNORM = 88,
-		EPT_R10G10B10_XR_BIAS_A2_UNORM = 89,
+		A8_UNORM = 65,
+		R1_UNORM = 66,
+		R9G9B9E5_SHAREDEXP = 67,
+		R8G8_B8G8_UNORM = 68,
+		G8R8_G8B8_UNORM = 69,
+		BC1_TYPELESS = 70,
+		BC1_UNORM = 71,
+		BC1_UNORM_SRGB = 72,
+		BC2_TYPELESS = 73,
+		BC2_UNORM = 74,
+		BC2_UNORM_SRGB = 75,
+		BC3_TYPELESS = 76,
+		BC3_UNORM = 77,
+		BC3_UNORM_SRGB = 78,
+		BC4_TYPELESS = 79,
+		BC4_UNORM = 80,
+		BC4_SNORM = 81,
+		BC5_TYPELESS = 82,
+		BC5_UNORM = 83,
+		BC5_SNORM = 84,
+		B5G6R5_UNORM = 85,
+		B5G5R5A1_UNORM = 86,
+		B8G8R8A8_UNORM = 87,
+		B8G8R8X8_UNORM = 88,
+		R10G10B10_XR_BIAS_A2_UNORM = 89,
 
-		EPT_B8G8R8A8_TYPELESS = 90,
-		EPT_B8G8R8A8_UNORM_SRGB = 91,
-		EPT_B8G8R8X8_TYPELESS = 92,
-		EPT_B8G8R8X8_UNORM_SRGB = 93,
+		B8G8R8A8_TYPELESS = 90,
+		B8G8R8A8_UNORM_SRGB = 91,
+		B8G8R8X8_TYPELESS = 92,
+		B8G8R8X8_UNORM_SRGB = 93,
 
-		EPT_BC6H_TYPELESS = 94,
-		EPT_BC6H_UF16 = 95,
-		EPT_BC6H_SF16 = 96,
-		EPT_BC7_TYPELESS = 97,
-		EPT_BC7_UNORM = 98,
-		EPT_BC7_UNORM_SRGB = 99,
-		EPT_FORCE_UINT = 0xffffffff
+		BC6H_TYPELESS = 94,
+		BC6H_UF16 = 95,
+		BC6H_SF16 = 96,
+		BC7_TYPELESS = 97,
+		BC7_UNORM = 98,
+		BC7_UNORM_SRGB = 99,
+		FORCE_UINT = 0xffffffff
 	};
 	//////////////////////////////////////////////////////////////////////////
 	enum class EShaderType
@@ -239,7 +252,9 @@ namespace UPO
 		ERead = 1,
 		EWrite = 2,
 		EReadWrite = 3,
-		EWriteDiscard = 4,
+		//indicates that the app doesn't need to keep the old data in the buffer. If the GPU is still using the buffer when
+		//you call, the runtime returns a pointer to a new region of memory instead of the old buffer data. 
+		EWriteDiscard = 4,	
 		EWriteNoOverwrite = 5
 	};
 	//////////////////////////////////////////////////////////////////////////
@@ -257,9 +272,8 @@ namespace UPO
 		EDstColor = 9,
 		EInvDstColor = 10,
 
-
-		EBlendFactor = 14,
-		EInvBlendFactor = 15,
+		EFactor = 14,
+		EInvFactor = 15,
 	};
 	//////////////////////////////////////////////////////////////////////////
 	enum class EBlendOP
@@ -283,32 +297,36 @@ namespace UPO
 	};
 	enum class EVertexFormat
 	{
-		EUnknown, EFloat1, EFloat2, EFloat3, EFloat4,
+		EUnknown, EFloat1, EFloat2, EFloat3, EFloat4, EColor32
 	};
 	//////////////////////////////////////////////////////////////////////////
-	struct GFXResource_Desc
+	struct GFXResourceDesc
 	{
-		bool				mCPUReadAccess = false;
-		bool				mCPUWriteAccess = false;
-	};
-	//////////////////////////////////////////////////////////////////////////
-	struct GFXIndexBuffer_Desc : GFXResource_Desc
-	{
-		void*				mInitialData = nullptr;
-		size_t				mSize = 0;
-		EResourceUsage		mUsage = EResourceUsage::EDefault;
-		EIndexBufferType	mType = EIndexBufferType::EUShort;
 
 	};
 	//////////////////////////////////////////////////////////////////////////
-	struct GFXVertexBuffer_Desc : GFXResource_Desc
+	struct GFXIndexBufferDesc : GFXResourceDesc
+	{
+		void*				mInitialData = nullptr;
+		size_t				mSize = 0;
+		EIndexBufferType	mType = EIndexBufferType::EUShort;
+		bool				mImmutable = false;
+		bool				mDynamic = false;
+		bool				mCPUReadAccess = false;
+
+	};
+	//////////////////////////////////////////////////////////////////////////
+	struct GFXVertexBufferDesc : GFXResourceDesc
 	{
 		void*				mInitialData = nullptr;
 		size_t				mSize = 0;
 		EResourceUsage		mUsage = EResourceUsage::EDefault;
+		bool				mImmutable = false;
+		bool				mDynamic = false;
+		bool				mCPUReadAccess = false;
 	};
 	//////////////////////////////////////////////////////////////////////////
-	struct GFXDepthStencilState_Desc
+	struct UAPI GFXDepthStencilStateDesc
 	{
 		bool				mDepthEnable = true;
 		bool				mDepthWriteAll = true;
@@ -327,13 +345,17 @@ namespace UPO
 		EStencilOP			mBackFaceStencilDepthFailOp = EStencilOP::EKeep;
 		EStencilOP			mBackFaceStencilPassOp = EStencilOP::EKeep;
 		EComparisonFunc		mBackFaceStencilFunc = EComparisonFunc::EAlways;
+
+
+		bool operator == (const GFXDepthStencilStateDesc& other) const;
+		bool operator != (const GFXDepthStencilStateDesc& other) const { return !this->operator==(other); }
 	};
 	
 	//////////////////////////////////////////////////////////////////////////
-	struct GFXSamplerState_Desc
+	struct UAPI GFXSamplerStateDesc
 	{
 		//Filtering method to use when sampling a texture 
-		ETextureFilter		mFilter = ETextureFilter::ETF_MIN_MAG_MIP_LINEAR;
+		ETextureFilter		mFilter = ETextureFilter::EMinLinearMagPointMipLinear;
 		ETextureAddress		mAddressU = ETextureAddress::EClamp;
 		ETextureAddress		mAddressV = ETextureAddress::EClamp;
 		ETextureAddress		mAddressW = ETextureAddress::EClamp;
@@ -353,9 +375,12 @@ namespace UPO
 		//and any level higher than that is less detailed. This value must be greater than or equal to MinLOD.
 		//To have no upper limit on LOD set this to a large value such as D3D11_FLOAT32_MAX.
 		float				mMaxLOD = FLT_MAX;
+
+		bool operator == (const GFXSamplerStateDesc& other) const;
+		bool operator != (const GFXSamplerStateDesc& other) const { return !this->operator==(other); }
 	};
 	//////////////////////////////////////////////////////////////////////////
-	struct GFXRasterizerState_Desc
+	struct UAPI GFXRasterizerStateDesc
 	{
 		bool			mWireframe = false;
 		//Indicates triangles facing the specified direction are not drawn
@@ -370,6 +395,9 @@ namespace UPO
 		bool			mScissorEnable = false;
 		bool			mMultisampleEnable = false;
 		bool			mAntialiasedLineEnable = false;
+
+		bool operator == (const GFXRasterizerStateDesc& other) const;
+		bool operator != (const GFXRasterizerStateDesc& other) const { return !this->operator ==(other); }
 	};
 
 
@@ -388,10 +416,11 @@ namespace UPO
 		finalColor.rgb = newAlpha * newColor + (1 - newAlpha) * oldColor;
 		finalColor.a = newAlpha.a;
 	************************************************************************/
-	struct GFXBlendState_Desc
+	struct UAPI GFXBlendStateDesc
 	{
-		bool mAlphaToCoverageEnable = false;
-		bool mIndependentBlendEnable = false;
+		bool mAlphaToCoverage = false;
+		//true enables independent blending. If set to false, only the mRenderTargets[0] members are used, rest are ignored. 
+		bool mIndependentBlend = false;
 		struct
 		{
 			bool mBlendEnable = false;
@@ -403,61 +432,113 @@ namespace UPO
 			EBlendOP mBlendOpAlpha = EBlendOP::EAdd;
 			EBlendColorWrite mWriteMask = EBlendColorWrite::ECW_ENABLE_ALL;
 
+			void MakeAlphaBlending()
+			{
+				//src is pixel shader output
+				//dest is current value on render target
+				mBlendEnable = true;
+
+				mSrcBlend = EBlendFactor::ESrcAlpha;
+				mBlendOp = EBlendOP::EAdd;
+				mDestBlend = EBlendFactor::EInvSrcAlpha;
+
+				mSrcBlendAlpha = EBlendFactor::EOne;
+				mBlendOpAlpha = EBlendOP::EAdd;
+				mDestBlendAlpha = EBlendFactor::EZero;
+			}
+
 		} mRenderTargets[GFX_MAX_RENDER_TARGET];
+
+		bool operator == (const GFXBlendStateDesc& other) const;
+		bool operator != (const GFXBlendStateDesc& other) const { return !this->operator==(other); }
 	};
 
 	//////////////////////////////////////////////////////////////////////////
-	struct GFXConstantBuffer_Desc
+	struct GFXConstantBufferDesc
 	{
 		void*				mInitialData = nullptr;
 		size_t				mSize = 0;	//should be multiple of 16
-		EResourceUsage		mUsage = EResourceUsage::EDynamic;
+		EResourceUsage		mUsage = EResourceUsage::ECPUWrite;
 	};
 
 
 
-	enum class EGFXResource
-	{
-		EResource,
-		EShader,
-		ERasterizerState,
-	};
+
 	//////////////////////////////////////////////////////////////////////////
-	class GFXResource : public RefCountable
+	class UAPI GFXResource : public RefCountable
 	{
-		void* mNativeHandle = nullptr;
-		EGFXResource mType = EGFXResource::EResource;
-		
-
 	public:
-		virtual ~GFXResource(){}
+		void*	mNativeHandle;
+		Name	mDebugName;
+
+		GFXResource(void* nativeHandle, Name debugName = nullptr);
+		virtual ~GFXResource();
+
 		template<typename T> T* As() const { return dynamic_cast<T*>(const_cast<GFXResource*>(this)); }
 		template<typename T> bool Is() const { return dynamic_cast<T*>(this) != nullptr; }
-		EGFXResource GetType() const { return mType; }
-		template<typename T> T& HandleAs() { return *(reinterpret_cast<T*>(mNativeHandle)); }
+		template<typename T> T& HandleAs() { return *((T*)(&mNativeHandle)); }
+
+		operator bool () const { return mNativeHandle != nullptr; }
 	};
+
+
 	//////////////////////////////////////////////////////////////////////////
 	typedef unsigned long long ShaderHash_t;
 	//////////////////////////////////////////////////////////////////////////
 	class GFXShader : public GFXResource
 	{
 	protected:
-		EShaderType mType;
-		ShaderHash_t mHash;
+		EShaderType		mType;
 	public:
+		GFXShader(void* handle, EShaderType type, Name debugName) : GFXResource(handle, debugName) , mType(type) {}
 		EShaderType GetType() const { return mType; }
-		ShaderHash_t GetHash() const { return mHash; }
 	};
 
 	typedef TSmartPtr<GFXShader> GFXShaderRef;
 
+	//////////////////////////////////////////////////////////////////////////
+	class GFXVertexShader : public GFXShader 
+	{ 
+	public:
+		GFXVertexShader(void* handle, Name debugName) : GFXShader(handle, EShaderType::EVertex, debugName) {}
 
-	class GFXVertexShader : public GFXShader { public: static const EShaderType EnumType = EShaderType::EVertex; };
-	class GFXHullShader : public GFXShader { public: static const EShaderType EnumType = EShaderType::EHull; };
-	class GFXDomainShader : public GFXShader { public: static const EShaderType EnumType = EShaderType::EDomain; };
-	class GFXGeometryShader : public GFXShader { public: static const EShaderType EnumType = EShaderType::EGeometry; };
-	class GFXPixelShader : public GFXShader { public: static const EShaderType EnumType = EShaderType::EPixel; };
-	class GFXComputeShader : public GFXShader { public: static const EShaderType EnumType = EShaderType::ECompute; };
+		static const EShaderType EnumType = EShaderType::EVertex;
+	};
+	//////////////////////////////////////////////////////////////////////////
+	class GFXHullShader : public GFXShader 
+	{
+	public:
+		GFXHullShader(void* handle, Name debugName) : GFXShader(handle, EShaderType::EHull, debugName) {}
+		static const EShaderType EnumType = EShaderType::EHull;
+	};
+	//////////////////////////////////////////////////////////////////////////
+	class GFXDomainShader : public GFXShader 
+	{ 
+	public:
+		GFXDomainShader(void* handle, Name debugName) : GFXShader(handle, EShaderType::EDomain, debugName) {}
+		static const EShaderType EnumType = EShaderType::EDomain;
+	};
+	//////////////////////////////////////////////////////////////////////////
+	class GFXGeometryShader : public GFXShader 
+	{
+	public:
+		GFXGeometryShader(void* handle, Name debugName) : GFXShader(handle, EShaderType::EGeometry, debugName) {}
+		static const EShaderType EnumType = EShaderType::EGeometry;
+	};
+	//////////////////////////////////////////////////////////////////////////
+	class GFXPixelShader : public GFXShader 
+	{
+	public: 
+		GFXPixelShader(void* handle, Name debugName) : GFXShader(handle, EShaderType::EPixel, debugName) {}
+		static const EShaderType EnumType = EShaderType::EPixel;
+	};
+	//////////////////////////////////////////////////////////////////////////
+	class GFXComputeShader : public GFXShader 
+	{
+	public: 
+		GFXComputeShader(void* handle, Name debugName) : GFXShader(handle, EShaderType::ECompute, debugName) {}
+		static const EShaderType EnumType = EShaderType::ECompute; 
+	};
 
 
 	typedef TSmartPtr<GFXVertexShader> GFXVertexShaderRef;
@@ -519,9 +600,12 @@ namespace UPO
 	//////////////////////////////////////////////////////////////////////////
 	class GFXRasterizerState : public GFXResource
 	{
+	protected:
+		GFXRasterizerStateDesc mDesc;
 	public:
-		GFXRasterizerState_Desc mDesc;
-		const GFXRasterizerState_Desc& GetDesc() const { return mDesc; }
+		GFXRasterizerState(void* handle, Name debugName = nullptr) : GFXResource(handle, debugName) {}
+
+		const GFXRasterizerStateDesc& GetDesc() const { return mDesc; }
 	};
 	typedef TSmartPtr<GFXRasterizerState> GFXRasterizerStateRef;
 
@@ -529,9 +613,10 @@ namespace UPO
 	class GFXSamplerState : public GFXResource
 	{
 	protected:
-		GFXSamplerState_Desc mDesc;
+		GFXSamplerStateDesc mDesc;
 	public:
-		const GFXSamplerState_Desc& GetDesc() const { return mDesc; }
+		GFXSamplerState(void* handle, Name debugName = nullptr) : GFXResource(handle, debugName) {}
+		const GFXSamplerStateDesc& GetDesc() const { return mDesc; }
 	};
 	typedef TSmartPtr<GFXSamplerState> GFXSamplerStateRef;
 
@@ -539,10 +624,7 @@ namespace UPO
 	class GFXBuffer : public GFXResource
 	{
 	public:
-		virtual void* Map(EMapFlag) = 0;
-		virtual void Unmap() = 0;
-
-		template<typename T> T* Map(EMapFlag flag) { return (T*)Map(flag); }
+		GFXBuffer(void* handle, Name debugName = nullptr) : GFXResource(handle, debugName) {}
 	};
 	typedef TSmartPtr<GFXBuffer> GFXBufferRef;
 
@@ -550,9 +632,10 @@ namespace UPO
 	class GFXVertexBuffer : public GFXBuffer
 	{
 	protected:
-		GFXVertexBuffer_Desc	mDesc;
+		GFXVertexBufferDesc	mDesc;
 	public:
-		const GFXVertexBuffer_Desc& GetDesc() const { return mDesc; }
+		GFXVertexBuffer(void* handle, Name debugName = nullptr) : GFXBuffer(handle, debugName) {}
+		const GFXVertexBufferDesc& GetDesc() const { return mDesc; }
 	};
 	typedef TSmartPtr<GFXVertexBuffer> GFXVertexBufferRef;
 
@@ -560,9 +643,10 @@ namespace UPO
 	class GFXIndexBuffer : public GFXBuffer
 	{
 	protected:
-		GFXIndexBuffer_Desc		mDesc;
+		GFXIndexBufferDesc		mDesc;
 	public:
-		const GFXIndexBuffer_Desc& GetDesc() const { return mDesc; }
+		GFXIndexBuffer(void* handle, Name debugName = nullptr) : GFXBuffer(handle, debugName) {}
+		const GFXIndexBufferDesc& GetDesc() const { return mDesc; }
 	};
 	typedef TSmartPtr<GFXIndexBuffer> GFXIndexBufferRef;
 
@@ -570,9 +654,10 @@ namespace UPO
 	class GFXConstantBuffer : public GFXBuffer
 	{
 	protected:
-		GFXConstantBuffer_Desc mDesc;
+		GFXConstantBufferDesc mDesc;
 	public:
-		const GFXConstantBuffer_Desc& GetDesc() const { return mDesc; }
+		GFXConstantBuffer(void* handle, Name debugName = nullptr) : GFXBuffer(handle, debugName) {}
+		const GFXConstantBufferDesc& GetDesc() const { return mDesc; }
 	};
 	typedef TSmartPtr<GFXConstantBuffer> GFXConstantBufferRef;
 
@@ -580,32 +665,62 @@ namespace UPO
 	class GFXDepthStencilState : public GFXResource
 	{
 	protected:
-		GFXDepthStencilState_Desc	mDesc;
+		GFXDepthStencilStateDesc	mDesc;
 	public:
-		const GFXDepthStencilState_Desc& GetDesc() const { return mDesc; }
+		GFXDepthStencilState(void* handle, Name debugName = nullptr) : GFXResource(handle, debugName) {}
+
+		const GFXDepthStencilStateDesc& GetDesc() const { return mDesc; }
 	};
 	typedef TSmartPtr<GFXDepthStencilState> GFXDepthStencilStateRef;
 
+
+	enum ETextureFlag
+	{
+		EDefault = 0,
+		EShaderResourceView = 1,
+		ERenderTargatable = 2,
+		EDepthStencil = 4,
+		ECPURead = 8,
+		ECPUWrite = 16,
+		EImmutable = 32,
+	};
+	enum BufferFlag
+	{
+
+	};
 	//////////////////////////////////////////////////////////////////////////
-	struct GFXTexture2D_Desc
+	struct GFXTexture2DDesc
 	{
 		void*			mInitialData = nullptr;
 		unsigned		mWidth = 0;
 		unsigned		mHeight = 0;
-		EPixelFormat	mFormat = EPixelFormat::EPT_UNKNOWN;
+		EPixelFormat	mFormat = EPixelFormat::UNKNOWN;
+		//Use 1 for a multisampled texture; or 0 to generate a full set of subtextures.
 		unsigned		mMipLevels = 1;	//currently only 1 mipLevel is implemented
-		bool			mResourceView = true;
-		bool			mRenderTargetable = false;
-		bool			mDepthStencil = false;
-		EResourceUsage	mUsage = EResourceUsage::EDefault;
+		unsigned		mSampleCount = 1;
+// 		bool			mShaderResourceView = true;
+// 		bool			mRenderTargetView = false;
+// 		bool			mDepthStencilView = false;
+// 		EResourceUsage	mUsage = EResourceUsage::EDefault;
+		Flag		mFlag = 0; //ETextureFlag
 	};
+
 	//////////////////////////////////////////////////////////////////////////
 	class GFXTexture2D : public GFXResource
 	{
 	protected:
-		GFXTexture2D_Desc mDesc;
+		GFXTexture2DDesc mDesc;
+		GFXShaderResourceView*	mShaderResourceView = nullptr;
+		GFXRenderTargetView*	mRenderTargetView = nullptr;
+		GFXDepthStencilView*	mDepthStencilView = nullptr;
 	public:
-		const GFXTexture2D_Desc& GetDesc() const { return mDesc; }
+		GFXShaderResourceView* GetShaderResourceView() { return mShaderResourceView; }
+		GFXRenderTargetView* GetRenderTargetView() { return mRenderTargetView; }
+		GFXDepthStencilView* GetDepthStencilView() { return mDepthStencilView; }
+
+		GFXTexture2D(void* handle , Name debugName = nullptr) : GFXResource(handle, debugName) {}
+		const GFXTexture2DDesc& GetDesc() const { return mDesc; }
+
 	};
 	typedef TSmartPtr<GFXTexture2D> GFXTexture2DRef;
 
@@ -631,13 +746,22 @@ namespace UPO
 		}
 	};
 	//////////////////////////////////////////////////////////////////////////
-	struct GFXInputLayoutDesc
+	struct UAPI GFXInputLayoutDesc
 	{
 		static const unsigned MAX_ELEMENT = 32;
 
 		GFXVertexShader* mVertexShader;
 		GFXVertexElementDesc mElements[MAX_ELEMENT];
 		
+		unsigned GetNumElement() const
+		{
+			for (unsigned i = 0; i < MAX_ELEMENT; i++)
+				if(mElements[i].mName == nullptr) return i;
+
+			return MAX_ELEMENT;
+		}
+		bool operator == (const GFXInputLayoutDesc& other) const;
+		bool operator != (const GFXInputLayoutDesc& other) const { return !this->operator==(other); }
 	};
 	//////////////////////////////////////////////////////////////////////////
 	class GFXInputLayout : public GFXResource
@@ -645,6 +769,7 @@ namespace UPO
 	protected:
 		GFXInputLayoutDesc mDesc;
 	public:
+		GFXInputLayout(void* handle, Name debugName) : GFXResource(handle, debugName) {}
 		const GFXInputLayoutDesc& GetDesc() const { return mDesc; }
 	};
 	typedef TSmartPtr<GFXInputLayout> GFXInputLayoutRef;
@@ -656,16 +781,15 @@ namespace UPO
 	class GFXBlendState : public GFXResource
 	{
 	protected:
-		GFXBlendState_Desc mDesc;
+		GFXBlendStateDesc mDesc;
 	public:
-		const GFXBlendState_Desc& GetDesc() const { return mDesc; }
+		GFXBlendState(void* handle, Name debugName = nullptr) : GFXResource(handle, debugName) {}
+
+		const GFXBlendStateDesc& GetDesc() const { return mDesc; }
 	};
 	typedef TSmartPtr<GFXBlendState> GFXBlendStateRef;
 
-	//////////////////////////////////////////////////////////////////////////
-	class GFXProgram : public GFXResource
-	{
-	};
+
 	//////////////////////////////////////////////////////////////////////////
 	struct GFXShaderBound
 	{
@@ -696,70 +820,177 @@ namespace UPO
 		GFXBlendState* mBlendState = nullptr;
 		GFXDepthStencilState* mDepthStencilState = nullptr;
 	};
-	class GFXPipleLine : public GFXResource
-	{
 
-	};
-	struct GFXSwapChain_Desc
+	struct GFXSwapChainDesc
 	{
-		bool	mVSyncEnable;
-		int		mSampleCount;
-		GameWindow*	mGameWindow;
+		bool	mVSyncEnable = true;
+		bool	mFullScreem = false;
+		int		mSampleCount = 1;
+		GameWindow*	mGameWindow = nullptr;
 
-		GFXSwapChain_Desc() : mVSyncEnable(false), mSampleCount(1), mGameWindow(nullptr) {}
-		GFXSwapChain_Desc(InitConfig)
+		GFXSwapChainDesc(){}
+
+		GFXSwapChainDesc(InitConfig)
 		{
 			mVSyncEnable = GEngineConfig()->AsBool("GFX.VSync");
 			mSampleCount = Max(GEngineConfig()->AsNumber("GFX.MultiSample"), 1.0f);
+			mFullScreem = GEngineConfig()->AsBool("Window.FullScreen", false);
 		}
 	};
+
+	
+
+	//////////////////////////////////////////////////////////////////////////
+	class GFXShaderResourceView : public GFXResource
+	{
+	public:
+		GFXShaderResourceView(void* handle, Name debugName = nullptr) : GFXResource(handle, debugName) {}
+	};
+	//////////////////////////////////////////////////////////////////////////
+	class GFXRenderTargetView : public GFXResource
+	{
+	public:
+		GFXRenderTargetView(void* handle, Name debugName = nullptr) : GFXResource(handle, debugName) {}
+	};
+	//////////////////////////////////////////////////////////////////////////
+	class GFXDepthStencilView : public GFXResource
+	{
+	public:
+		GFXDepthStencilView(void* handle, Name debugName = nullptr) : GFXResource(handle, debugName) {}
+	};
+
+	UAPI GFXResource* UGetGFXResourceByNativeHandle(void* nativeHandle);
 
 	//////////////////////////////////////////////////////////////////////////
 	class UAPI GFXSwapChain : public GFXResource
 	{
 	protected:
-		GFXSwapChain_Desc mDesc;
+		GFXSwapChainDesc mDesc;
+		Vec2I mBackBufferSize;
 	public:
-		const GFXSwapChain_Desc& GetDesc() { return mDesc; }
+		GFXSwapChain(void* handle, Name debugName) : GFXResource(handle, debugName) {}
+
+		const GFXSwapChainDesc& GetDesc() { return mDesc; }
 
 		virtual bool Present() { return false; };
-		virtual GFXTexture2D* GetBackBuffer() { return nullptr; }
-		virtual void GetBackBufferSize(Vec2I& out) {}
+		virtual GFXRenderTargetView* GetBackBufferView() { return nullptr; }
+		virtual void GetBackBufferSize(Vec2I& out) { out = mBackBufferSize; }
 		virtual bool Resize(const Vec2I& newSize) { return false; }
-		virtual GameWindow* GetGameWindow() { return nullptr; }
+		virtual GameWindow* GetWindow() { return nullptr; }
+	};
+	//////////////////////////////////////////////////////////////////////////
+	template<class TGFXResource> class TGFXResourceHandle
+	{
+	public:
+		void* mNativeHandle;
+
+		TGFXResourceHandle() : mNativeHandle(nullptr) {}
+		TGFXResourceHandle(const TGFXResource* resource)
+		{
+			mNativeHandle = resource ? resource->mNativeHandle : nullptr;
+		}
+		~TGFXResourceHandle() { mNativeHandle = nullptr; }
+
+		TGFXResourceHandle& operator = (const TGFXResource* resource)
+		{
+			mNativeHandle = resource->mNativeHandle;
+			return *this;
+		}
+		template<typename T> T& HandleAs() { return *(reinterpret_cast<T*>(&mNativeHandle)); }
+
+		TGFXResource* GetResource() const
+		{
+			return (TGFXResource*)UGetGFXResourceByNativeHandle(mNativeHandle);
+		}
+
+		template<typename To> explicit operator TGFXResourceHandle<To>() const
+		{
+			return TGFXResourceHandle<To>((To*)(mNativeHandle));
+		}
+		operator bool() const { return mNativeHandle != nullptr; }
 	};
 
+	typedef TGFXResourceHandle<GFXTexture2D>				GFXTexture2DHandle;
+	typedef TGFXResourceHandle<GFXShader>					GFXShaderHandle;
+	typedef TGFXResourceHandle<GFXVertexShader>				GFXVertexShaderHandle;
+	typedef TGFXResourceHandle<GFXHullShader>				GFXHullShaderHandle;
+	typedef TGFXResourceHandle<GFXDomainShader>				GFXDomainShaderHandle;
+	typedef TGFXResourceHandle<GFXGeometryShader>			GFXGeometryShaderHandle;
+	typedef TGFXResourceHandle<GFXPixelShader>				GFXPixelShaderHandle;
+	typedef TGFXResourceHandle<GFXComputeShader>			GFXComputeShaderHandle;
+
+	typedef TGFXResourceHandle<GFXRasterizerState>			GFXRasterizerStateHandle;
+	typedef TGFXResourceHandle<GFXDepthStencilState>		GFXDepthStencilStateHandle;
+	typedef TGFXResourceHandle<GFXBlendState>				GFXBlendStateHandle;
+	typedef TGFXResourceHandle<GFXSamplerState>				GFXSamplerStateHandle;
+
+	typedef TGFXResourceHandle<GFXShaderResourceView>		GFXShaderResourceViewHandle;
+	typedef TGFXResourceHandle<GFXDepthStencilView>			GFXDepthStencilViewHandle;
+	typedef TGFXResourceHandle<GFXRenderTargetView>			GFXRenderTargetViewHandle;
+
+	typedef TGFXResourceHandle<GFXVertexBuffer>				GFXVertexBufferHandle;
+	typedef TGFXResourceHandle<GFXIndexBuffer>				GFXIndexBufferHandle;
+	typedef TGFXResourceHandle<GFXConstantBuffer>			GFXConstantBufferHandle;
+	typedef TGFXResourceHandle<GFXInputLayout>				GFXInputLayoutHandle;
+
+
+	struct GFXViewport
+	{
+		float mTopLeftX;
+		float mTopLeftY;
+		float mWidth;
+		float mHeight;
+		float mMinDepth;	//Minimum depth of the viewport. Ranges between 0 and 1.
+		float mMaxDepth;	//Maximum depth of the viewport. Ranges between 0 and 1.
+	};
+	inline Vec3 UNDCToScreenSpace(const Vec3 ndc, const GFXViewport& viewport)
+	{
+		//https://msdn.microsoft.com/en-us/library/windows/desktop/bb205126(v=vs.85).aspx
+		float X = (ndc.mX + 1) * viewport.mWidth * 0.5 + viewport.mTopLeftX;
+		float Y = (1 - ndc.mY) * viewport.mHeight * 0.5 + viewport.mTopLeftY;
+		float Z = viewport.mMinDepth + ndc.mZ * (viewport.mMaxDepth - viewport.mMinDepth);
+		return Vec3(X, Y, Z);
+	}
 	//////////////////////////////////////////////////////////////////////////
-	class UAPI GFXDevice : public GFXResource
+	class UAPI GFXDevice
 	{
 	public:
 
 		static GFXDevice* Create();
 
 		//////////////////////////////////////////////////////////////////////////
+		virtual void SetViewport(const GFXViewport& viewport) = 0;
+
+		//////////////////////////////////////////////////////////////////////////
+		virtual GFXShaderResourceView* CreateShaderResourceView(GFXTexture2D* texture2D) = 0;
+		virtual GFXShaderResourceView* CreateShaderResourceView(GFXTexture2D* texture2D, unsigned mostDetailedMip, unsigned numMipLevels, EPixelFormat format) = 0;
+
+		virtual GFXRenderTargetView* CreateRenderTargetView(GFXTexture2D* texture) = 0;
+		virtual GFXRenderTargetView* CreateRenderTargetView(GFXTexture2D* texture, unsigned mipSlice, EPixelFormat format = EPixelFormat::UNKNOWN) = 0;
+
+		virtual GFXDepthStencilView* CreateDepthStencilView(GFXTexture2D* texture) = 0;
+		virtual GFXDepthStencilView* CreateDepthStencilView(GFXTexture2D* texture, unsigned mipSlice, EPixelFormat format = EPixelFormat::UNKNOWN) = 0;
+
+		//////////////////////////////////////////////////////////////////////////
 		//creates a swap chain from a game window
-		virtual GFXSwapChain* CreateSwapChain(const GFXSwapChain_Desc& param) = 0;
+		virtual GFXSwapChain* CreateSwapChain(const GFXSwapChainDesc& param) = 0;
 
 		//////////////////////////////////////////////////////////////////////////buffers
-		virtual GFXIndexBuffer* CreateIndexBuffer(const GFXIndexBuffer_Desc&) = 0;
-		virtual GFXVertexBuffer* CreateVertexBuffer(const GFXVertexBuffer_Desc&) = 0;
-		virtual GFXConstantBuffer* CreateConstantBuffer(const GFXConstantBuffer_Desc&) = 0;
+		virtual GFXIndexBuffer* CreateIndexBuffer(const GFXIndexBufferDesc&) = 0;
+		virtual GFXVertexBuffer* CreateVertexBuffer(const GFXVertexBufferDesc&) = 0;
+		virtual GFXConstantBuffer* CreateConstantBuffer(const GFXConstantBufferDesc&) = 0;
 
 		//////////////////////////////////////////////////////////////////////////states
-		virtual GFXDepthStencilState* CreateDepthStencilState(const GFXDepthStencilState_Desc&) = 0;
-		virtual GFXSamplerState* CreateSamplerState(const GFXSamplerState_Desc&) = 0;
-		virtual GFXRasterizerState* CreateRasterizerState(const GFXRasterizerState_Desc&) = 0;
+		virtual GFXDepthStencilState* CreateDepthStencilState(const GFXDepthStencilStateDesc&) = 0;
+		virtual GFXSamplerState* CreateSamplerState(const GFXSamplerStateDesc&) = 0;
+		virtual GFXRasterizerState* CreateRasterizerState(const GFXRasterizerStateDesc&) = 0;
 
 
 		virtual GFXInputLayout* CreateInputLayout(const GFXInputLayoutDesc& param) = 0;
+		virtual void SetInputLayout(GFXInputLayoutHandle layout) = 0;
 
-// 		virtual void Bind(GFXDepthStencilState*) = 0;
-// 		virtual void Bind(GFXRasterizerState*) = 0;
-// 		virtual void Bind(GFXInputLayout*) = 0;
-
-		virtual void BinVertexBuffer(const GFXVertexBuffer* buffer, unsigned stride, unsigned offset = 0) = 0;
-		virtual void BinIndexBuffer(const GFXIndexBuffer* buffer, unsigned offset = 0) = 0;
-		virtual void BindConstantBuffer(const GFXConstantBuffer* buffer, unsigned slot, EShaderType whichShader) = 0;
+		virtual void SetVertexBuffer(GFXVertexBuffer* buffer, unsigned slot, unsigned stride, unsigned offset = 0) = 0;
+		virtual void SetIndexBuffer(GFXIndexBuffer* buffer, unsigned offset = 0) = 0;
 		virtual void SetPrimitiveTopology(EPrimitiveTopology topology) = 0;
 		//@vertexCount				Number of vertices to draw.
 		//@startVertexLocation		Index of the first vertex, which is usually an offset in a vertex buffer.
@@ -769,44 +1000,108 @@ namespace UPO
 		//@baseVertexLocation		A value added to each index before reading a vertex from the vertex buffer.
 		virtual void DrawIndexed(unsigned indexCount, unsigned startIndexLocation = 0, unsigned baseVertexLocation = 0, unsigned instanceCount = 0, unsigned startInstanceLocation = 0) = 0;
 
+		virtual GFXTexture2D* CreateTexture2DFromMemory(const Buffer& memory) = 0;
 
-		virtual GFXTexture2D* CreateTexture2D(const GFXTexture2D_Desc& param) = 0;
-		virtual void BindDepthStencilState(const GFXDepthStencilState* state) = 0;
-		virtual void BindRenderTarget(const GFXTexture2D* renderTarget, const GFXTexture2D* depthStencil) = 0;
-		virtual void BindRasterizer(const GFXRasterizerState* state) = 0;
-		
+		virtual GFXTexture2D* CreateTexture2D(const GFXTexture2DDesc& param) = 0;
+
+
+		virtual void SetDepthStencilState(GFXDepthStencilStateHandle state) = 0;
+		virtual void SetRenderTarget(GFXRenderTargetView** renderTargets, unsigned numRenderTargets, GFXTexture2D* depthStencil) = 0;
+		template<unsigned N> void SetRenderTarget(GFXRenderTargetView*(&renderTargets)[N], GFXTexture2D* depthStencil)
+		{
+			SetRenderTarget(renderTargets, N, depthStencil);
+		}
+		virtual void SetRasterizerState(GFXRasterizerStateHandle state) = 0;
+
+		virtual GFXShader* CreateShader(const Buffer& bytesCode, EShaderType type, Name debugName = nullptr) = 0;
 		virtual GFXShader* CreateShader(const ShaderUniqueParam& param) = 0;
+
+		// 		template<typename ShaderClass> ShaderClass* CreateShader(const char* filename, const char* entryPoint, const ShaderMacroDefinition* customDefinitionsNullTerminated = nullptr)
+		// 		{
+		// 			static_assert(std::is_base_of<GFXShader, ShaderClass>::value, "invalid shader class");
+		// 			ShaderUniqueParam param;
+		// 			param.mFileName = filename;
+		// 			param.mEntryPoint = entryPoint;
+		// 			param.mType = ShaderClass::EnumType;
+		// 			//TODO: definitions
+		// 			return CreateShader(filename, functionName, ShaderClass::EnumType, customDefinitionsNullTerminated)->As<ShaderClass>();
+		// 		}
+
+		virtual void SetShader(const GFXShaderBound& shaders) = 0;
+
+		virtual void SetShaders(GFXVertexShader* vertexShader, GFXPixelShader* pixelShader) = 0;
+
+
+		virtual void SetResourceView(GFXTexture2D** textures, unsigned startSlot, unsigned numTextures, EShaderType whichShader) = 0;
+		template<unsigned N> void SetResourceView(GFXTexture2D*(&textures)[N], unsigned startSlot, EShaderType whichShader)
+		{
+			SetResourceView(textures, startSlot, N, whichShader);
+		};
+		void SetResourceView(GFXTexture2D* texture, unsigned slot, EShaderType wichShader)
+		{
+			SetResourceView(&texture, slot, 1, wichShader);
+		}
+
+
+
+		virtual void SetResourceView(GFXShaderResourceView** views, unsigned startSlot, unsigned numViews, EShaderType whichShder) = 0;
+		template<unsigned N> void SetResourceView(GFXShaderResourceView*(&views)[N], unsigned startSlot, EShaderType whichShader)
+		{
+			SetResourceView(views, startSlot, N, whichShader);
+		}
+		void SetResourceView(GFXShaderResourceView* view, unsigned slot, EShaderType whichShader)
+		{
+			SetResourceView(&view, slot, 1, whichShader);
+		}
+
+
+
+
+		virtual void SetSamplerState(GFXSamplerStateHandle* samplers, unsigned startSlot, unsigned numSamplers, EShaderType whichShader) = 0;
+		template<unsigned N> void SetSamplerState(GFXSamplerStateHandle(&samplers)[N], unsigned startSlot, EShaderType whichShader)
+		{
+			SetSamplerState(samplers, startSlot, N, whichShader);
+		}
+		void SetSamplerState(GFXSamplerStateHandle sampler, unsigned slot, EShaderType whichShader)
+		{
+			SetSamplerState(&sampler, slot, 1, whichShader);
+		}
+
+
+
+		virtual void SetConstentBuffer(GFXConstantBuffer** buffers, unsigned startSlot, unsigned numBuffers, EShaderType whichShader) = 0;
+		template<unsigned N> void SetConstentBuffer(GFXConstantBuffer*(&buffers)[N], unsigned startSlot, EShaderType whichShader)
+		{
+			SetConstentBuffer(buffers, startSlot, N, whichShader);
+		}
+		void SetConstentBuffer(GFXConstantBuffer* buffer, unsigned slot, EShaderType whichShader)
+		{
+			SetConstentBuffer(&buffer, slot, 1, whichShader);
+		}
+
+
+
+
 		
-// 		template<typename ShaderClass> ShaderClass* CreateShader(const char* filename, const char* entryPoint, const ShaderMacroDefinition* customDefinitionsNullTerminated = nullptr)
-// 		{
-// 			static_assert(std::is_base_of<GFXShader, ShaderClass>::value, "invalid shader class");
-// 			ShaderUniqueParam param;
-// 			param.mFileName = filename;
-// 			param.mEntryPoint = entryPoint;
-// 			param.mType = ShaderClass::EnumType;
-// 			//TODO: definitions
-// 			return CreateShader(filename, functionName, ShaderClass::EnumType, customDefinitionsNullTerminated)->As<ShaderClass>();
-// 		}
+		virtual GFXBlendState* CreateBlendState(const GFXBlendStateDesc& param) = 0;
+		virtual void SetBlendState(GFXBlendStateHandle blendState, const Color& blendFactor = Color::WHITE, unsigned sampleMask = 0xFFffFFff) = 0;
 
-		virtual void BindShader(const GFXShaderBound& shaders) = 0;
-
-		virtual void BindShaders(GFXVertexShader* vertexShader, GFXPixelShader* pixelShader) = 0;
-
-		
-
-		virtual void BindTexture(GFXTexture2D* texture, unsigned slot, EShaderType whichShader) = 0;
-		virtual void BindSamplerState(GFXSamplerState* sampler, unsigned slot, EShaderType whichShader) = 0;
-
-		
-		virtual void BinInputLayout(const GFXInputLayout* layout) = 0;
-		virtual GFXBlendState* CreateBlendState(const GFXBlendState_Desc& param) = 0;
-		virtual void BindBlendState(const GFXBlendState* state, float blendFactor[4], unsigned sampleMask = 0xFFffFFff) = 0;
-
-		virtual void ClearRenderTarget(const GFXTexture2D* renderTarget, const Color& color) = 0;
-		virtual void ClearDepthStencil(const GFXTexture2D* depthTexture, bool clearDepth, bool clearStencil, float depth, char stencil) = 0;
+		virtual void ClearRenderTarget(GFXRenderTargetView* view, const Color& color) = 0;
+		virtual void ClearDepthStencil(GFXDepthStencilView* view, bool clearDepth, bool clearStencil, float depth, char stencil) = 0;
 
 		virtual void Dispatch(unsigned groupCount[3]) {}
 
+		/*
+		This method resets any device context to the default settings. This sets all input/output resource slots, shaders,
+		input layouts, predications, scissor rectangles, depth-stencil state, rasterizer state, 
+		blend state, sampler state, and viewports to NULL. The primitive topology is set to UNDEFINED.
+		*/
+		virtual void ClearState() = 0;
+		virtual bool IsImmediate() = 0;
+
+		virtual void* Map(GFXBuffer*, EMapFlag) = 0;
+		virtual void Unmap(GFXBuffer*) = 0;
+		template<typename T> T* Map(GFXBuffer* buffer, EMapFlag flag) { return (T*)Map(buffer, flag); }
 	};
 	//////////////////////////////////////////////////////////////////////////
 	extern UAPI GFXDevice* gGFX;

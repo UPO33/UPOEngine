@@ -8,11 +8,12 @@
 #include <D3DX11tex.h>
 #include <d3dcommon.h>
 #include <D3DX10math.h>
-#include <dxgi.h>
-#include <DirectXMath.h>
-#include <DirectXCollision.h>
+// #include <DirectXMath.h>
+// #include <DirectXCollision.h>
 #include <SimpleMath.h>
 #include <D3Dcompiler.h>
+// #include <SpriteFont.h>
+// #include <SpriteBatch.h>
 
 using namespace DirectX::SimpleMath;
 using namespace DirectX;
@@ -28,6 +29,17 @@ namespace UPO
 
 namespace UPO
 {
+	/*
+	D3D11_USAGE
+
+	Usage		Default		Dynamic		Immutable	Staging
+	GPU-Read	yes			yes				yes			yes
+	GPU-Write	yes										yes
+	CPU-Read											yes
+	CPU-Write				yes							yes
+	*/
+
+
 	//////////////////////////////////////////////////////////////////////////
 	class GFXDeviceDX;
 
@@ -57,17 +69,7 @@ namespace UPO
 		UASSERT(false);
 		return DXGI_FORMAT::DXGI_FORMAT_R16_UINT;
 	}
-	//////////////////////////////////////////////////////////////////////////
-	inline D3D11_USAGE ToDXType(EResourceUsage in)
-	{
-		switch (in)
-		{
-		case EResourceUsage::EDefault: return D3D11_USAGE_DEFAULT;
-		case EResourceUsage::EImmutable: return D3D11_USAGE_IMMUTABLE;
-		case EResourceUsage::EDynamic: return D3D11_USAGE_DYNAMIC;
-		default: return D3D11_USAGE_DEFAULT;
-		}
-	}
+
 	//////////////////////////////////////////////////////////////////////////
 	inline D3D11_PRIMITIVE_TOPOLOGY ToDXType(EPrimitiveTopology in)
 	{
@@ -99,6 +101,31 @@ namespace UPO
 		return (UINT8)in;
 	}
 	//////////////////////////////////////////////////////////////////////////
+	inline D3D11_TEXTURE_ADDRESS_MODE ToDXType(ETextureAddress in)
+	{
+		return (D3D11_TEXTURE_ADDRESS_MODE)in;
+	}
+	//////////////////////////////////////////////////////////////////////////
+	inline D3D11_FILTER ToDXType(ETextureFilter in)
+	{
+		return (D3D11_FILTER)in;
+	}
+	//////////////////////////////////////////////////////////////////////////
+	inline D3D11_COMPARISON_FUNC ToDXType(EComparisonFunc in)
+	{
+		return (D3D11_COMPARISON_FUNC)in;
+	}
+	//////////////////////////////////////////////////////////////////////////
+	inline D3D11_CULL_MODE ToDXType(ECullMode in)
+	{
+		return (D3D11_CULL_MODE)in;
+	}
+	//////////////////////////////////////////////////////////////////////////
+	inline D3D11_STENCIL_OP ToDXType(EStencilOP in)
+	{
+		return (D3D11_STENCIL_OP)in;
+	}
+	//////////////////////////////////////////////////////////////////////////
 	inline DXGI_FORMAT ToDXType(EVertexFormat in)
 	{
 		switch (in)
@@ -107,11 +134,15 @@ namespace UPO
 		case EVertexFormat::EFloat2: return DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT;
 		case EVertexFormat::EFloat3: return DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT;
 		case EVertexFormat::EFloat4: return DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT;
-			break;
+		case EVertexFormat::EColor32: return DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM;
 		}
 		return DXGI_FORMAT::DXGI_FORMAT_UNKNOWN;
 	}
-
+	inline EPixelFormat ToGFXType(DXGI_FORMAT in)
+	{
+		//TODO
+		return (EPixelFormat)in;
+	}
 	//////////////////////////////////////////////////////////////////////////
 	class GFXResourceDX
 	{
@@ -146,7 +177,7 @@ namespace UPO
 			D3D11_MAPPED_SUBRESOURCE mappedData;
 			if (FAILED(mDeviceContext->Map(mHandle, 0, ToDXType(flag), 0, &mappedData)))
 			{
-				ULOG_ERROR("Failed to map vertex buffer");
+				ULOG_ERROR("Failed to map buffer");
 				return nullptr;
 			}
 			return mappedData.pData;
@@ -157,54 +188,48 @@ namespace UPO
 		}
 	};
 	//////////////////////////////////////////////////////////////////////////
-	class GFXVertexBufferDX : public GFXBufferDX, public GFXVertexBuffer
+	class GFXVertexBufferDX : public GFXVertexBuffer
 	{
-		friend GFXDeviceDX;
-
+	public:
+		GFXVertexBufferDX(ID3D11Buffer* vbuffer, const GFXVertexBufferDesc& desc, Name debugName = nullptr) : GFXVertexBuffer(vbuffer)
+		{
+			mDesc = desc;
+		}
 		~GFXVertexBufferDX()
 		{
-		}
-		virtual void* Map(EMapFlag flag) override
-		{
-			return GFXBufferDX::Map(flag);
-		}
-		virtual void Unmap() override
-		{
-			GFXBufferDX::Unmap();
+			if (mNativeHandle)
+				HandleAs<ID3D11Buffer*>()->Release();
+			mNativeHandle = nullptr;
 		}
 	};
 	//////////////////////////////////////////////////////////////////////////
-	class GFXIndexBufferDX : public GFXBufferDX, public GFXIndexBuffer
+	class GFXIndexBufferDX : public GFXIndexBuffer
 	{
-		friend GFXDeviceDX;
-
+	public:
+		GFXIndexBufferDX(ID3D11Buffer* vbuffer, const GFXIndexBufferDesc& desc, Name debugName = nullptr) : GFXIndexBuffer(vbuffer)
+		{
+			mDesc = desc;
+		}
 		~GFXIndexBufferDX()
 		{
-		}
-		virtual void* Map(EMapFlag flag) override
-		{
-			return GFXBufferDX::Map(flag);
-		}
-		virtual void Unmap() override
-		{
-			GFXBufferDX::Unmap();
+			if (mNativeHandle)
+				HandleAs<ID3D11Buffer*>()->Release();
+			mNativeHandle = nullptr;
 		}
 	};
 	//////////////////////////////////////////////////////////////////////////
-	class GFXConstantBufferDX : public GFXBufferDX, public GFXConstantBuffer
+	class GFXConstantBufferDX : public GFXConstantBuffer
 	{
-		friend GFXDeviceDX;
-
+	public:
+		GFXConstantBufferDX(ID3D11Buffer* vbuffer, const GFXConstantBufferDesc& desc, Name debugName = nullptr) : GFXConstantBuffer(vbuffer) 
+		{
+			mDesc = desc;
+		}
 		~GFXConstantBufferDX()
 		{
-		}
-		virtual void* Map(EMapFlag flag) override
-		{
-			return GFXBufferDX::Map(flag);
-		}
-		virtual void Unmap() override
-		{
-			GFXBufferDX::Unmap();
+			if (mNativeHandle)
+				HandleAs<ID3D11Buffer*>()->Release();
+			mNativeHandle = nullptr;
 		}
 	};
 	//////////////////////////////////////////////////////////////////////////
@@ -212,12 +237,15 @@ namespace UPO
 	{
 		friend GFXDeviceDX;
 	public:
-		ID3D11DepthStencilState* mHandle;
-
+		GFXDepthStencilStateDX(const GFXDepthStencilStateDesc& desc, ID3D11DepthStencilState* handle, Name name = nullptr) : GFXDepthStencilState(handle, name)
+		{
+			mDesc = desc;
+		}
 		~GFXDepthStencilStateDX()
 		{
-			if (mHandle) mHandle->Release();
-			mHandle = nullptr;
+			if (mNativeHandle)
+				HandleAs<ID3D11DepthStencilState*>()->Release();
+			mNativeHandle = nullptr;
 		}
 	};
 	
@@ -226,12 +254,15 @@ namespace UPO
 	{
 		friend class GFXDeviceDX;
 	public:
-		ID3D11SamplerState* mHandle;
-
+		GFXSamplerStateDX(const GFXSamplerStateDesc& desc, ID3D11SamplerState* sampler, Name debugName = nullptr) : GFXSamplerState(sampler, debugName) 
+		{
+			mDesc = desc;
+		}
 		~GFXSamplerStateDX()
 		{
-			if (mHandle) mHandle->Release();
-			mHandle = nullptr;
+			if (mNativeHandle) 
+				HandleAs<ID3D11SamplerState*>()->Release();
+			mNativeHandle = nullptr;
 		}
 	};
 	//////////////////////////////////////////////////////////////////////////
@@ -239,12 +270,15 @@ namespace UPO
 	{
 		friend GFXDeviceDX;
 	public:
-		ID3D11RasterizerState* mHandle;
-
+		GFXRasterizerStateDX(const GFXRasterizerStateDesc& desc, ID3D11RasterizerState* state, Name debugName = nullptr) : GFXRasterizerState(state, debugName)
+		{
+			mDesc = desc;
+		}
 		~GFXRasterizerStateDX()
 		{
-			if (mHandle) mHandle->Release();
-			mHandle = nullptr;
+			if (mNativeHandle) 
+				HandleAs<ID3D11RasterizerState*>()->Release();
+			mNativeHandle = nullptr;
 		}
 	};
 	
@@ -255,148 +289,153 @@ namespace UPO
 	//////////////////////////////////////////////////////////////////////////
 	class GFXTexture2DDX : public GFXTexture2D
 	{
-		friend GFXDeviceDX;
 	public:
-		ID3D11Texture2D*			mTexture = nullptr;
-		ID3D11ShaderResourceView*	mResourceView = nullptr;
-		ID3D11RenderTargetView*		mRenderTargetView = nullptr;
-		ID3D11DepthStencilView*		mDepthStencilView = nullptr;
+
+
+		GFXTexture2DDX(ID3D11Texture2D* handle, GFXShaderResourceView* srv, GFXRenderTargetView* rtv, GFXDepthStencilView* dsv,  const GFXTexture2DDesc& param = GFXTexture2DDesc(), Name debugName = nullptr)
+			: GFXTexture2D(handle, debugName)
+		{
+			mShaderResourceView = srv;
+			mRenderTargetView = rtv;
+			mDepthStencilView = dsv;
+			mDesc = param;
+		}
 
 		~GFXTexture2DDX()
 		{
-			if (mResourceView) mResourceView->Release();
-			mResourceView = nullptr;
-			if (mRenderTargetView) mRenderTargetView->Release();
-			mRenderTargetView = nullptr;
-			if (mDepthStencilView) mDepthStencilView->Release();
-			mDepthStencilView = nullptr;
-			if (mTexture) mTexture->Release();
-			mTexture = nullptr;
+			SafeDelete(mShaderResourceView);
+			SafeDelete(mRenderTargetView);
+			SafeDelete(mDepthStencilView);
+			if (mNativeHandle)
+				HandleAs<ID3D11Texture2D*>()->Release();
 		}
 	};
 	//////////////////////////////////////////////////////////////////////////
 	struct GFXShaderDXBase
 	{
-		void* mHandle = nullptr;
 		Buffer mByteCodes;
+
+		GFXShaderDXBase(const Buffer& bytecodes) : mByteCodes(bytecodes) {}
 
 		void* GetByteCode() const { return mByteCodes.Data(); }
 		size_t GetByteCodeSize() const { return mByteCodes.Size(); }
 
-		void Release(EShaderType type)
+
+		void Release(void*& handle, EShaderType type)
 		{
-			if(mHandle)
+			if(handle)
 			{
 				switch (type)
 				{
-				case UPO::EShaderType::EVertex: reinterpret_cast<ID3D11VertexShader*>(mHandle)->Release();
+				case UPO::EShaderType::EVertex: ((ID3D11VertexShader*)(handle))->Release();
 					break;
-				case UPO::EShaderType::EHull: reinterpret_cast<ID3D11HullShader*>(mHandle)->Release();
+				case UPO::EShaderType::EHull: ((ID3D11HullShader*)(handle))->Release();
 					break;
-				case UPO::EShaderType::EDomain: reinterpret_cast<ID3D11DomainShader*>(mHandle)->Release();
+				case UPO::EShaderType::EDomain: ((ID3D11DomainShader*)(handle))->Release();
 					break;
-				case UPO::EShaderType::EGeometry: reinterpret_cast<ID3D11GeometryShader*>(mHandle)->Release();
+				case UPO::EShaderType::EGeometry: ((ID3D11GeometryShader*)(handle))->Release();
 					break;
-				case UPO::EShaderType::EPixel: reinterpret_cast<ID3D11PixelShader*>(mHandle)->Release();
+				case UPO::EShaderType::EPixel: ((ID3D11PixelShader*)(handle))->Release();
 					break;
-				case UPO::EShaderType::ECompute: reinterpret_cast<ID3D11ComputeShader*>(mHandle)->Release();
+				case UPO::EShaderType::ECompute: ((ID3D11ComputeShader*)(handle))->Release();
 					break;
 				}
 			}
-			mHandle = nullptr;
+			handle = nullptr;
 		}
 	};
 	//////////////////////////////////////////////////////////////////////////
-	class GFXVertexShaderDX : public GFXResourceDX, public GFXVertexShader
+	class GFXVertexShaderDX : public GFXVertexShader
 	{
 	public:
 		GFXShaderDXBase mShader;
 
-		GFXVertexShaderDX(const GFXShaderDXBase& shader) : mShader(shader) {}
+		GFXVertexShaderDX(const Buffer& byteCodes, void* handle , Name debugName) : GFXVertexShader(handle, debugName), mShader(byteCodes) {}
 
 		~GFXVertexShaderDX()
 		{
-			mShader.Release(EShaderType::EVertex);
+			mShader.Release(mNativeHandle, mType);
 		}
-		ID3D11VertexShader* Handle() { return reinterpret_cast<ID3D11VertexShader*>(mShader.mHandle); }
 	};
 	//////////////////////////////////////////////////////////////////////////
-	class GFXHullShaderDX : public GFXResourceDX, public GFXHullShader
+	class GFXHullShaderDX : public GFXHullShader
 	{
 	public:
 		GFXShaderDXBase mShader;
 
-		GFXHullShaderDX(const GFXShaderDXBase& shader) : mShader(shader) {}
+		GFXHullShaderDX(const Buffer& byteCodes, void* handle, Name debugName) : GFXHullShader(handle, debugName), mShader(byteCodes) {}
 
 		~GFXHullShaderDX()
 		{
-			mShader.Release(EShaderType::EHull);
+			mShader.Release(mNativeHandle, mType);
 		}
-		ID3D11HullShader* Handle() { return reinterpret_cast<ID3D11HullShader*>(mShader.mHandle); }
 	};
 	//////////////////////////////////////////////////////////////////////////
-	class GFXDomainShaderDX : public GFXResourceDX, public GFXDomainShader
+	class GFXDomainShaderDX : public GFXDomainShader
 	{
 	public:
 		GFXShaderDXBase mShader;
 
-		GFXDomainShaderDX(const GFXShaderDXBase& shader) : mShader(shader) {}
+		GFXDomainShaderDX(const Buffer& byteCodes, void* handle, Name debugName) : GFXDomainShader(handle, debugName), mShader(byteCodes) {}
 
 		~GFXDomainShaderDX()
 		{
-			mShader.Release(EShaderType::EDomain);
+			mShader.Release(mNativeHandle, mType);
 		}
-		ID3D11DomainShader* Handle() { return reinterpret_cast<ID3D11DomainShader*>(mShader.mHandle); }
 	};
 	//////////////////////////////////////////////////////////////////////////
-	class GFXGeometryShaderDX : public GFXResourceDX, public GFXGeometryShader
+	class GFXGeometryShaderDX : public GFXGeometryShader
 	{
 	public:
 		GFXShaderDXBase mShader;
 
-		GFXGeometryShaderDX(const GFXShaderDXBase& shader) : mShader(shader) {}
+		GFXGeometryShaderDX(const Buffer& byteCodes, void* handle, Name debugName) : GFXGeometryShader(handle, debugName), mShader(byteCodes) {}
+
 		~GFXGeometryShaderDX()
 		{
-			mShader.Release(EShaderType::EGeometry);
+			mShader.Release(mNativeHandle, mType);
 		}
-		ID3D11GeometryShader* Handle() { return reinterpret_cast<ID3D11GeometryShader*>(mShader.mHandle); }
 	};
 	//////////////////////////////////////////////////////////////////////////
-	class GFXPixelShaderDX : public GFXResourceDX, public GFXPixelShader
+	class GFXPixelShaderDX : public GFXPixelShader
 	{
 	public:
 		GFXShaderDXBase mShader;
 
-		GFXPixelShaderDX(const GFXShaderDXBase& shader) : mShader(shader) {}
+		GFXPixelShaderDX(const Buffer& byteCodes, void* handle, Name debugName) : GFXPixelShader(handle, debugName), mShader(byteCodes) {}
+
 		~GFXPixelShaderDX()
 		{
-			mShader.Release(EShaderType::EPixel);
+			mShader.Release(mNativeHandle, mType);
 		}
-		ID3D11PixelShader* Handle() { return reinterpret_cast<ID3D11PixelShader*>(mShader.mHandle); }
 	};
 	//////////////////////////////////////////////////////////////////////////
-	class GFXComputeShaderDX : public GFXResourceDX, public GFXComputeShader
+	class GFXComputeShaderDX : public GFXComputeShader
 	{
 	public:
 		GFXShaderDXBase mShader;
 
-		GFXComputeShaderDX(const GFXShaderDXBase& shader) : mShader(shader) {}
+		GFXComputeShaderDX(const Buffer& byteCodes, void* handle, Name debugName) : GFXComputeShader(handle, debugName), mShader(byteCodes) {}
+
 		~GFXComputeShaderDX()
 		{
-			mShader.Release(EShaderType::ECompute);
+			mShader.Release(mNativeHandle, mType);
 		}
-		ID3D11ComputeShader* Handle() { return reinterpret_cast<ID3D11ComputeShader*>(mShader.mHandle); }
 	};
 	//////////////////////////////////////////////////////////////////////////
 	class GFXInputLayoutDX : public GFXInputLayout
 	{
 		friend GFXDeviceDX;
 	public:
-		ID3D11InputLayout* mHandle = nullptr;
+		GFXInputLayoutDX(const GFXInputLayoutDesc& desc, ID3D11InputLayout* handle, Name debugName = nullptr) : GFXInputLayout(handle, debugName)
+		{
+			mDesc = desc;
+		}
 		~GFXInputLayoutDX()
 		{
-			if (mHandle) mHandle->Release();
-			mHandle = nullptr;
+			if (mNativeHandle)
+				HandleAs<ID3D11InputLayout*>()->Release();
+			mNativeHandle = nullptr;
 		}
 	};
 	
@@ -406,67 +445,94 @@ namespace UPO
 	{
 		friend GFXDeviceDX;
 
-		ID3D11BlendState* mHandle;
-
+		GFXBlendStateDX(const GFXBlendStateDesc& desc, ID3D11BlendState* handle, Name debugName = nullptr) : GFXBlendState(handle, debugName)
+		{
+			mDesc = desc;
+		}
 		~GFXBlendStateDX()
 		{
-			if (mHandle) mHandle->Release();
-			mHandle = nullptr;
+			if (mNativeHandle)
+				HandleAs<ID3D11BlendState*>()->Release();
+			mNativeHandle = nullptr;
 		}
 	};
 	struct GFXDevice_Desc
 	{
 
 	};
-	//////////////////////////////////////////////////////////////////////////
-	class GFXRenderTargerView
-	{
 
-	};
-	class GFXDepthStencilView
-	{
-
-	};
-	class GFXTexture2DView
-	{
-
-	};
 	class UAPI GFXSwapChainDX : public GFXSwapChain
 	{
 		friend GFXDeviceDX;
 
-		HWND mHWND = nullptr;
-		IDXGISwapChain* mSwapchain = nullptr;
-
-		ID3D11RenderTargetView* mBackBufferView = nullptr;
-		ID3D11Texture2D* mBackBuffer = nullptr;
-
-		GFXTexture2DDX* mBackBufferTexture2D = nullptr;
-
-		Vec2I mBackBufferSize;
+		GFXRenderTargetView* mBackBufferView = nullptr;
+		
 
 	public:
-		GFXSwapChainDX(const GFXSwapChain_Desc& param)
-		{
-			mDesc = param;
-			Init();
-		}
-		bool Init();
-		//////////////////////////////////////////////////////////////////////////
-		bool Resize(const Vec2I& newSize) override;
-		//////////////////////////////////////////////////////////////////////////
-		bool Release();
-		//////////////////////////////////////////////////////////////////////////
-		bool Present() override;
-		GFXTexture2D* GetBackBuffer() override { return mBackBufferTexture2D; }
-		GameWindow* GetGameWindow() override { return mDesc.mGameWindow; }
-		void GetBackBufferSize(Vec2I& out) override { out = mBackBufferSize; }
+		GFXSwapChainDX(void* handle, Name debugName = nullptr) : GFXSwapChain(handle, debugName) {}
+		~GFXSwapChainDX();
 
-		~GFXSwapChainDX()
+		bool Resize(const Vec2I& newSize) override;
+		bool Present() override;
+
+		GFXRenderTargetView* GetBackBufferView() override { return mBackBufferView; }
+		GameWindow* GetWindow() override { return mDesc.mGameWindow; }
+	};
+
+	class GFXShaderResourceViewDX : public GFXShaderResourceView
+	{
+	public:
+		GFXShaderResourceViewDX(ID3D11ShaderResourceView* srv) : GFXShaderResourceView(srv)
+		{}
+		~GFXShaderResourceViewDX()
 		{
-			Release();
+			if (mNativeHandle)
+				HandleAs<ID3D11ShaderResourceView*>()->Release();
+			mNativeHandle = nullptr;
 		}
 	};
+	//////////////////////////////////////////////////////////////////////////
+	class GFXRenderTargetViewDX : public GFXRenderTargetView
+	{
+	public:
+		GFXRenderTargetViewDX(ID3D11RenderTargetView* handle) : GFXRenderTargetView(handle)
+		{ }
+		~GFXRenderTargetViewDX()
+		{
+			if (mNativeHandle)
+				HandleAs<ID3D11RenderTargetView*>()->Release();
+			mNativeHandle = nullptr;
+		}
+		
+	};
+	//////////////////////////////////////////////////////////////////////////
+	class GFXDepthStencilViewDX : public GFXDepthStencilView
+	{
+	public:
+		GFXDepthStencilViewDX(ID3D11DepthStencilView* handle) : GFXDepthStencilView(handle)
+		{ }
+		~GFXDepthStencilViewDX()
+		{
+			if (mNativeHandle)
+				HandleAs<ID3D11DepthStencilView*>()->Release();
+			mNativeHandle = nullptr;
+		}
+
+	};
+
+	//////////////////////////////////////////////////////////////////////////
+	inline DXGI_FORMAT GetFormatForShaderResourceView(DXGI_FORMAT format)
+	{
+		return format;
+	}
+	inline DXGI_FORMAT GetFormatForRenderTargetView(DXGI_FORMAT format)
+	{
+		return format;
+	}
+	inline DXGI_FORMAT GetFormatForDepthStencilView(DXGI_FORMAT format)
+	{
+		return format;
+	}
 
 	//////////////////////////////////////////////////////////////////////////
 	class GFXDeviceDX : public GFXDevice
@@ -475,684 +541,145 @@ namespace UPO
 		ID3D11Device* mDevice = nullptr;
 		ID3D11DeviceContext* mImmediateContext = nullptr;
 		D3D_FEATURE_LEVEL	mFeatureLevel;
+		IDXGIFactory*	mGIFactory = nullptr;
+		IDXGIAdapter*	mAdapter = nullptr;
 
 		static GFXDeviceDX* Create();
 		
-		GFXDeviceDX(){}
 
-		GFXDeviceDX(ID3D11Device* device, ID3D11DeviceContext* immediateContext, D3D_FEATURE_LEVEL featureLevel)
-			: mDevice(device), mImmediateContext(immediateContext), mFeatureLevel(featureLevel)
-		{}
 
 		ID3D11Device* GetDXDevice() const { return mDevice; }
 		ID3D11DeviceContext* GetDXDeviceContext() const { return mImmediateContext; }
 
 		//////////////////////////////////////////////////////////////////////////
-		GFXSwapChain* CreateSwapChain(const GFXSwapChain_Desc& param) override;
+		GFXSwapChain* CreateSwapChain(const GFXSwapChainDesc& param) override;
 
 		//////////////////////////////////////////////////////////////////////////
-		virtual void ClearRenderTarget(const GFXTexture2D* renderTarget, const Color& color) override
-		{
-			if (renderTarget == nullptr) return;
-			ID3D11RenderTargetView* rtv = renderTarget->As<GFXTexture2DDX>()->mRenderTargetView;
-			if (rtv == nullptr) return;
-			mImmediateContext->ClearRenderTargetView(rtv, color.mRGBA);
-		}
+		void SetViewport(const GFXViewport& viewport) override;
 		//////////////////////////////////////////////////////////////////////////
-		virtual void ClearDepthStencil(const GFXTexture2D* depthTexture, bool clearDepth, bool clearStencil, float depth, char stencil) override
-		{
-			if (depthTexture == nullptr) return;
-			ID3D11DepthStencilView* dsv = depthTexture->As<GFXTexture2DDX>()->mDepthStencilView;
-			if (dsv == nullptr) return;
-			UINT clearFlag = 0;
-			if (clearDepth) clearFlag |= D3D11_CLEAR_DEPTH;
-			if (clearStencil) clearFlag |= D3D11_CLEAR_STENCIL;
-			mImmediateContext->ClearDepthStencilView(dsv, clearFlag, depth, stencil);
-		}
+		virtual void ClearRenderTarget(GFXRenderTargetView* view, const Color& color) override;
+		virtual void ClearDepthStencil(GFXDepthStencilView* view, bool clearDepth, bool clearStencil, float depth, char stencil) override;
+
+
 		//////////////////////////////////////////////////////////////////////////
-		virtual GFXIndexBuffer* CreateIndexBuffer(const GFXIndexBuffer_Desc& param) override
-		{
-			if (param.mInitialData == nullptr && param.mUsage == EResourceUsage::EImmutable)
-			{
-				ULOG_ERROR("immutable buffer needs initial data");
-				return nullptr;
-			}
-
-			D3D11_BUFFER_DESC desc;
-			desc.MiscFlags = 0;
-			desc.StructureByteStride = 0;
-			desc.BindFlags = D3D11_BIND_FLAG::D3D11_BIND_INDEX_BUFFER;
-			desc.ByteWidth = param.mSize;
-
-			desc.CPUAccessFlags = 0;
-			if (param.mCPUWriteAccess) desc.CPUAccessFlags |= D3D11_CPU_ACCESS_FLAG::D3D11_CPU_ACCESS_WRITE;
-			if (param.mCPUReadAccess) desc.CPUAccessFlags |= D3D11_CPU_ACCESS_FLAG::D3D11_CPU_ACCESS_READ;
-
-			if (param.mUsage == EResourceUsage::EDynamic)
-				desc.CPUAccessFlags = D3D11_CPU_ACCESS_FLAG::D3D11_CPU_ACCESS_WRITE;
-
-			desc.Usage = ToDXType(param.mUsage);
-
-			D3D11_SUBRESOURCE_DATA data;
-			data.pSysMem = param.mInitialData;
-			data.SysMemPitch = 0;
-			data.SysMemSlicePitch = 0;
-
-			ID3D11Buffer* handle = nullptr;
-			if (SUCCEEDED(mDevice->CreateBuffer(&desc, &data, &handle)))
-			{
-				GFXIndexBufferDX* ret = new GFXIndexBufferDX;
-				ret->mDevice = mDevice;
-				ret->mDeviceContext = mImmediateContext;
-				ret->mHandle = handle;
-				ret->mDesc = param;
-				ret->mDesc.mInitialData = nullptr;
-				ULOG_SUCCESS("index buffer created.");
-				return ret;
-			}
-			ULOG_ERROR("Failed to create index buffer");
-			return nullptr;
-		}
+		GFXIndexBuffer* CreateIndexBuffer(const GFXIndexBufferDesc& param) override;
 		//////////////////////////////////////////////////////////////////////////
-		virtual GFXVertexBuffer* CreateVertexBuffer(const GFXVertexBuffer_Desc& param) override
-		{
-			if (param.mInitialData == nullptr && param.mUsage == EResourceUsage::EImmutable)
-			{
-				ULOG_ERROR("immutable buffer needs initial data");
-				return nullptr;
-			}
-			D3D11_BUFFER_DESC desc;
-			desc.MiscFlags = 0;
-			desc.StructureByteStride = 0;
-			desc.BindFlags = D3D11_BIND_FLAG::D3D11_BIND_VERTEX_BUFFER;
-			desc.ByteWidth = param.mSize;
-
-			desc.CPUAccessFlags = 0;
-			if (param.mCPUWriteAccess) desc.CPUAccessFlags |= D3D11_CPU_ACCESS_FLAG::D3D11_CPU_ACCESS_WRITE;
-			if (param.mCPUReadAccess) desc.CPUAccessFlags |= D3D11_CPU_ACCESS_FLAG::D3D11_CPU_ACCESS_READ;
-
-			if (param.mUsage == EResourceUsage::EDynamic)
-				desc.CPUAccessFlags = D3D11_CPU_ACCESS_FLAG::D3D11_CPU_ACCESS_WRITE;
-
-			desc.Usage = ToDXType(param.mUsage);
-
-			D3D11_SUBRESOURCE_DATA data;
-			data.pSysMem = param.mInitialData;
-			data.SysMemPitch = 0;
-			data.SysMemSlicePitch = 0;
-
-			D3D11_SUBRESOURCE_DATA* pData = nullptr;
-			if (param.mInitialData) pData = &data;
-
-			ID3D11Buffer* handle = nullptr;
-			if (SUCCEEDED(mDevice->CreateBuffer(&desc, pData, &handle)))
-			{
-				GFXVertexBufferDX* ret = new GFXVertexBufferDX;
-				ret->mDevice = mDevice;
-				ret->mDeviceContext = mImmediateContext;
-				ret->mHandle = handle;
-				ret->mDesc = param;
-				ret->mDesc.mInitialData = nullptr;
-				ULOG_SUCCESS("Vertex buffer created");
-				return ret;
-			}
-			ULOG_ERROR("failed to create vertex buffer");
-			return nullptr;
-		}
+		GFXVertexBuffer* CreateVertexBuffer(const GFXVertexBufferDesc& param) override;
 		//////////////////////////////////////////////////////////////////////////
-		virtual GFXConstantBuffer* CreateConstantBuffer(const GFXConstantBuffer_Desc& param) override
-		{
-			UASSERT(param.mSize % 16 == 0);
-
-			D3D11_BUFFER_DESC desc;
-			desc.MiscFlags = 0;
-			desc.StructureByteStride = 0;
-			desc.BindFlags = D3D11_BIND_FLAG::D3D11_BIND_CONSTANT_BUFFER;
-			desc.ByteWidth = param.mSize;
-			desc.CPUAccessFlags =  D3D11_CPU_ACCESS_WRITE;
-			desc.Usage = D3D11_USAGE::D3D11_USAGE_DYNAMIC;
-
-			D3D11_SUBRESOURCE_DATA data;
-			data.pSysMem = param.mInitialData;
-			data.SysMemPitch = 0;
-			data.SysMemSlicePitch = 0;
-
-			D3D11_SUBRESOURCE_DATA* pData = nullptr;
-			if (param.mInitialData) pData = &data;
-
-			ID3D11Buffer* handle = nullptr;
-			if (SUCCEEDED(mDevice->CreateBuffer(&desc, pData, &handle)))
-			{
-				GFXConstantBufferDX* ret = new GFXConstantBufferDX;
-				ret->mDevice = mDevice;
-				ret->mDeviceContext = mImmediateContext;
-				ret->mHandle = handle;
-				ret->mDesc = param;
-				ret->mDesc.mInitialData = nullptr;
-				ULOG_SUCCESS("constant buffer created");
-				return ret;
-			}
-			ULOG_ERROR("failed to create constant buffer");
-			return nullptr;
-		}
+		GFXConstantBuffer* CreateConstantBuffer(const GFXConstantBufferDesc& param) override;
 		//////////////////////////////////////////////////////////////////////////
-		virtual GFXDepthStencilState* CreateDepthStencilState(const GFXDepthStencilState_Desc& param) override
-		{
-			D3D11_DEPTH_STENCIL_DESC desc;
-			desc.DepthEnable = param.mDepthEnable;
-			desc.DepthWriteMask = param.mDepthWriteAll ? D3D11_DEPTH_WRITE_MASK_ALL : D3D11_DEPTH_WRITE_MASK_ZERO;
-			desc.DepthFunc = (D3D11_COMPARISON_FUNC)param.mDepthFunc;
-
-			desc.StencilEnable = param.mStencilEnable;
-			desc.StencilReadMask = param.mStencilReadMask;
-			desc.StencilWriteMask = param.mStencilWriteMask;
-
-			desc.FrontFace.StencilFailOp = (D3D11_STENCIL_OP)param.mFrontFaceStencilFailOp;
-			desc.FrontFace.StencilDepthFailOp = (D3D11_STENCIL_OP)param.mFrontFaceStencilDepthFailOp;
-			desc.FrontFace.StencilPassOp = (D3D11_STENCIL_OP)param.mFrontFaceStencilPassOp;
-			desc.FrontFace.StencilFunc = (D3D11_COMPARISON_FUNC)param.mFrontFaceStencilFunc;
-
-			desc.BackFace.StencilFailOp = (D3D11_STENCIL_OP)param.mBackFaceStencilFailOp;
-			desc.BackFace.StencilDepthFailOp = (D3D11_STENCIL_OP)param.mBackFaceStencilDepthFailOp;
-			desc.BackFace.StencilPassOp = (D3D11_STENCIL_OP)param.mBackFaceStencilPassOp;
-			desc.BackFace.StencilFunc = (D3D11_COMPARISON_FUNC)param.mBackFaceStencilFunc;
-
-			ID3D11DepthStencilState* handle = nullptr;
-			if (SUCCEEDED(mDevice->CreateDepthStencilState(&desc, &handle)))
-			{
-				GFXDepthStencilStateDX* ret = new GFXDepthStencilStateDX;
-				ret->mHandle = handle;
-				ret->mDesc = param;
-				ULOG_SUCCESS("depth stencil state crated");
-				return ret;
-			}
-			ULOG_ERROR("Failed to create depth stencil state");
-			return nullptr;
-		}
+		GFXDepthStencilState* CreateDepthStencilState(const GFXDepthStencilStateDesc& param) override;
 		//////////////////////////////////////////////////////////////////////////
-		virtual GFXSamplerState* CreateSamplerState(const GFXSamplerState_Desc& param) override
-		{
-			D3D11_SAMPLER_DESC desc;
-			desc.Filter = (D3D11_FILTER)param.mFilter;
-			desc.AddressU = (D3D11_TEXTURE_ADDRESS_MODE)param.mAddressU;
-			desc.AddressV = (D3D11_TEXTURE_ADDRESS_MODE)param.mAddressV;
-			desc.AddressW = (D3D11_TEXTURE_ADDRESS_MODE)param.mAddressW;
-			desc.MipLODBias = param.mMipLODBias;
-			desc.MaxAnisotropy = param.mMaxAnisotropy;
-			desc.ComparisonFunc = (D3D11_COMPARISON_FUNC)param.mComparisonFunc;
-			param.mBorderColor.StoreTo(desc.BorderColor);
-			desc.MinLOD = param.mMinLOD;
-			desc.MaxLOD = param.mMaxLOD;
-			
-			ID3D11SamplerState* handle = nullptr;
-			if (SUCCEEDED(mDevice->CreateSamplerState(&desc, &handle)))
-			{
-				GFXSamplerStateDX* ret = new GFXSamplerStateDX;
-				ret->mHandle = handle;
-				ret->mDesc = param;
-				ULOG_SUCCESS("Sampler state crated");
-				return ret;
-			}
-			ULOG_ERROR("Failed to create sampler state");
-			return nullptr;
-		}
+		GFXSamplerState* CreateSamplerState(const GFXSamplerStateDesc& param) override;
 		//////////////////////////////////////////////////////////////////////////
-		virtual GFXRasterizerState* CreateRasterizerState(const GFXRasterizerState_Desc& param) override
-		{
-			D3D11_RASTERIZER_DESC desc;
-			desc.FillMode = param.mWireframe ? D3D11_FILL_MODE::D3D11_FILL_WIREFRAME : D3D11_FILL_MODE::D3D11_FILL_SOLID;
-			desc.CullMode = (D3D11_CULL_MODE)param.mCullMode;
-			desc.DepthBias = param.mDepthBias;
-			desc.DepthBiasClamp = param.mDepthBiasClamp;
-			desc.DepthClipEnable = param.mDepthClipEnable;
-			desc.AntialiasedLineEnable = param.mAntialiasedLineEnable;
-			desc.FrontCounterClockwise = param.mFrontCounterClockWise;
-			desc.MultisampleEnable = param.mMultisampleEnable;
-			desc.ScissorEnable = param.mScissorEnable;
-			desc.SlopeScaledDepthBias = param.mSlopeScaledDepthBias;
-			
-			ID3D11RasterizerState* handle = nullptr;
-			if(SUCCEEDED(mDevice->CreateRasterizerState(&desc, &handle)))
-			{
-				GFXRasterizerStateDX* ret = new GFXRasterizerStateDX;
-				ret->mHandle = handle;
-				ret->mDesc = param;
-				ULOG_SUCCESS("rasterizer created");
-				return ret;
-			}
-			ULOG_ERROR("Failde to create rasterizer");
-			return nullptr;
-		}
+		GFXRasterizerState* CreateRasterizerState(const GFXRasterizerStateDesc& param) override;
 		//////////////////////////////////////////////////////////////////////////
-		virtual void BinVertexBuffer(const GFXVertexBuffer* buffer, unsigned stride, unsigned offset) override
-		{
-			if (buffer == nullptr)
-			{
-				mImmediateContext->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
-				return;
-			}
+		void SetVertexBuffer(GFXVertexBuffer* buffer, unsigned slot, unsigned stride, unsigned offset = 0) override;
 
-			ID3D11Buffer* buffers[1] = { buffer->As<GFXVertexBufferDX>()->mHandle };
-			UINT strides[1] = { stride };
-			UINT offsets[1] = { offset };
-			mImmediateContext->IASetVertexBuffers(0, 1, buffers, strides, offsets);
-		}
 		//////////////////////////////////////////////////////////////////////////
-		virtual void BinIndexBuffer(const GFXIndexBuffer* buffer, unsigned offset) override
-		{
-			if (buffer == nullptr)
-			{
-				mImmediateContext->IASetIndexBuffer(nullptr, DXGI_FORMAT::DXGI_FORMAT_UNKNOWN, 0);
-				return;
-			}
+		void SetIndexBuffer(GFXIndexBuffer* buffer, unsigned offset = 0) override;
+		//////////////////////////////////////////////////////////////////////////
+		void SetConstentBuffer(GFXConstantBuffer** buffers, unsigned startSlot, unsigned numBuffers, EShaderType whichShader) override;
+		void SetResourceView(GFXShaderResourceView** views, unsigned startSlot, unsigned numViews, EShaderType whichShder) override;
+		void SetResourceView(GFXTexture2D** textures, unsigned startSlot, unsigned numTextures, EShaderType whichShader) override;
 
-			GFXIndexBufferDX* ib = buffer->As<GFXIndexBufferDX>();
-			mImmediateContext->IASetIndexBuffer(ib->mHandle, ToDXType(ib->GetDesc().mType), offset);
-		}
 		//////////////////////////////////////////////////////////////////////////
-		virtual void BindConstantBuffer(const GFXConstantBuffer* buffer, unsigned slot, EShaderType whichShader) override
-		{
-			ID3D11Buffer* d3dBuffer = buffer ? buffer->As<GFXConstantBufferDX>()->GetHandle() : nullptr;
-			if (whichShader == EShaderType::EVertex)
-				mImmediateContext->VSSetConstantBuffers(slot, 1, &d3dBuffer);
-			else if (whichShader == EShaderType::EHull)
-				mImmediateContext->PSSetConstantBuffers(slot, 1, &d3dBuffer);
-		}
+		void SetPrimitiveTopology(EPrimitiveTopology topology) override;
 		//////////////////////////////////////////////////////////////////////////
-		virtual void SetPrimitiveTopology(EPrimitiveTopology topology) override
-		{
-			mImmediateContext->IASetPrimitiveTopology(ToDXType(topology));
-		}
+		void Draw(unsigned vertexCount, unsigned startVertexLocation, unsigned instanceCount, unsigned startInstanceLocation) override;
 		//////////////////////////////////////////////////////////////////////////
-		virtual void Draw(unsigned vertexCount, unsigned startVertexLocation, unsigned instanceCount, unsigned startInstanceLocation) override
-		{
-			if(instanceCount > 1)
-				mImmediateContext->DrawInstanced(vertexCount, instanceCount, startVertexLocation, startInstanceLocation);
-			else
-				mImmediateContext->Draw(vertexCount, startVertexLocation);
-		}
+		void DrawIndexed(unsigned indexCount, unsigned startIndexLocation, unsigned baseVertexLocation, unsigned instanceCount, unsigned startInstanceLocation) override;
 		//////////////////////////////////////////////////////////////////////////
-		virtual void DrawIndexed(unsigned indexCount, unsigned startIndexLocation, unsigned baseVertexLocation, unsigned instanceCount, unsigned startInstanceLocation) override
-		{
-			if(instanceCount > 1)
-				mImmediateContext->DrawIndexedInstanced(indexCount, instanceCount, startIndexLocation, baseVertexLocation, startInstanceLocation);
-			else
-				mImmediateContext->DrawIndexed(indexCount, startIndexLocation, baseVertexLocation);
-		}
-		//////////////////////////////////////////////////////////////////////////
-		virtual GFXTexture2D* CreateTexture2D(const GFXTexture2D_Desc& param)
-		{
-			UASSERT(param.mWidth < MAX_TEXTURE2D_SIZE && param.mHeight < MAX_TEXTURE2D_SIZE);
-			if (param.mUsage == EResourceUsage::EImmutable && param.mInitialData == nullptr)
-			{
-				ULOG_FATAL("immutable texture needs initial data");
-				return nullptr;
-			}
-			if (param.mMipLevels != 1)
-			{
-				ULOG_FATAL("currently only 1 miplevel is implemented");
-				return nullptr;
-			}
-			DXGI_FORMAT pixelFormat = ToDXType(param.mFormat);
-			if (param.mDepthStencil && !DirectX::IsDepthStencil(pixelFormat))
-			{
-				ULOG_FATAL("invalid pixel format for DepthStencil");
-				return nullptr;
-			}
+		GFXRenderTargetView* CreateRenderTargetView(GFXTexture2D* texture) override;
+		GFXRenderTargetView* CreateRenderTargetView(GFXTexture2D* texture, unsigned mipSlice, EPixelFormat format) override;
 
-			D3D11_TEXTURE2D_DESC desc;
-			desc.Width = param.mWidth;
-			desc.Height = param.mHeight;
-			desc.MipLevels = param.mMipLevels;
-			desc.ArraySize = 1;
-			desc.MiscFlags = 0;
-			desc.SampleDesc.Count = 1;
-			desc.SampleDesc.Quality = 0;
-			desc.Usage = ToDXType(param.mUsage);
-			desc.Format = pixelFormat;
-			desc.CPUAccessFlags = 0;
+		GFXDepthStencilView* CreateDepthStencilView(GFXTexture2D* texture) override;
+		GFXDepthStencilView* CreateDepthStencilView(GFXTexture2D* texture, unsigned mipSlice, EPixelFormat format) override;
 
-			desc.BindFlags = 0;
-			if(param.mResourceView)
-				desc.BindFlags |= D3D11_BIND_FLAG::D3D11_BIND_SHADER_RESOURCE;
-			if(param.mRenderTargetable)
-				desc.BindFlags |= D3D11_BIND_FLAG::D3D11_BIND_RENDER_TARGET;
-			if (param.mDepthStencil)
-				desc.BindFlags |= D3D11_BIND_FLAG::D3D11_BIND_DEPTH_STENCIL;
+		GFXShaderResourceView* CreateShaderResourceView(GFXTexture2D* texture2D) override;
+		GFXShaderResourceView* CreateShaderResourceView(GFXTexture2D* texture2D, unsigned mostDetailedMip, unsigned numMipLevels, EPixelFormat format) override;
 
-			size_t pitch = 0, slicePitch = 0;
-// 			DirectX::ComputePitch(pixelFormat, param.mWidth, param.mHeight, pitch, slicePitch);
-			D3D11_SUBRESOURCE_DATA data;
-			data.pSysMem = param.mInitialData;
-			data.SysMemPitch = pitch;
-			data.SysMemSlicePitch = slicePitch;
-			ID3D11Texture2D* handleTexture = nullptr;
-			D3D11_SUBRESOURCE_DATA* pData = param.mInitialData == nullptr ? nullptr : &data;
-			if (SUCCEEDED(mDevice->CreateTexture2D(&desc, pData, &handleTexture)))
-			{
-				ID3D11ShaderResourceView* handleSRV = nullptr;
-				if(param.mResourceView)
-				{
-					D3D11_SHADER_RESOURCE_VIEW_DESC resViewDesc;
-					resViewDesc.Format = pixelFormat;
-					resViewDesc.ViewDimension = D3D11_SRV_DIMENSION::D3D10_1_SRV_DIMENSION_TEXTURE2D;
-					resViewDesc.Texture2D.MostDetailedMip = 0;
-					resViewDesc.Texture2D.MipLevels = 1;
-					if (FAILED(mDevice->CreateShaderResourceView(handleTexture, &resViewDesc, &handleSRV)))
-					{
-						ULOG_FATAL("Failed to create ShaderResourceView");
-						handleTexture->Release();
-						return nullptr;
-					}
-				}
-				
-				ID3D11RenderTargetView* handleRTV = nullptr;
-				if (param.mRenderTargetable)
-				{
-					D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
-					renderTargetViewDesc.Format = pixelFormat;
-					renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION::D3D11_RTV_DIMENSION_TEXTURE2D;
-					renderTargetViewDesc.Texture2D.MipSlice = 0;
-					if (FAILED(mDevice->CreateRenderTargetView(handleTexture, &renderTargetViewDesc, &handleRTV)))
-					{
-						ULOG_FATAL("failed to create RenderTargetView");
-						if (handleSRV) handleSRV->Release();
-						handleTexture->Release();
-						return nullptr;
-					}
-
-				}
-				ID3D11DepthStencilView* handleDSV = nullptr;
-				if (param.mDepthStencil)
-				{
-					D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
-					depthStencilViewDesc.Format = pixelFormat;
-					depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION::D3D11_DSV_DIMENSION_TEXTURE2D;
-					depthStencilViewDesc.Texture2D.MipSlice = 0;
-					depthStencilViewDesc.Flags = 0;
-					if (FAILED(mDevice->CreateDepthStencilView(handleTexture, &depthStencilViewDesc, &handleDSV)))
-					{
-						ULOG_FATAL("failed to create DepthStencilView");
-						if (handleSRV) handleSRV->Release();
-						if (handleRTV) handleRTV->Release();
-						handleTexture->Release();
-						return nullptr;
-					}
-				}
-
-				GFXTexture2DDX* ret = new GFXTexture2DDX;
-				ret->mDesc = param;
-				ret->mTexture = handleTexture;
-				ret->mResourceView = handleSRV;
-				ret->mRenderTargetView = handleRTV;
-				ret->mDepthStencilView = handleDSV;
-
-				ULOG_SUCCESS("Texture created");
-				return ret;
-			}
-			ULOG_FATAL("texture creation failed");
-			return nullptr;
-		}
 		//////////////////////////////////////////////////////////////////////////
-		virtual void BindDepthStencilState(const GFXDepthStencilState* state) override
-		{
-			if (state == nullptr)
-				mImmediateContext->OMSetDepthStencilState(nullptr, 0);
-			else
-				mImmediateContext->OMSetDepthStencilState(state->As<GFXDepthStencilStateDX>()->mHandle, 1);
-		}
+		GFXTexture2D* CreateTexture2DFromMemory(const Buffer& memory) override;
+
+
+
 		//////////////////////////////////////////////////////////////////////////
-		virtual void BindRenderTarget(const GFXTexture2D* renderTarget, const GFXTexture2D* depthStencil) override
-		{
-			ID3D11RenderTargetView* rtv = nullptr;
-			if (renderTarget)
-			{
-				rtv = renderTarget->As<GFXTexture2DDX>()->mRenderTargetView;
-				UASSERT(rtv);
-			}
-			ID3D11DepthStencilView* dsv = nullptr;
-			if (depthStencil)
-			{
-				dsv = depthStencil->As<GFXTexture2DDX>()->mDepthStencilView;
-				UASSERT(dsv);
-			}
-			mImmediateContext->OMSetRenderTargets(1, &rtv, dsv);
-		}
+		GFXTexture2D* CreateTexture2D(const GFXTexture2DDesc& param);
 		//////////////////////////////////////////////////////////////////////////
-		virtual void BindRasterizer(const GFXRasterizerState* state) override
-		{
-			mImmediateContext->RSSetState(state ? state->As<GFXRasterizerStateDX>()->mHandle : nullptr);
-		}
+		void SetDepthStencilState(GFXDepthStencilStateHandle state) override;
+		//////////////////////////////////////////////////////////////////////////
+		void SetRenderTarget(GFXRenderTargetView** renderTargets, unsigned numRenderTargets, GFXTexture2D* depthStencil) override;
+		//////////////////////////////////////////////////////////////////////////
+		void SetRasterizerState(GFXRasterizerStateHandle state) override;
+		//////////////////////////////////////////////////////////////////////////
+		GFXShader* CreateShaderFromBytecode(const Buffer& bytecodes, EShaderType type);
+		//////////////////////////////////////////////////////////////////////////
+		GFXShader* CreateShader(const ShaderUniqueParam& param) override;
+		GFXShader* CreateShader(const Buffer& bytesCode, EShaderType type, Name debugName) override;
+
+		//////////////////////////////////////////////////////////////////////////
+		void SetShaders(GFXVertexShader* vertexShader, GFXPixelShader* pixelShader) override;
+		//////////////////////////////////////////////////////////////////////////
+		void SetShader(const GFXShaderBound& shaders) override;
+		//////////////////////////////////////////////////////////////////////////
 		
-		GFXShader* CreateShaderFromBytecode(const Buffer& bytecodes, EShaderType type)
-		{
-			HRESULT result = S_OK;
-			GFXShader* shader = nullptr;
-			GFXShaderDXBase shaderDX;
-
-			switch (type)
-			{
-			case EShaderType::EVertex:
-				result = mDevice->CreateVertexShader(bytecodes.Data(), bytecodes.Size(), nullptr, (ID3D11VertexShader**)&shaderDX.mHandle);
-				shader = new GFXVertexShaderDX(shaderDX);
-				break;
-			case EShaderType::EHull:
-				result = mDevice->CreateHullShader(bytecodes.Data(), bytecodes.Size(), nullptr, (ID3D11HullShader**)&shaderDX.mHandle);
-				shader = new GFXHullShaderDX(shaderDX);
-				break;
-			case EShaderType::EDomain:
-				result = mDevice->CreateDomainShader(bytecodes.Data(), bytecodes.Size(), nullptr, (ID3D11DomainShader**)&shaderDX.mHandle);
-				shader = new GFXDomainShaderDX(shaderDX);
-				break;
-			case EShaderType::EGeometry:
-				result = mDevice->CreateGeometryShader(bytecodes.Data(), bytecodes.Size(), nullptr, (ID3D11GeometryShader**)&shaderDX.mHandle);
-				shader = new GFXGeometryShaderDX(shaderDX);
-				break;
-			case EShaderType::EPixel:
-				result = mDevice->CreatePixelShader(bytecodes.Data(), bytecodes.Size(), nullptr, (ID3D11PixelShader**)&shaderDX.mHandle);
-				shader = new GFXPixelShaderDX(shaderDX);
-				break;
-			case EShaderType::ECompute:
-				result = mDevice->CreateComputeShader(bytecodes.Data(), bytecodes.Size(), nullptr, (ID3D11ComputeShader**)&shaderDX.mHandle);
-				shader = new GFXComputeShaderDX(shaderDX);
-				break;
-			}
-			
-			if (SUCCEEDED(result))
-			{
-				return shader;
-			}
-			else
-			{
-				if (shader) delete shader;
-				return nullptr;
-			}
-		}
 		//////////////////////////////////////////////////////////////////////////
-		virtual GFXShader* CreateShader(const ShaderUniqueParam& param) override
-		{
-			if (param.mFileName == nullptr || param.mEntryPoint == nullptr) return nullptr;
-
-			Buffer byteCodes;
-
-			if (!ShaderMgr::Get()->GetShaderCode(param, byteCodes))
-			{
-				ULOG_ERROR("failed to get shader [%] bytecodes", param.mFileName);
-				return nullptr;
-			}
-
-			GFXShader* ret = CreateShaderFromBytecode(byteCodes, param.mType);
-			if (ret == nullptr)
-			{
-				ULOG_ERROR("failed to create shader; name: [%], entryPoint: [%], type: [%]", param.mFileName, param.mEntryPoint, EnumToStr(param.mType));
-				return nullptr;
-			}
-			ULOG_SUCCESS("shader created. name: [%], type: [%]", param.mFileName, EnumToStr(param.mType));
-			return ret;
-		}
+		void SetSamplerState(GFXSamplerStateHandle* samplers, unsigned startSlot, unsigned numSamplers, EShaderType whichShader) override;
+		//////////////////////////////////////////////////////////////////////////
+		GFXInputLayout* CreateInputLayout(const GFXInputLayoutDesc& param) override;
+		void SetInputLayout(GFXInputLayoutHandle layout) override;
 
 		//////////////////////////////////////////////////////////////////////////
-		virtual void BindShaders(GFXVertexShader* vertexShader, GFXPixelShader* pixelShader) override
-		{
-			if(auto vs = vertexShader->As<GFXVertexShaderDX>())
-				mImmediateContext->VSSetShader(vs->Handle(), nullptr, 0);
-			if (auto ps = pixelShader->As<GFXPixelShaderDX>())
-				mImmediateContext->PSSetShader(ps->Handle(), nullptr, 0);
-		}
+		GFXBlendState* CreateBlendState(const GFXBlendStateDesc& param) override;
+		//////////////////////////////////////////////////////////////////////////
+		void SetBlendState(GFXBlendStateHandle blendState, const Color& blendFactor, unsigned sampleMask = 0xFFffFFff) override;
+		void ClearState() override;
+		bool IsImmediate() override;
 
-		virtual void BindShader(const GFXShaderBound& shaders) override
-		{
 
-		}
+		virtual void* Map(GFXBuffer*, EMapFlag) override;
+		virtual void Unmap(GFXBuffer*) override;
 		//////////////////////////////////////////////////////////////////////////
-		virtual void BindTexture(GFXTexture2D* texture, unsigned slot, EShaderType whichShader) override
-		{
-			if (texture == nullptr) return;
-			ID3D11ShaderResourceView* view = nullptr;
-			if (texture)
-			{
-				view = texture->As<GFXTexture2DDX>()->mResourceView;
-				if (view == nullptr)
-				{
-					ULOG_ERROR("texture has no view");
-					return;
-				}
-			}
-			if(whichShader == EShaderType::EVertex)
-				mImmediateContext->VSSetShaderResources(slot, 1, &view);
-			else if (whichShader == EShaderType::EHull)
-				mImmediateContext->PSSetShaderResources(slot, 1, &view);
-		}
-		//////////////////////////////////////////////////////////////////////////
-		virtual void BindSamplerState(GFXSamplerState* sampler, unsigned slot, EShaderType shader) override
-		{
-			ID3D11SamplerState* samplerState = nullptr;
-			if(sampler) samplerState = sampler->As<GFXSamplerStateDX>()->mHandle;
-			
-			if (shader == EShaderType::EVertex)
-				mImmediateContext->VSSetSamplers(slot, 1, &samplerState);
-			else if (shader == EShaderType::EHull)
-				mImmediateContext->PSSetSamplers(slot, 1, &samplerState);
-		}
-		//////////////////////////////////////////////////////////////////////////
-		virtual GFXInputLayout* CreateInputLayout(const GFXInputLayoutDesc& param) override
-		{
-			UASSERT(param.mVertexShader);
-			
-			unsigned numElement = 0;
-			for (;numElement < param.MAX_ELEMENT; numElement++)
-			{
-				if(param.mElements[numElement].mName == nullptr) break;
-			}
-
-			UASSERT(numElement != 0);
-
-			D3D11_INPUT_ELEMENT_DESC d3DElements[GFXInputLayoutDesc::MAX_ELEMENT];
-			for (unsigned i = 0; i < numElement; i++)
-			{
-				auto elem = param.mElements[i];
-				d3DElements[i].SemanticName = elem.mName;
-				d3DElements[i].SemanticIndex = 0;
-				d3DElements[i].InstanceDataStepRate = 0;
-				d3DElements[i].InputSlotClass = elem.mPerInstance ? D3D11_INPUT_PER_INSTANCE_DATA : D3D11_INPUT_PER_VERTEX_DATA;
-				d3DElements[i].InputSlot = elem.mSlot;
-				d3DElements[i].Format = ToDXType(elem.mFormat);
-				d3DElements[i].AlignedByteOffset = elem.mOffset >= 0 ? elem.mOffset : D3D11_APPEND_ALIGNED_ELEMENT;
-			}
-			GFXVertexShaderDX* shader = param.mVertexShader->As<GFXVertexShaderDX>();
-			
-			ID3D11InputLayout* handle = nullptr;
-			if (FAILED(mDevice->CreateInputLayout(d3DElements, numElement, shader->mShader.GetByteCode(), shader->mShader.GetByteCodeSize(), &handle)))
-			{
-				ULOG_ERROR("failed to create InputLayout");
-				return nullptr;
-			}
-			GFXInputLayoutDX* ret = new GFXInputLayoutDX;
-			ret->mDesc = param;
-			ret->mHandle = handle;
-			ULOG_SUCCESS("InputLayout Created");
-			return ret;
-		}
-		//////////////////////////////////////////////////////////////////////////
-		virtual void BinInputLayout(const GFXInputLayout* layout) override
-		{
-			mImmediateContext->IASetInputLayout(layout ? layout->As<GFXInputLayoutDX>()->mHandle : nullptr);
-		}
-		//////////////////////////////////////////////////////////////////////////
-		virtual GFXBlendState* CreateBlendState(const GFXBlendState_Desc& param) override
-		{
-			D3D11_BLEND_DESC desc;
-			desc.AlphaToCoverageEnable = param.mAlphaToCoverageEnable;
-			desc.IndependentBlendEnable = param.mIndependentBlendEnable;
-			for (size_t i = 0; i < GFX_MAX_RENDER_TARGET; i++)
-			{
-				desc.RenderTarget[0].BlendEnable = param.mRenderTargets[0].mBlendEnable;
-				desc.RenderTarget[0].BlendOp = ToDXType(param.mRenderTargets[0].mBlendOp);
-				desc.RenderTarget[0].BlendOpAlpha = ToDXType(param.mRenderTargets[0].mBlendOpAlpha);
-				desc.RenderTarget[0].DestBlend = ToDXType(param.mRenderTargets[0].mDestBlend);
-				desc.RenderTarget[0].DestBlendAlpha = ToDXType(param.mRenderTargets[0].mDestBlendAlpha);
-				desc.RenderTarget[0].SrcBlend = ToDXType(param.mRenderTargets[0].mSrcBlend);
-				desc.RenderTarget[0].SrcBlendAlpha = ToDXType(param.mRenderTargets[0].mSrcBlendAlpha);
-				desc.RenderTarget[0].RenderTargetWriteMask = ToDXType(param.mRenderTargets[0].mWriteMask);
-			}
-			ID3D11BlendState* handle = nullptr;
-			if (FAILED(mDevice->CreateBlendState(&desc, &handle)))
-			{
-				ULOG_ERROR("failed to create BlendState");
-				return nullptr;
-			}
-			GFXBlendStateDX* ret = new GFXBlendStateDX;
-			ret->mDesc = param;
-			ret->mHandle = handle;
-			return ret;
-		}
-		//////////////////////////////////////////////////////////////////////////
-		virtual void BindBlendState(const GFXBlendState* state, float blendFactor[4], unsigned sampleMask = 0xFFffFFff) override
-		{
-			ID3D11BlendState* bs = state ? state->As<GFXBlendStateDX>()->mHandle : nullptr;
-			mImmediateContext->OMSetBlendState(bs, blendFactor, sampleMask);
-		}
-		//////////////////////////////////////////////////////////////////////////
-		virtual GFXTexture2D* LoadTextureFromFile(const char* filename)
-		{
-			if (filename == nullptr) return nullptr;
-
-			char fullFileName[256];
-			sprintf_s(fullFileName, "..//Content//%s", filename);
-			wchar_t fullFileNameW[256];
-			size_t ncc = 0;
-			mbstowcs_s(&ncc, fullFileNameW, 256, fullFileName, 256);
-			const char* ext = StrFindRNChar(filename, '.', 0);
-			if (ext == nullptr) return nullptr;
-			unsigned flag = 0;
-			DirectX::ScratchImage image;
-			HRESULT hr = S_OK;
-			if (_strcmpi(ext, ".dds") == 0)
-				hr = DirectX::LoadFromDDSFile(fullFileNameW, flag, nullptr, image);
-			else if(_strcmpi(ext, ".tga") == 0)
-				hr = DirectX::LoadFromTGAFile(fullFileNameW, nullptr, image);
-			else
-				hr = DirectX::LoadFromWICFile(fullFileNameW, flag, nullptr, image);
-			if (SUCCEEDED(hr))
-			{
-				ID3D11ShaderResourceView* srv = nullptr;
-				ID3D11Resource* handle = nullptr;
-				if (FAILED(DirectX::CreateShaderResourceView(mDevice, image.GetImages(), image.GetImageCount(), image.GetMetadata(), &srv)))
-				{
-					ULOG_ERROR("failed to create texture");
-					return nullptr;
-				}
-				GFXTexture2DDX* ret = new GFXTexture2DDX;
-				ret->mResourceView = srv;
-				srv->GetResource((ID3D11Resource**)&(ret->mTexture));
-				ULOG_SUCCESS("Texture loaded");
-				return ret;
-
-			}
-			ULOG_ERROR("failed to load texture");
-			return nullptr;
-		}
+// 		GFXTexture2D* LoadTextureFromFile(const char* filename)
+// 		{
+// 			if (filename == nullptr) return nullptr;
+// 
+// 			
+// 			char fullFileName[256];
+// 			sprintf_s(fullFileName, "..//Content//%s", filename);
+// 			wchar_t fullFileNameW[256];
+// 			size_t ncc = 0;
+// 			mbstowcs_s(&ncc, fullFileNameW, 256, fullFileName, 256);
+// 			const char* ext = StrFindRNChar(filename, '.', 0);
+// 			if (ext == nullptr) return nullptr;
+// 			unsigned flag = 0;
+// 			DirectX::ScratchImage image;
+// 			HRESULT hr = S_OK;
+// 			if (_strcmpi(ext, ".dds") == 0)
+// 				hr = DirectX::LoadFromDDSFile(fullFileNameW, flag, nullptr, image);
+// 			else if(_strcmpi(ext, ".tga") == 0)
+// 				hr = DirectX::LoadFromTGAFile(fullFileNameW, nullptr, image);
+// 			else
+// 				hr = DirectX::LoadFromWICFile(fullFileNameW, flag, nullptr, image);
+// 			if (SUCCEEDED(hr))
+// 			{
+// 				ID3D11ShaderResourceView* srv = nullptr;
+// 				ID3D11Resource* handle = nullptr;
+// 				if (FAILED(DirectX::CreateShaderResourceView(mDevice, image.GetImages(), image.GetImageCount(), image.GetMetadata(), &srv)))
+// 				{
+// 					ULOG_ERROR("failed to create texture");
+// 					return nullptr;
+// 				}
+// 				GFXTexture2DDX* ret = new GFXTexture2DDX;
+// 				ret->mShaderResourceView = srv;
+// 				srv->GetResource((ID3D11Resource**)&(ret->mTexture));
+// 				ULOG_SUCCESS("Texture loaded");
+// 				return ret;
+// 
+// 			}
+// 			ULOG_ERROR("failed to load texture");
+// 			return nullptr;
+// 		}
 	};
-	//////////////////////////////////////////////////////////////////////////
-	extern UAPI GFXDeviceDX* gGFXDX;
 };

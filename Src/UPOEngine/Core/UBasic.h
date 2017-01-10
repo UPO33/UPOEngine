@@ -197,6 +197,16 @@ namespace UPO
 	enum InitConfig {};
 	enum InitZero {};
 
+	template<typename T> void SafeDelete(T*& object)
+	{
+		if (object) delete object;
+		object = nullptr;
+	}
+	template<typename T> void SafeDeleteArray(T*& object)
+	{
+		if (object) delete[] object;
+		object = nullptr;
+	}
 	//////////////////////////////////////////////////////////////////////////
 	UAPI bool IsGameThread();
 	UAPI bool IsRenderThread();
@@ -492,6 +502,10 @@ namespace UPO
 		bool Test(unsigned flag) const
 		{
 			return (mFlag & flag) == flag;
+		}
+		bool TestAny(unsigned flag) const
+		{
+			return (mFlag & flag);
 		}
 		void Set(unsigned flag)
 		{

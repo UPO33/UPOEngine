@@ -39,9 +39,6 @@ namespace UPO
 		World* CreateWorld();
 		void DeleteWorld(World*);
 		
-		GameWindow* CreateGameWindow(const GameWindowCreationParam&);
-		void DeleteGameWindow(GameWindow*);
-
 		static IEngineInterface* Get();
 	};
 

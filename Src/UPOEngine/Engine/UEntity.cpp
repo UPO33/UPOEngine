@@ -190,7 +190,7 @@ namespace UPO
 
 	const AABB& Entity::GetBound() const
 	{
-		mBound;
+		return mBound;
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -303,7 +303,7 @@ namespace UPO
 
 	void Entity::OnConstruct()
 	{
-
+		ULOG_MESSAGE("");
 	}
 	void Entity::OnBeginPlay()
 	{

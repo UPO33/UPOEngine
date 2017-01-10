@@ -5,6 +5,9 @@
 
 namespace UPO
 {
+	extern UAPI unsigned gFPS;
+
+
 	typedef TCommandQueueSPSC<2000> TRenderCommandQueue;
 	extern TRenderCommandQueue gGame2RenderQueue;	//UEngine.cpp
 

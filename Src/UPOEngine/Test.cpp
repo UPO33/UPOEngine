@@ -14,11 +14,12 @@
 #include "Core/UMatrix.h"
 #include "core/UDelegate.h"
 #include "core/UPlane.h"
+#include "Engine/UEntityTest.h"
 
 namespace UPO
 {
 	
-	class TestObject : public Object 
+	class alignas(16) TestObject : public Object 
 	{
 		UCLASS(TestObject, Object)
 
@@ -75,6 +76,7 @@ namespace UPO
 	class EngineLauncher : public IEngineInterface
 	{
 		GameWindow* mGameWnd = nullptr;
+		GameWindow* mGameWnd2 = nullptr;
 		World*		mStartupWorld = nullptr;
 
 		virtual bool OnInit() override
@@ -82,14 +84,26 @@ namespace UPO
 			AssetSys::Get()->CollectAssetEntries();
 
 			GameWindowCreationParam gwcp = InitConfig();
-			mGameWnd = GEngine()->CreateGameWindow(gwcp);
+			gwcp.mVSyncEnable = false;
+
+
+
+			mGameWnd = GameWindow::CreateLauncherWin(gwcp);
+			mGameWnd2 = GameWindow::CreateLauncherWin(gwcp);
 
 			UASSERT(mGameWnd);
-
+			UASSERT(mGameWnd2);
 
 			mStartupWorld = GEngine()->CreateWorld();
+			mStartupWorld->CreateEntity<EntityTest>(nullptr);
+			mStartupWorld->SetPlaying();
 
 			mGameWnd->SetWorld(mStartupWorld);
+
+			mStartupWorld = GEngine()->CreateWorld();
+			mStartupWorld->CreateEntity<EntityTest>(nullptr);
+			mStartupWorld->SetPlaying();
+			mGameWnd2->SetWorld(mStartupWorld);
 
 			return true;
 		}
@@ -105,10 +119,10 @@ namespace UPO
 
 		virtual bool OnRelease() override
 		{
-			GEngine()->DeleteWorld(mStartupWorld);
-			GameWindow::Instances.ForEach([](GameWindow* gw) { GameWindow::Destroy(gw); });
-			mStartupWorld = nullptr;
-			mGameWnd = nullptr;
+// 			GEngine()->DeleteWorld(mStartupWorld);
+// 			GameWindow::Instances.ForEach([](GameWindow* gw) { GameWindow::Destroy(gw); });
+// 			mStartupWorld = nullptr;
+// 			mGameWnd = nullptr;
 			return true;
 		}
 	};
@@ -172,6 +186,7 @@ namespace UPO
 		return Dot(planeNormal, point - planePoint);
 	}
 
+
 	void DebugTest()
 	{
 // 		Matrix4 rotation;
@@ -181,6 +196,7 @@ namespace UPO
 // 			rotation.MakeRotationXYZ(ang);
 // 			Vec3 v0 = rotation.GetRotationEuler1();
 // 		}
+
 
 		UPO::Plane p0(Vec3(0, 0, 0), Vec3(0,1,0));
 		Vec3 pos = Vec3(123, -23, 55);

@@ -2,10 +2,10 @@
 
 namespace UPO
 {
-	UDECL_GLOBAL_SHADER(gVSPrimitiveBatch, GFXVertexShader);
-	UDECL_GLOBAL_SHADER(gPSPrimitiveBatch, GFXPixelShader);
-	UIMPL_GLOBAL_SHADER(gVSPrimitiveBatch, "WorldPrimitiveBatch.hlsl", "VSMain");
-	UIMPL_GLOBAL_SHADER(gPSPrimitiveBatch, "WorldPrimitiveBatch.hlsl", "PSMain");
+	UGLOBAL_SHADER_DECL(gVSPrimitiveBatch, GFXVertexShader);
+	UGLOBAL_SHADER_DECL(gPSPrimitiveBatch, GFXPixelShader);
+	UGLOBAL_SHADER_IMPL(gVSPrimitiveBatch, "WorldPrimitiveBatch.hlsl", "VSMain");
+	UGLOBAL_SHADER_IMPL(gPSPrimitiveBatch, "WorldPrimitiveBatch.hlsl", "PSMain");
 
 
 	PrimitiveBatch::PrimitiveBatch()
@@ -33,9 +33,9 @@ namespace UPO
 	{
 		UASSERT(IsRenderThread());
 
-		GFXVertexBuffer_Desc vbdesc;
+		GFXVertexBufferDesc vbdesc;
 		vbdesc.mSize = MAX_LINE_PER_FRAME * sizeof(Line);
-		vbdesc.mUsage = EResourceUsage::EDynamic;
+		vbdesc.mDynamic = true;
 
 		mLinesBuffer = gGFX->CreateVertexBuffer(vbdesc);
 		UASSERT(mLinesBuffer);
@@ -64,22 +64,22 @@ namespace UPO
 	{
 		UASSERT(IsRenderThread());
 
-		auto& linedData = mLines[mGSIndex ^ 1];
-
-		unsigned numLine = linedData.Length();
-		if (numLine == 0) return;
-
-		void* ptrMapped = mLinesBuffer->Map(EMapFlag::EWriteDiscard);
-		MemCopy(ptrMapped, linedData.Elements(), sizeof(PrimitiveBatch::Line) * linedData.Length());
-		mLinesBuffer->Unmap();
-
-
-		gGFX->BinVertexBuffer(mLinesBuffer, sizeof(PrimitiveBatch::Line) / 2, 0);
-		gGFX->BinIndexBuffer(nullptr);
-		gGFX->BinInputLayout(mInputLayout);
-		gGFX->BindShaders(gVSPrimitiveBatch, gPSPrimitiveBatch);
-		gGFX->SetPrimitiveTopology(EPrimitiveTopology::EPT_LINELIST);
-		gGFX->Draw(numLine * 2);
+// 		auto& linedData = mLines[mGSIndex ^ 1];
+// 
+// 		unsigned numLine = linedData.Length();
+// 		if (numLine == 0) return;
+// 
+// 		void* ptrMapped = mLinesBuffer->Map(EMapFlag::EWriteDiscard);
+// 		MemCopy(ptrMapped, linedData.Elements(), sizeof(PrimitiveBatch::Line) * linedData.Length());
+// 		mLinesBuffer->Unmap();
+// 
+// 
+// 		gGFX->SetVertexBuffer(mLinesBuffer, sizeof(PrimitiveBatch::Line) / 2, 0);
+// 		gGFX->SetIndexBuffer(nullptr);
+// 		gGFX->BinInputLayout(mInputLayout);
+// 		gGFX->BindShaders(gVSPrimitiveBatch, gPSPrimitiveBatch);
+// 		gGFX->SetPrimitiveTopology(EPrimitiveTopology::ELineList);
+// 		gGFX->Draw(numLine * 2);
 
 	}
 

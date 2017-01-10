@@ -5,30 +5,33 @@
 
 namespace UPO
 {
-	template<unsigned MaxCommand = 1000> class alignas(64) TCommandQueueSPSC
+	template<unsigned MaxCommand = 1000> class alignas(UCACHE_ALIGN) TCommandQueueSPSC
 	{
-		static const unsigned MaxLambdaSize = sizeof(void*) * 8;
+		static const unsigned MaxLambdaSize = sizeof(void*) * 7;
 
-		struct ICMD
+		struct alignas(16) ICMD
 		{
 			virtual ~ICMD() {}
 		};
-
-		static const unsigned CMDSize = MaxLambdaSize + sizeof(ICMD);
+		struct alignas(16) CMDBase : ICMD
+		{
+			char mBuffer[MaxLambdaSize];
+		};
+		static_assert(sizeof(CMDBase) % 16 == 0, "should be 16 aligned");
+		static const unsigned CMDSize = sizeof(CMDBase);
 
 		alignas(64)	volatile unsigned		mHead = 0;
 		volatile bool						mRuning = false;
 		Event								mWaitEvent;
 		alignas(64) volatile unsigned		mTail = 0;
-		alignas(64)	ICMD					mElements[MaxCommand];
-
-
+		ThreadID							mConsumerThreadID = 0;
+		alignas(64)	CMDBase					mElements[MaxCommand];
 
 
 		bool IsEmpty() const { return mHead == mTail; }
 		bool IsFull() const { return ((mTail + 1) % MaxCommand) == mHead; }
 
-		ICMD* BeginEnqueue()
+		void* BeginEnqueue()
 		{
 			UASSERT(!IsFull());	//assert if full
 			return mElements + mTail;
@@ -41,7 +44,7 @@ namespace UPO
 		ICMD* BeginDequeue()
 		{
 			if (mHead == mTail) return nullptr;
-			return mElements + mHead;
+			return (ICMD*)(mElements + mHead);
 		}
 		void EndDequeue()
 		{
@@ -56,29 +59,42 @@ namespace UPO
 
 		TCommandQueueSPSC() : mWaitEvent(false, false) {}
 
-		template<typename Lambda> void Enqueue(Lambda& proc)
+		template<typename Lambda> void Enqueue(const Lambda& proc)
 		{
-			struct alignas(sizeof(void*)) NewCMD : public ICMD
+			if (Thread::ID() == mConsumerThreadID)
+			{
+				proc();
+				return;
+			}
+
+			struct NewCMD : public ICMD
 			{
 				Lambda mProc;
-				NewCMD(Lambda& p) : mProc(p) {}
+				NewCMD(const Lambda& p) : mProc(p) {}
 				~NewCMD()
 				{
 					mProc();
 				}
 			};
 			static_assert(sizeof(NewCMD) <= CMDSize, "");
-			ICMD* cmd = BeginEnqueue();
+			static_assert(alignof(NewCMD) <= alignof(ICMD), "");
+			void* cmd = BeginEnqueue();
 			new (cmd) NewCMD(proc);
 			EndEnqueue();
 		}
-		template<typename Lambda> void EnqueueAndWait(Lambda& proc)
+		template<typename Lambda> void EnqueueAndWait(const Lambda& proc)
 		{
-			struct alignas(sizeof(void*)) NewCMD : public ICMD
+			if (Thread::ID() == mConsumerThreadID)
+			{
+				proc();
+				return;
+			}
+
+			struct NewCMD : public ICMD
 			{
 				Lambda mProc;
 				TCommandQueueSPSC*	mOwner;
-				NewCMD(Lambda& p, TCommandQueueSPSC* owner) : mProc(p), mOwner(owner) {}
+				NewCMD(const Lambda& p, TCommandQueueSPSC* owner) : mProc(p), mOwner(owner) {}
 				~NewCMD()
 				{
 					mProc();
@@ -86,17 +102,21 @@ namespace UPO
 				}
 			};
 			static_assert(sizeof(NewCMD) <= CMDSize, "");
-			ICMD* cmd = BeginEnqueue();
+			static_assert(alignof(NewCMD) <= alignof(ICMD), "");
+			void* cmd = BeginEnqueue();
 			new (cmd) NewCMD(proc, this);
 			EndEnqueue();
+			
 			mWaitEvent.Wait();
 		}
 		void RunTillQuit()
 		{
 			mRuning = true;
+			mConsumerThreadID = Thread::ID();
 
 			while (mRuning)
 			{
+
 				if (ICMD* cmd = BeginDequeue())
 				{
 					cmd->~ICMD();

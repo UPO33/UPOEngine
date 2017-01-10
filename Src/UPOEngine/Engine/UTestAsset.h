@@ -18,10 +18,5 @@ namespace UPO
 		ATest();
 		~ATest();
 
-
-		virtual void OnInit() override;
-		virtual void OnInitRS() override;
-		virtual void OnRelease() override;
-		virtual void OnReleaseRS() override;
 	};
 };

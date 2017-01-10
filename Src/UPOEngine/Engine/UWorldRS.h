@@ -91,11 +91,9 @@ namespace UPO
 		void RenderStaticMesh(unsigned index);
 
 		void RemoveRS(Entity* ent);
-		void AddToScene(Entity* from);
+		void AddRS(Entity* from);
 
 
-		void PerformFetch();
-		void CollectMeshesForRender();
 
 	};
 

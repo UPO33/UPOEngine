@@ -20,6 +20,9 @@ namespace UPO
 	{
 		UCLASS(Vec2, void)
 
+		static const Vec2 ZERO;
+		static const Vec2 ONE;
+
 		float mX, mY;
 
 		inline Vec2() {}
@@ -129,7 +132,23 @@ namespace UPO
 		void MetaSerialize(Stream&);
 	};
 	
-
+	inline Vec2 URotatePoint(Vec2 point, float angleRadian)
+	{
+		float fSin, fCos;
+		SinCos(angleRadian, fSin, fCos);
+		return Vec2(
+			point.mX * fCos - point.mY * fSin,
+			point.mX * fSin + point.mY * fCos);
+	}
+	inline Vec2 URotatePoint(Vec2 point, float angleRadian, Vec2 origin)
+	{
+		float fSin, fCos;
+		SinCos(angleRadian, fSin, fCos);
+		point -= origin;
+		float xx = point.mX * fCos - point.mY * fSin;
+		float yy = point.mX * fSin + point.mY * fCos;
+		return Vec2(xx + origin.mX, yy + origin.mY);
+	}
 	inline float Dot(const Vec2& a, const Vec2& b)
 	{
 		return a | b;
@@ -166,6 +185,10 @@ namespace UPO
 	struct UAPI Vec3
 	{
 		UCLASS(Vec3, void)
+
+
+		static const Vec3 ZERO;
+		static const Vec3 ONE;
 
 		union
 		{
@@ -450,6 +473,9 @@ namespace UPO
 	{
 		UCLASS(Vec4, void)
 
+		static const Vec4 Zero;
+		static const Vec4 One;
+
 		union
 		{
 			struct
@@ -682,6 +708,15 @@ namespace UPO
 	{
 		UCLASS(Color, void)
 
+		static const Color WHITE;
+		static const Color RED;
+		static const Color GREEN;
+		static const Color BLUE;
+		static const Color YELLOW;
+		static const Color BLACK;
+		static const Color PURPLE;
+		static const Color PINK;
+
 		inline Color(){}
 		explicit inline Color(float rgba) { mR = mG = mB = mA = rgba; }
 		explicit inline Color(float rgb, float a) { mR = mG = mB = rgb;	mA = a; }
@@ -691,6 +726,14 @@ namespace UPO
 		void ToString(char* outBuffer, unsigned bufferSize) const;
 		String ToString() const;
 
+		bool operator == (const Color& other) const
+		{
+			return mR == other.mR && mG == other.mG && mB == other.mB && mA == other.mA;
+		}
+		bool operator != (const Color& other) const
+		{
+			return !this->operator==(other);
+		}
 		void MetaSerialize(Stream&);
 	};
 

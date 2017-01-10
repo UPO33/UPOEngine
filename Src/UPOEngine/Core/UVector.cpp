@@ -32,6 +32,9 @@ namespace UPO
 	const Color32 Color32::BLUE(0, 0, 255, 255);
 	const Color32 Color32::YELLOW(255, 255, 0, 255);
 
+	const Vec2 Vec2::ZERO(0);
+	const Vec2 Vec2::ONE(1);
+
 	void Vec2::ToString(char* outBuffer, unsigned bufferSize) const
 	{
 		UASSERT(outBuffer && bufferSize);
@@ -50,6 +53,9 @@ namespace UPO
 		s.RW(mX).RW(mY);
 	}
 
+	const Vec3 Vec3::ZERO(0);
+	const Vec3 Vec3::ONE(1);
+
 	void Vec3::ToString(char* outBuffer, unsigned bufferSize) const
 	{
 		UASSERT(outBuffer && bufferSize);
@@ -67,6 +73,10 @@ namespace UPO
 	{
 		s.RW(mX).RW(mY).RW(mZ);
 	}
+
+	const Vec4 Vec4::Zero(0);
+	const Vec4 Vec4::One(1);
+
 	void Vec4::MetaSerialize(Stream& s)
 	{
 		s.RW(mX).RW(mY).RW(mZ).RW(mW);
@@ -90,6 +100,16 @@ namespace UPO
 		s.RW(mR).RW(mG).RW(mB).RW(mA);
 	}
 
+	const Color Color::WHITE(1,1,1,1);
+	const Color Color::RED(1,0,0,1);
+	const Color Color::GREEN(0,1,0,1);
+	const Color Color::BLUE(0,0,1,1);
+	const Color Color::YELLOW(1,1,0,1);
+	const Color Color::BLACK(0,0,0,1);
+	const Color Color::PURPLE(160.0f / 255.0f,  32 / 255.0f, 240 / 255.0f, 1);
+	const Color Color::PINK(1, 20 / 255.0f, 147 / 255.0f, 1);
+
+	//255 - 20 - 147
 	void Color::ToString(char* outBuffer, unsigned bufferSize) const
 	{
 		UASSERT(outBuffer && bufferSize);

@@ -49,13 +49,13 @@ namespace UPO
 		Vec2				mViewPortScale;
 		int					mSuperiority;
 
-		unsigned			mPrivateIndex;
-		EntityCamera*		mGS;
-		WorldRS*			mOwner;
+		//cameras fetch is performed every frame without considering dirty flags
+		void Fetch();
+		
+		EntityCamera* GS() const { return (EntityCamera*)mOwner; }
 
 		bool ShouldBeReanderd() const;
 		void GetFrustum(Frustum& out);
-		void OnFetch();
 		void Update();
 	};
 

@@ -37,8 +37,7 @@ namespace UPO
 
 		void CreatePxMaterial();
 
-		void OnInit() override;
-		void OnRelease() override;
+
 
 	};
 

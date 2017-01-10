@@ -212,7 +212,7 @@ namespace UPO
 			mParentClassName = mHasParent ? (strchr(typeid(TParent).name(), ' ') + 1) : nullptr;
 			mClassName = strchr(typeid(TClass).name(), ' ') + 1;
 			mTypeSize = sizeof(TClass);
-			mTypeAlign = sizeof(TClass);
+			mTypeAlign = alignof(TClass);
 			// 		mParentTypeSize = sizeof(void);
 			// 		mParentTypeAlign = alignof(void);
 
@@ -308,6 +308,7 @@ namespace UPO
 #define UCLASS_END_IMPL(Class)
 #endif
 
+#define UPROPERTY_NAME_EQUAL(PropertyInfoPtr, MemberVarible) PropertyInfoPtr->GetName() == #MemberVarible
 
 //////////////////////////////////////////////////////////////////////////
 namespace UPO

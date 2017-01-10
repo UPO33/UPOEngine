@@ -2,4 +2,5 @@
 
 namespace UPO
 {
+	UAPI unsigned gFPS = 0;
 };

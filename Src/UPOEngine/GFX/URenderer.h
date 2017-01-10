@@ -3,6 +3,13 @@
 
 #include "../GFXCore/UGFXCore.h"
 
+#include "../Engine/UGameWindow.h"
+#include "../Engine/UWorldRS.h"
+#include "../Engine/UWorld.h"
+#include "../Engine/UCanvas.h"
+
+#include "UDefferdRenderTargets.h"
+
 namespace UPO
 {
 	//////////////////////////////////////////////////////////////////////////
@@ -13,20 +20,25 @@ namespace UPO
 	class UAPI Renderer
 	{
 	public:
-		class TestQuadRE* mTestQuad = nullptr;
-		class WorldRS* mWorld = nullptr;
-		class PrimitiveBatch*	mPrimitiveBatch = nullptr;
+		GameWindow* mGameWnd;
+		GFXSwapChain* mSwapChain;
+		WorldRS*	mWorldRS;
+		PrimitiveBatch* mPrimitiveBatch;
+		Canvas* mCanvas;
+		DefferdRenderTargets* mRenderTargets = nullptr;
+		class TestQuadRE* mQuad;
+		CriticalSection mSwapChainLock;
 
-		virtual bool Init() { return false; }
-		virtual bool RenderFrame() { return false; }
-		virtual bool Release() { return false; }
-		virtual void AttachWorld(WorldRS* world) {}
-
+		Renderer();
+		~Renderer();
 
 		static Renderer* New();
 		static void Delete(Renderer*);
 
 		virtual void RenderGameWin(GameWindow*);
+
+		void Render();
+		void CheckRenderTargetResizing();
 	};
 
 

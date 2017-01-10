@@ -8,22 +8,36 @@
 namespace UPO
 {
 	//////////////////////////////////////////////////////////////////////////
+	class ATexture2D;
+	class ATexture2DRS;
+	
+
+	//////////////////////////////////////////////////////////////////////////
 	struct Texture2DSamplerInfo
 	{
 		UCLASS(Texture2DSamplerInfo, void)
 
 		ETextureAddress		mUAddress = ETextureAddress::EClamp;
 		ETextureAddress		mVAddress = ETextureAddress::EClamp;
-		ETextureFilter		mFilter = ETextureFilter::ETF_MIN_POINT_MAG_MIP_LINEAR;
+		ETextureFilter		mFilter = ETextureFilter::EMinMagMipLinear;
 		Color				mBorderColor = Color(1,1,1,1);
+		float				mMaxAnisotropy = 16;
+		float				mMipLODBias = 0;
 	};
 
 	//////////////////////////////////////////////////////////////////////////
-	class ATexture2DRS
+	class UAPI ATexture2DRS
 	{
 	public:
-		class GFXSamplerState*	mSampler;
-		class GFXTexture2D*		mTexture;
+		class GFXSamplerState*	mSampler = nullptr;
+		class GFXTexture2D*		mTexture = nullptr;
+		class ATexture2D*		mGS = nullptr;
+
+		
+		void ReCreateSampler();
+		void RecreatreTexture();
+
+		
 	};
 
 	//////////////////////////////////////////////////////////////////////////
@@ -35,16 +49,17 @@ namespace UPO
 
 	private:
 		Buffer		mContent;
-		unsigned	mWidth;
-		unsigned	mHeight;
 		Texture2DSamplerInfo mSampler;
 		ATexture2DRS*	mRS;
-		TinyLock		mEditingLock;
 
-		void OnInit() override;
-		void OnRelease() override;
+
+		virtual void OnCreate() override;
+		virtual void OnDestroy() override;
 
 	public:
-		void MetaPropertyChanged(PropertyInfo*);
+		ATexture2DRS* GetRS() const { return mRS; }
+
+		void MetaBeforePropertyChange(const PropertyInfo*);
+		void MetaAfterPropertyChange(const PropertyInfo*);
 	};
 };

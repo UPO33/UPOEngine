@@ -178,6 +178,25 @@ namespace UPO
 		}
 	}
 
+	bool AssetSys::ReadFileFull(const String& filename, Buffer& outFileContent)
+	{
+		outFileContent = Buffer();
+
+		if (filename.IsEmpty()) return false;
+
+		String fullFileName = GetEngineAssetsPath() + PATH_SEPARATOR_CHAR + filename;
+
+		if (File::OpenReadFull(fullFileName, outFileContent))
+			return true;
+
+		if (GetProjectAssetsPath().IsEmpty())	//has not project?
+			return false;	
+
+		fullFileName = GetProjectAssetsPath() + PATH_SEPARATOR_CHAR + filename;
+		if (File::OpenReadFull(fullFileName, outFileContent))
+			return true;
+	}
+
 	//////////////////////////////////////////////////////////////////////////
 	Asset* AssetSys::LoadAsset(Name nanme, Object* ref)
 	{
@@ -445,7 +464,7 @@ namespace UPO
 					{
 						mTickSinceLastKill = 0;
 						mPendingKillAssets.Add(asset);
-						asset->OnRelease();
+						asset->OnDestroy();
 					}
 				}
 				else
@@ -569,7 +588,7 @@ namespace UPO
 			
 				ULOG_SUCCESS("asset [%] loaded", GetName());
 
-				asset->OnInit();
+				asset->OnCreate();
 
 				
 				return true;

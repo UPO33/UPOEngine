@@ -1,12 +1,17 @@
 #include "UEntityTest.h"
 #include "../Meta/UMeta.h"
 #include "UInput.h"
+#include "UWorld.h"
+#include "UCanvas.h"
 
 namespace UPO
 {
 
 
 	UCLASS_BEGIN_IMPL(EntityTest)
+		UPROPERTY(mQuadPos)
+		UPROPERTY(mQuadSize)
+		UPROPERTY(mColor)
 	UCLASS_END_IMPL(EntityTest)
 
 	EntityTest::EntityTest()
@@ -23,13 +28,15 @@ namespace UPO
 	{
 		Parent::OnBeginPlay();
 		ULOG_MESSAGE("");
-		Invoke(1, 8, [this]()
+
+		SetTickEnable(true);
+		this->Invoke(0.5f, ~0U, [this]()
 		{
-			Destroy();
-			ULOG_MESSAGE("");
+			if (auto canvas = GetWorld()->GetCanvas())
+			{
+
+			}
 		});
-
-
 	}
 
 	void EntityTest::OnEndPlay(EEndPlayReason)
@@ -38,12 +45,31 @@ namespace UPO
 		
 	}
 
+	TArray<CanvasTextureItem> gTextureItems;
+
 	void EntityTest::OnTick()
 	{
 		Parent::OnTick();
 
 		if (Input::IsKeyReleased(EKeyCode::EKC_Any))
 			ULOG_MESSAGE("");
+
+		if (Input::IsKeyPressed(EKeyCode::EKC_MouseLeft))
+		{
+			ULOG_MESSAGE("mouse clickead at %", Input::GetMousePosition());
+			CanvasTextureItem item;
+			item.mPosition = Input::GetMousePosition() - Vec2(100);
+			item.mSize = Vec2(200);
+			gTextureItems.Add(item);
+		}
+
+		if (auto canvas = GetWorld()->GetCanvas())
+		{
+			for (auto& item : gTextureItems)
+			{
+				canvas->Draw(item);
+			}
+		}
 	}
 
 	void EntityTest::OnConstruct()

@@ -5,8 +5,8 @@
 
 namespace UPO
 {
-	UDECL_GLOBAL_SHADER(gVShaderTest, GFXVertexShader);
-	UDECL_GLOBAL_SHADER(gPShaderTest, GFXPixelShader);
+	UGLOBAL_SHADER_DECL(gVShaderTest, GFXVertexShader);
+	UGLOBAL_SHADER_DECL(gPShaderTest, GFXPixelShader);
 
 	class TestQuadRE : public RendererElement
 	{

@@ -4,52 +4,88 @@
 
 namespace UPO
 {
+	UCLASS_BEGIN_IMPL(Texture2DSamplerInfo)
+		UPROPERTY(mUAddress)
+		UPROPERTY(mVAddress)
+		UPROPERTY(mFilter)
+		UPROPERTY(mBorderColor)
+		UPROPERTY(mMaxAnisotropy, UATTR_Range(0, 16))
+		UPROPERTY(mMipLODBias, UATTR_Range(0, 128))
+	UCLASS_END_IMPL(Texture2DSamplerInfo)
 
 
-	void ATexture2D::OnInit()
+	UCLASS_BEGIN_IMPL(ATexture2D)
+		UPROPERTY(mContent, UATTR_Hidden())
+		UPROPERTY(mSampler)
+	UCLASS_END_IMPL(ATexture2D)
+
+	//////////////////////////////////////////////////////////////////////////
+	GFXSamplerStateDesc ToGFX(const Texture2DSamplerInfo& in)
 	{
-		EnqueueRenderCommend([this]() {
-			mEditingLock.Enter();
-			ATexture2DRS* rs = new ATexture2DRS;
-			rs->mSampler = nullptr; //create sampler
-			rs->mTexture = nullptr; // load texture from memory
-			mRS = rs;
-			mEditingLock.Leave();
-		});
+		GFXSamplerStateDesc desc;
+		desc.mAddressU = in.mUAddress;
+		desc.mAddressV = in.mVAddress;
+		desc.mBorderColor = in.mBorderColor;
+		desc.mFilter = in.mFilter;
+		desc.mMaxAnisotropy = in.mMaxAnisotropy;
+		desc.mMipLODBias = in.mMipLODBias;
+		return desc;
 	}
-	void ATexture2D::OnRelease()
-	{
-		EnqueueRenderCommend([this]() {
-			if (mRS) delete mRS;
-		});
-	}
 
-	void ATexture2D::MetaPropertyChanged(PropertyInfo* pi)
+	void ATexture2D::OnCreate()
 	{
-		if (pi->GetName() == "mSample")
+		EnqueueRenderCommandAndWait([this]()
 		{
-			EnqueueRenderCommend([this]()
+			ATexture2DRS* rs = new ATexture2DRS;
+			
+			rs->mSampler = gGFX->CreateSamplerState(ToGFX(this->mSampler));
+			if(!rs->mSampler) 
+				ULOG_ERROR("failed to create sampler for asset [%]", this->GetName());
+
+			rs->mTexture = gGFX->CreateTexture2DFromMemory(mContent);
+			if(!rs->mTexture)
+				ULOG_ERROR("failed to create texture for asset [%]", this->GetName());
+
+			mRS = rs;
+		});
+	}
+	
+	void ATexture2D::MetaBeforePropertyChange(const PropertyInfo* prp)
+	{
+
+	}
+
+	void ATexture2D::MetaAfterPropertyChange(const PropertyInfo* prp)
+	{
+		if (UPROPERTY_NAME_EQUAL(prp, mSampler))
+		{
+			EnqueueRenderCommandAndWait([this]()
 			{
-				mEditingLock.Enter();
-				delete mRS->mSampler;
-				GFXSamplerState_Desc desc;
-				GFXSamplerState* newSampler = gGFX->CreateSamplerState(desc);
-				mEditingLock.Leave();
+				if (mRS->mSampler) delete mRS->mSampler;
+				mRS->mSampler = gGFX->CreateSamplerState(ToGFX(this->mSampler));
+
 			});
 		}
 	}
 
-		UCLASS_BEGIN_IMPL(Texture2DSamplerInfo)
-			UPROPERTY(mUAddress)
-			UPROPERTY(mVAddress)
-			UPROPERTY(mFilter)
-			UPROPERTY(mBorderColor)
-			UCLASS_END_IMPL(Texture2DSamplerInfo)
+	void ATexture2D::OnDestroy()
+	{
+		EnqueueRenderCommandAndWait([this]() {
+			if (!mRS)return;
 
+			if (mRS->mSampler) delete mRS->mSampler;
+			if (mRS->mTexture) delete mRS->mTexture;
+		});
+	}
 
-			UCLASS_BEGIN_IMPL(ATexture2D)
-			UPROPERTY(mContent, UATTR_Hidden())
-			UPROPERTY(mSampler)
-		UCLASS_END_IMPL(ATexture2D)
+	void ATexture2DRS::ReCreateSampler()
+	{
+
+	}
+
+	void ATexture2DRS::RecreatreTexture()
+	{
+
+	}
 
 };

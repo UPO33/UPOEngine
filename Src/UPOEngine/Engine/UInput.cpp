@@ -317,8 +317,7 @@ namespace UPO
 	struct InputData
 	{
 		bool mkeys[256] = {};
-		float mMousePositionX = 0;
-		float mMousePositionY = 0;
+		Vec2 mMousePosition = Vec2::ZERO;
 		bool mMouseBtn[8] = {};
 		int mMouseWheelDelta = 0;
 	};
@@ -353,8 +352,7 @@ namespace UPO
 
 	void Input::SetMousePos(int x, int y)
 	{
-		gCurInputData.mMousePositionX = x;
-		gCurInputData.mMousePositionY = y;
+		gCurInputData.mMousePosition = Vec2(x, y);
 	}
 
 	void Input::Tick()
@@ -362,16 +360,23 @@ namespace UPO
 		gPreInputData = gCurInputData;
 	}
 
-	void Input::GetMousePosition(int& outX, int& outY)
+
+
+	void Input::Reset()
 	{
-		outX = gCurInputData.mMousePositionX;
-		outY = gCurInputData.mMousePositionY;
+		ZeroType(gCurInputData);
+		ZeroType(gPreInputData);
 	}
 
-	void Input::GetMouseVelocity(int& outX, int& outY)
+	Vec2 Input::GetMousePosition()
 	{
-		outX = gCurInputData.mMousePositionX - gPreInputData.mMousePositionX;
-		outY = gCurInputData.mMousePositionY - gPreInputData.mMousePositionY;
+		return gCurInputData.mMousePosition;
+	}
+
+
+	Vec2 Input::GetMouseVelocity()
+	{
+		return gCurInputData.mMousePosition - gPreInputData.mMousePosition;
 	}
 
 	int Input::GetMouseWheelDelta()

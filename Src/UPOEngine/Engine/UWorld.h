@@ -12,6 +12,7 @@ namespace UPO
 	class Entity;
 	class EntityCamera;
 	class GameWindow;
+	class Canvas;
 
 	//////////////////////////////////////////////////////////////////////////
 	struct WorldTickResult
@@ -169,6 +170,8 @@ namespace UPO
 
 		bool ProjectWorldToScreen(const Vec3& worldPos, Vec2& outScreenPos, EntityCamera* camera);
 		bool ProjectScreenToWorld(const Vec2& screenPos, Vec3& outWorldPos, EntityCamera* camera);
+
+		Canvas* GetCanvas() const;
 	};
 	//////////////////////////////////////////////////////////////////////////
 

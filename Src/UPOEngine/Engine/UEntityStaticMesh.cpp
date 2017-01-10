@@ -59,7 +59,7 @@ namespace UPO
 		mOwner->mStaticMeshesCullingState.AddUnInit();
 		mPrivateIndex = mOwner->mStaticMeshes.Add(this);
 
-		OnFetch();
+		OnFetch(mGS->mEntityFlag);
 	}
 
 	EntityStaticMeshRS::~EntityStaticMeshRS()
@@ -81,7 +81,7 @@ namespace UPO
 			mMesh = GS()->mMesh ? GS()->mMesh->GetRS() : nullptr;
 			mMaterial = GS()->mMaterial ? GS()->mMaterial->GetRS() : nullptr;
 
-			if (mMesh && mMaterial)	mEntityFlag.Set(EEF_RenderDataValid);
+			if (mMesh && mMaterial)	mRSFlag.Set(EEF_RenderDataValid);
 		}
 	}
 

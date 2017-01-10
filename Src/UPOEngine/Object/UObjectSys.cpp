@@ -169,6 +169,9 @@ namespace UPO
 		UASSERT(newObj);
 		newObj->mClassInfo = (ClassInfo*)classInfo;
 		newObj->mRefData = nullptr;
+
+		classInfo->Call_DefaultConstructor((void*)newObj);
+
 		return newObj;
 	}
 

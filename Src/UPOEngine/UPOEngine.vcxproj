@@ -45,6 +45,7 @@
     <ClInclude Include="Core\UPlane.h" />
     <ClInclude Include="Core\UQueue.h" />
     <ClInclude Include="Core\URefCount.h" />
+    <ClInclude Include="Core\USIMD.h" />
     <ClInclude Include="Core\USparseArray.h" />
     <ClInclude Include="Core\UStream.h" />
     <ClInclude Include="Core\UString.h" />
@@ -64,8 +65,10 @@
     <ClInclude Include="Engine\UEntity.h" />
     <ClInclude Include="Engine\UEntityCamera.h" />
     <ClInclude Include="Engine\UEntityGFX.h" />
+    <ClInclude Include="Engine\UEntityPrimitive.h" />
     <ClInclude Include="Engine\UEntityStaticMesh.h" />
     <ClInclude Include="Engine\UEntityTest.h" />
+    <ClInclude Include="Engine\UFontSystem.h" />
     <ClInclude Include="Engine\UGameInstance.h" />
     <ClInclude Include="Engine\UGameWindow.h" />
     <ClInclude Include="Engine\UGameWindow_Win.h" />
@@ -92,8 +95,10 @@
     <ClInclude Include="GFXCore\UGFXDeviceDX.h" />
     <ClInclude Include="GFXCore\UGFXDeviceGL.h" />
     <ClInclude Include="GFXCore\UGFXUniform.h" />
+    <ClInclude Include="GFXCore\UGlobalResources.h" />
     <ClInclude Include="GFXCore\UGlobalShader.h" />
     <ClInclude Include="GFXCore\UShaderMgr.h" />
+    <ClInclude Include="GFXCore\UTexturePool.h" />
     <ClInclude Include="GFX\UForwardRenderTargets.h" />
     <ClInclude Include="GFX\UGFX.h" />
     <ClInclude Include="GFX\UMeshDrawer.h" />
@@ -120,6 +125,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\UBound.cpp" />
+    <ClCompile Include="Core\UCommandQueue.cpp" />
     <ClCompile Include="Core\UFrustum.cpp" />
     <ClCompile Include="Core\UPlane.cpp" />
     <ClCompile Include="Core\UArray.cpp" />
@@ -152,8 +158,10 @@
     <ClCompile Include="Engine\UEntity.cpp" />
     <ClCompile Include="Engine\UEntityCamera.cpp" />
     <ClCompile Include="Engine\UEntityGFX.cpp" />
+    <ClCompile Include="Engine\UEntityPrimitive.cpp" />
     <ClCompile Include="Engine\UEntityStaticMesh.cpp" />
     <ClCompile Include="Engine\UEntityTest.cpp" />
+    <ClCompile Include="Engine\UFontSystem.cpp" />
     <ClCompile Include="Engine\UGameInstance.cpp" />
     <ClCompile Include="Engine\UGameWindow.cpp" />
     <ClCompile Include="Engine\UGameWindow_Win.cpp" />
@@ -177,9 +185,11 @@
     <ClCompile Include="GFXCore\UGFXDeviceDX.cpp" />
     <ClCompile Include="GFXCore\UGFXDeviceGL.cpp" />
     <ClCompile Include="GFXCore\UGFXUniform.cpp" />
+    <ClCompile Include="GFXCore\UGlobalResources.cpp" />
     <ClCompile Include="GFXCore\UGlobalShader.cpp" />
     <ClCompile Include="GFXCore\UShaderMgr.cpp" />
     <ClCompile Include="GFXCore\UShaderMgr_DX.cpp" />
+    <ClCompile Include="GFXCore\UTexturePool.cpp" />
     <ClCompile Include="GFX\UForwardRenderTargets.cpp" />
     <ClCompile Include="GFX\UMeshDrawer.cpp" />
     <ClCompile Include="GFX\UPrimitiveBatch.cpp" />
@@ -259,8 +269,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(SolutionDir)Bin\</OutDir>
-    <IncludePath>C:\UE4\Engine\Source\ThirdParty\PhysX\PhysX-3.3\include;$(SolutionDir)Libs\zlib\;C:\VulkanSDK\1.0.30.0\Include;$(SolutionDir)Libs\DirectXTK\Inc;$(SolutionDir)Libs\SDL2\include;$(SolutionDir)Libs\DirectXTex\DirectXTex;$(DXSDK_DIR)\Include\;$(SolutionDir)Libs\glew-2.0.0\include;$(SolutionDir)Libs\assimp\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\UE4\Engine\Source\ThirdParty\PhysX\PhysX-3.3\lib\Win32\VS2015;$(SolutionDir)Libs\zlib\Debug;C:\VulkanSDK\1.0.30.0\Bin32;$(SolutionDir)Libs\glew-2.0.0\lib\Release\Win32;$(SolutionDir)Libs\DirectXTK\Bin\Desktop_2015\Win32\Debug;$(SolutionDir)Libs\DirectXTex\DirectXTex\Bin\Desktop_2015\Win32\Debug;$(DXSDK_DIR)\Lib\x86;$(SolutionDir)Libs\SDL2\lib\x86;$(SolutionDir)Libs\assimp\lib\Debug;$(LibraryPath)</LibraryPath>
+    <IncludePath>E:\Lib\FreeImage3170Win32Win64\FreeImage\Dist\x32;$(SolutionDir)\Libs\DirectXTex\DirectXTex;E:\Lib\freetype-2.4.0\include;C:\UE4\Engine\Source\ThirdParty\PhysX\PhysX-3.3\include;$(SolutionDir)Libs\zlib\;C:\VulkanSDK\1.0.30.0\Include;$(SolutionDir)Libs\DirectXTK\Inc;$(SolutionDir)Libs\SDL2\include;$(DXSDK_DIR)\Include\;$(SolutionDir)Libs\glew-2.0.0\include;$(SolutionDir)Libs\assimp\include;$(IncludePath)</IncludePath>
+    <LibraryPath>E:\Lib\FreeImage3170Win32Win64\FreeImage\Dist\x32;E:\Lib\freetype-2.4.0\objs\win32\vc2008;C:\UE4\Engine\Source\ThirdParty\PhysX\PhysX-3.3\lib\Win32\VS2015;$(SolutionDir)Libs\zlib\Debug;C:\VulkanSDK\1.0.30.0\Bin32;$(SolutionDir)Libs\glew-2.0.0\lib\Release\Win32;$(SolutionDir)Libs\DirectXTK\Bin\Desktop_2015\Win32\Debug;$(SolutionDir)Libs\DirectXTex\DirectXTex\Bin\Desktop_2015\Win32\Debug;$(DXSDK_DIR)\Lib\x86;$(SolutionDir)Libs\SDL2\lib\x86;$(SolutionDir)Libs\assimp\lib\Debug;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -273,7 +283,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>PhysX3DEBUG_x86.lib;PhysX3CommonDEBUG_x86.lib;PhysX3ExtensionsDEBUG.lib;assimp-vc140-mt.lib;d3dx11d.lib;d3d11.lib;d3dcompiler.lib;dxgi.lib;d3dx10d.lib;DirectXTex.lib;DirectXTK.lib;SDL2.lib;glew32s.lib;vulkan-1.lib;zlibstaticd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>FreeImage.lib;freetype240MT_D.lib;PhysX3DEBUG_x86.lib;PhysX3CommonDEBUG_x86.lib;PhysX3ExtensionsDEBUG.lib;assimp-vc140-mt.lib;d3dx11d.lib;d3d11.lib;DxERR.lib;d3dcompiler.lib;dxgi.lib;d3dx10d.lib;DirectXTK.lib;DirectXTex.lib;SDL2.lib;glew32s.lib;vulkan-1.lib;zlibstaticd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

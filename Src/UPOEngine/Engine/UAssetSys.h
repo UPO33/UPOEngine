@@ -87,6 +87,8 @@ namespace UPO
 		AssetEntry* CreateAsset(const ClassInfo* assetClass, Name assetName);
 		AssetEntry* CreateDefaulAssetFile(AssetEntry* folderToCreateIn, const String& assetFilename, ClassInfo* assetClass);
 
+		bool ReadFileFull(const String& filename, Buffer& outFileContent);
+
 		Asset* LoadAsset(Name nanme, Object* ref);
 		Asset* FindLoadedAsset(Name assetName);
 		Asset* FindLoadedAsset(AssetID id);

@@ -46,6 +46,8 @@ namespace UPO
 		MSG msg;
 		ZeroType(msg);
 
+		Input::Tick();
+
 		// Handle the windows messages.
 		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
@@ -64,7 +66,7 @@ namespace UPO
 
 	LRESULT WINAPI WNDProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam)
 	{
-		GameWindowWin* gw = UFindGameWindowByHWND(hwnd);
+		
 		switch (umsg)
 		{
 			// Check if the window is being destroyed.
@@ -78,9 +80,11 @@ namespace UPO
 		// Check if the window is being closed.
 		case WM_CLOSE:
 		{
-			if (gw)
+			if (GameWindowWin* gw = UFindGameWindowByHWND(hwnd))
 			{
-				GameWindow::Destroy(gw);
+
+				delete gw;
+
 				if (gGameWindows.Length() == 0)
 					PostQuitMessage(0);
 			}
@@ -88,13 +92,18 @@ namespace UPO
 // 			PostQuitMessage(0);
 			return 0;
 		}
+		case WM_SETREDRAW:
+		case  WM_PAINT:
+		{
+			ULOG_MESSAGE("paint");
+		}
 		}
 
 
-// 		if (gw)
-// 		{
-// 			return gw->MessageHandler(hwnd, umsg, wparam, lparam);
-// 		}
+		if (GameWindowWin* gw = UFindGameWindowByHWND(hwnd))
+		{
+			return gw->MessageHandler(hwnd, umsg, wparam, lparam);
+		}
 		return DefWindowProc(hwnd, umsg, wparam, lparam);
 	}
 
@@ -181,7 +190,7 @@ namespace UPO
 		}
 
 
-		ULOG_MESSAGE("");
+		
 		// Create the window with the screen settings and get the handle to it.
 		mWindowHandle = (void*)CreateWindowExW(WS_EX_APPWINDOW, mWindowName, mWindowName,
 			mFullScreen ? dwStyleNoborder : dwStyleBorder,
@@ -191,10 +200,12 @@ namespace UPO
 		SetForegroundWindow((HWND)mWindowHandle);
 		SetFocus((HWND)mWindowHandle);
 
+// 		SendMessage((HWND)mWindowHandle, WM_SETREDRAW, true, 0);
 		// Hide the mouse cursor.
 		ShowCursor(true);
 
 		gGameWindows.Add(this);
+		ULOG_MESSAGE("game window created");
 	}
 
 	void GameWindowWin::OnDestroyWindow()
@@ -246,6 +257,17 @@ namespace UPO
 // // 			PostQuitMessage(0);
 // 			return 0;
 // 		}
+		case WM_KILLFOCUS:	//before win loses focus
+		{
+			ULOG_MESSAGE("WM_KILLFOCUS");
+			return 0;
+		}
+		case WM_SETFOCUS: //after win got focus
+		{
+			ULOG_MESSAGE("WM_SETFOCUS");
+			Input::Reset();
+			return 0;
+		};
 		case WM_KEYDOWN:
 		case WM_SYSKEYDOWN:
 		{
@@ -255,6 +277,7 @@ namespace UPO
 			ULOG_MESSAGE("Key down [%]", EnumToStr(key));
 			return 0;
 		}
+		case WM_SYSKEYUP:
 		case WM_KEYUP:
 		{
 			Input::SetKeyState(UWin32VKToEKeyCode(UMapLeftRightVKey(wparam, lparam)), false);

@@ -50,7 +50,7 @@ public:
         gridLayout = new QGridLayout(TransformProperty);
         gridLayout->setSpacing(2);
         gridLayout->setObjectName(QStringLiteral("gridLayout"));
-        gridLayout->setContentsMargins(2, 2, 2, 0);
+        gridLayout->setContentsMargins(2, 2, 2, 2);
         mRY = new QDoubleSpinBox(TransformProperty);
         mRY->setObjectName(QStringLiteral("mRY"));
         mRY->setAccelerated(true);

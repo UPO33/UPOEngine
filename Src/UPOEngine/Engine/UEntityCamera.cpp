@@ -18,10 +18,7 @@ namespace UPO
 		UPROPERTY(mSuperiority, UATTR_Range(-1000, 1000))
 	UCLASS_END_IMPL(EntityCamera);
 
-	void EntityCamera::OnCreateRS()
-	{
-		new  (GetRSMemory()) EntityCameraRS(this, nullptr);
-	}
+
 
 	EntityCamera::EntityCamera()
 	{
@@ -53,7 +50,7 @@ namespace UPO
 
 		mPrivateIndex = mOwner->mCameras.Add(this);
 
-		OnFetch();
+		Fetch();
 	}
 
 	EntityCameraRS::~EntityCameraRS()
@@ -63,7 +60,7 @@ namespace UPO
 
 	bool EntityCameraRS::ShouldBeReanderd() const
 	{
-
+		return mRender;
 	}
 
 	void EntityCameraRS::GetFrustum(Frustum& out)
@@ -71,19 +68,21 @@ namespace UPO
 
 	}
 
-	void EntityCameraRS::OnFetch()
+	void EntityCameraRS::Fetch()
 	{
-		mRender = mGS->mRender;
-		mPerspective = mGS->mPerspective;
-		mFieldOfView = mGS->mFieldOfView;
-		mNearClip = mGS->mNearClip;
-		mFarClip = mGS->mFarClip;
-		mOrthoSize = mGS->mOrthoSize;
-		mViewportOffset = mGS->mViewportOffset;
-		mViewPortScale = mGS->mViewPortScale;
-		mSuperiority = mGS->mSuperiority;
+		EntityCamera* gs = (EntityCamera*)mGS;
 
-		mWorldMatrix = mGS->GetWorldTransform();
+		mRender = gs->mRender;
+		mPerspective = gs->mPerspective;
+		mFieldOfView = gs->mFieldOfView;
+		mNearClip = gs->mNearClip;
+		mFarClip = gs->mFarClip;
+		mOrthoSize = gs->mOrthoSize;
+		mViewportOffset = gs->mViewportOffset;
+		mViewPortScale = gs->mViewPortScale;
+		mSuperiority = gs->mSuperiority;
+
+		mWorldMatrix = gs->GetWorldTransform();
 	}
 
 	void EntityCameraRS::Update()

@@ -1,4 +1,3 @@
-
 float4 UV2NDC(float2 uv)
 {
 #if 1
@@ -9,45 +8,55 @@ float4 UV2NDC(float2 uv)
     return float4(xy.x, -xy.y, 0, 0.5f);
 #endif
 }
+float4 ScreenToNDC(float2 screenPos, float2 screenSize)
+{
+    return UV2NDC(screenPos / screenSize);
+}
+
 float2 Clip2UV(float4 v)
 {
     return v.xy / v.ww * float2(0.5, -0.5) + 0.5;
 }
 
+#ifdef USE_UVSPACE
+#define TRANSFORM_SPACE(v)   UV2NDC(v);
+#else   
+#define TRANSFORM_SPACE(v) float4(v, float2(0, 1));
+#endif
+
+
 struct VSIn
 {
-	float2 position : POSITION;
-    float2 uv : UV;
-    uint id : SV_VertexID;
-};
-struct VSOut
-{
-	float4 position : SV_Position;
+    float2 position : POSITION;
     float2 uv : UV;
     float4 color : COLOR;
 };
-cbuffer PerElement : register(b0)
+
+struct VSOut
 {
-    float4 gColor;
+    float4 position : SV_Position;
+    float4 color : COLOR;
+    float2 uv : UV;
 };
 
 Texture2D gTexture : register(t0);
-SamplerState gLinearSampler : register(s0);
+SamplerState gSampler : register(s0)
+{
+    Filter = MIN_MAG_MIP_LINEAR;
+    AddressU = Wrap;
+    AddressV = Wrap;
+};
 
 VSOut VSMain(VSIn input)
 {
-	VSOut output = (VSOut)0;
-	output.position = UV2NDC(input.position);
+    VSOut output = (VSOut) 0;
+    output.position = TRANSFORM_SPACE(input.position);
     output.uv = input.uv;
-    float4 colors[] = { float4(1, 0, 0, 0), float4(0, 1, 0, 0), float4(0, 0, 1, 0) };
-    output.color = colors[input.id % 3];
-	return output;
+    output.color = input.color;
+    return output;
 }
 float4 PSMain(VSOut input) : SV_Target
 {
-    //return float4(1,0,1,1);
-    float4 color = gTexture.Sample(gLinearSampler, input.uv);
-
-       //clip(color.a - 0.1);
+    float4 color = gTexture.Sample(gSampler, input.uv) * input.color;
     return color;
 }

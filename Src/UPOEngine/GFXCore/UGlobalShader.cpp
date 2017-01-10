@@ -2,23 +2,30 @@
 
 namespace UPO
 {
-	TArray<GlobalShaderRegParam> gGlobalShaders;
-
-
-	//////////////////////////////////////////////////////////////////////////
-	void UAPI UGlobalShader_Reg(const GlobalShaderRegParam& entry)
+	struct GlobalShadersContext
 	{
-		gGlobalShaders.Add(entry);
+		TArray<GlobalShaderRegParam>	mShaders;
+	};
+
+	GlobalShadersContext* gGlobalShadersContext = nullptr;
+
+	void GlobalShaders::Register(const GlobalShaderRegParam& param)
+	{
+		if (!gGlobalShadersContext) gGlobalShadersContext = new GlobalShadersContext;
+
+		gGlobalShadersContext->mShaders.Add(param);
 	}
 
-	//////////////////////////////////////////////////////////////////////////
-	void UAPI UGlobalShader_CompileAll(TFP<void, const ShaderUniqueParam&> compileSuccessProc /*= nullptr*/)
+	void GlobalShaders::CompileAll()
 	{
-		UASSERT(gGFX);
+		ULOG_MESSAGE("compiling global sghaders...");
 
-		for (size_t i = 0; i < gGlobalShaders.Length(); i++)
+		if (!gGlobalShadersContext) return;
+
+
+		for(GlobalShaderRegParam& regParam : gGlobalShadersContext->mShaders)
 		{
-			auto& param = gGlobalShaders[i].mParam;
+			auto& param = regParam.mParam;
 			UASSERT(param.mFileName && param.mEntryPoint);
 
 			GFXShader* pShader = gGFX->CreateShader(param);
@@ -28,8 +35,8 @@ namespace UPO
 				return;
 			}
 			pShader->IncRefCount(1);
-			
-			void** ppShader = gGlobalShaders[i].mPPShader;
+
+			void** ppShader = regParam.mPPShader;
 			switch (param.mType)
 			{
 			case EShaderType::EVertex: *(reinterpret_cast<GFXVertexShader**>(ppShader)) = (GFXVertexShader*)pShader;
@@ -45,29 +52,33 @@ namespace UPO
 			case EShaderType::ECompute: *(reinterpret_cast<GFXComputeShader**>(ppShader)) = (GFXComputeShader*)pShader;
 				break;
 			}
-
-			if (compileSuccessProc)
-			{
-				compileSuccessProc(param);
-			}
 		}
 	}
 
-
-
-	//////////////////////////////////////////////////////////////////////////
-	void UAPI UGlobalShader_ReleaseAll()
+	void GlobalShaders::ReleaseAll()
 	{
-		for (size_t i = 0; i < gGlobalShaders.Length(); i++)
+		if (!gGlobalShadersContext)return;
+
+
+		for (GlobalShaderRegParam& param : gGlobalShadersContext->mShaders)
 		{
-			auto param = gGlobalShaders[i];
 			UASSERT(param.mPPShader && *param.mPPShader);
 			GFXShader* pShader = *(reinterpret_cast<GFXShader**>(param.mPPShader));
 			pShader->IncRefCount(-1);
 			delete pShader;
 		}
 
-		gGlobalShaders.Empty();
+		delete gGlobalShadersContext;
 	}
+
+
+
+
+	//////////////////////////////////////////////////////////////////////////
+	void UAPI UGlobalShader_ReleaseAll()
+	{
+
+	}
+
 
 };

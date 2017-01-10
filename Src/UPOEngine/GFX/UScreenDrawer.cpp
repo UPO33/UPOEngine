@@ -2,7 +2,7 @@
 
 namespace UPO
 {
-	
+#if 0
 	//////////////////////////////////////////////////////////////////////////
 	ScreenDrawer::ScreenDrawer(Renderer* rdr) : RendererElement(rdr)
 	{
@@ -10,7 +10,6 @@ namespace UPO
 // 		UASSERT(mVertexShader);
 // 		mPixelShader = gGFX->CreateShader<GFXPixelShader>("Canvas.hlsl", "PSMain");
 // 		UASSERT(mPixelShader);
-
 		///////////////constant buffer
 		GFXConstantBuffer_Desc cbDesc;
 		cbDesc.mSize = sizeof(CBPerObject);
@@ -58,6 +57,7 @@ namespace UPO
 		GFXRasterizerState_Desc rs;
 		rs.mCullMode = ECullMode::ENone;
 		mRaster = gGFX->CreateRasterizerState(rs);
+
 	}
 
 	ScreenDrawer::~ScreenDrawer()
@@ -108,16 +108,16 @@ namespace UPO
 
 
 		gGFX->BinInputLayout(mLayout);
-		gGFX->BindRasterizer(mRaster);
-		gGFX->BindDepthStencilState(mDepthStencilState);
-		gGFX->SetPrimitiveTopology(EPrimitiveTopology::EPT_TRIANGLELIST);
-		gGFX->BinVertexBuffer(mQuadBuffer, sizeof(VertexType), 0);
+		gGFX->SetRasterizerState(mRaster);
+		gGFX->SetDepthStencilState(mDepthStencilState);
+		gGFX->SetPrimitiveTopology(EPrimitiveTopology::ETriangleList);
+		gGFX->SetVertexBuffer(mQuadBuffer, sizeof(VertexType), 0);
 		gGFX->BindShaders(mVertexShader, mPixelShader);
 		gGFX->BindTexture(texture, 0, EShaderType::EPixel);
-		gGFX->BindSamplerState(mSampler, 0, EShaderType::EPixel);
+		gGFX->SetSamplerState(mSampler, 0, EShaderType::EPixel);
 		gGFX->BindConstantBuffer(mCBPerObject, 0, EShaderType::EPixel);
 		float brgba[] = { 0,0,0,0 };
-		gGFX->BindBlendState(mAlphaBlend, brgba);
+		gGFX->SetBlendState(mAlphaBlend, brgba);
 		gGFX->Draw(6, 0);
 	}
 
@@ -125,4 +125,6 @@ namespace UPO
 	{
 		DrawTexture(nullptr, Vec2(0.1), Vec2(0.4), Color(1));
 	}
+#endif
+
 };

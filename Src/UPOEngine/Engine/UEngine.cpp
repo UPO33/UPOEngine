@@ -6,9 +6,10 @@
 #include "../Engine/UWorldRS.h"
 #include "../Engine/UEntityStaticMesh.h"
 #include "../Engine/UEntityTest.h"
-
+#include "../GFXCore/UGlobalResources.h"
 #include "UEngineBase.h"
 #include "../Misc/UMisc.h"
+#include "../GFXCore/UGFXDeviceDX.h"
 
 namespace UPO
 {
@@ -17,6 +18,7 @@ namespace UPO
 	
 	TRenderCommandQueue gGame2RenderQueue;
 
+	extern CriticalSection gSwapChainLock;
 
 	struct EngineImpl
 	{
@@ -28,7 +30,6 @@ namespace UPO
 		Renderer* mRenderer;
 		IEngineInterface* mInterface;
 		bool mLoop;
-		AssetCommendQueue	mAssetCommands;
 
 		volatile bool mLoopGT = true;
 		volatile bool mLoopRT = true;
@@ -37,19 +38,24 @@ namespace UPO
 
 		//when render thread was released this event is signaled
 		Event	mFetchCompleteEvent;
+		Event	mFetchReadyEvent;
 
 		TArray<World*>		mWorlds;
 		bool mAnyWorldRemoved = false;
 		
 		EngineImpl() :
-			mFetchCompleteEvent(false, false)
+			mFetchCompleteEvent(false, false),
+			mFetchReadyEvent(false, false)
 		{
 
 		}
 		~EngineImpl()
 		{
 		}
-
+		void WaitForFetch()
+		{
+			mFetchReadyEvent.Wait();
+		}
 		//////////////////////////////////////////////////////////////////////////
 		void Init()
 		{
@@ -66,37 +72,52 @@ namespace UPO
 				gGame2RenderQueue.RunTillQuit();
 			});
 
-			mInterface->OnInit();
-
 			EnqueueRenderCommandAndWait([this](){
 				
 				GFXDevice::Create();
-				UGlobalShader_CompileAll();
+				GlobalShaders::CompileAll();
+				GlobalResources::LoadGFXResources();
+
 				mRenderer = Renderer::New();
 				UASSERT(mRenderer);
 			});
-		}
 
+
+			mInterface->OnInit();
+		}
+		
+		//////////////////////////////////////////////////////////////////////////////////////////
 		void Loop()
 		{
 			double lastTime = 0;
 			mDelta = 1 / 60.0f;
 
+			static unsigned FPSCounter = 0;
+			static double FPSSeconds = 0;
+
 			ChronometerAccurate timer;
 			timer.Start();
+			
 
 			while (mLoopGT)
 			{
 				bool result;
 
-				result = GTick();
-				if (!result) break;
-
-				Thread::Sleep(10);
-
 				double curTime = timer.SinceSeconds();
 				mDelta = (float)(curTime - lastTime);
 				lastTime = curTime;
+
+				result = GTick();
+				if (!result) break;
+
+				FPSCounter++;
+				FPSSeconds += mDelta;
+				if (FPSSeconds >= 1)
+				{
+					FPSSeconds -= 1;
+					gFPS = FPSCounter;
+					FPSCounter = 0;
+				}
 			}
 		}
 #if 0
@@ -135,6 +156,16 @@ namespace UPO
 #endif // 0
 		void Release()
 		{
+			for (GameWindow* gw : GameWindow::Instances)
+			{
+				delete gw;
+			}
+			GameWindow::Instances.RemoveAll();
+			for (World* world : mWorlds)
+			{
+				delete world;
+			}
+			mWorlds.RemoveAll();
 			ULOG_MESSAGE("");
 			EnqueueRenderCommandAndWait([this]() {
 				ReleaseRT();
@@ -146,11 +177,16 @@ namespace UPO
 		{
 			UASSERT(IsRenderThread());
 			ULOG_MESSAGE("");
-			mRenderer->Release();
 			delete mRenderer;
 			mRenderer = nullptr;
+
+
+			GlobalShaders::ReleaseAll();
+			GlobalResources::UnloadGFXResources();
 			delete gGFX;
+			gGFX = nullptr;
 		}
+		//////////////////////////////////////////////////////////////////////////
 		void Render()
 		{
 			if (!gEngine.mRenderer) return;
@@ -159,28 +195,39 @@ namespace UPO
 			{
 				 gEngine.mRenderer->RenderGameWin(gw);
 			}
+
+			mFetchReadyEvent.SetSignaled();
+
+			for (GameWindow* gw : GameWindow::Instances)
+			{
+				if (gw  && gw->mSwapchain)
+				{
+					gw->mSwapchain->Present();
+				}
+			}
 		}
 		//////////////////////////////////////////////////////////////////////////game thread tick
 		bool GTick()
 		{
+			bool result = true;
+
+			if (!gIsEditor)
+			{
+				result &= GameWindow::PeekMessages();
+			}
+
 			EnqueueRenderCommand([this]() {
 				Render();
+				
 			});
 
-			bool result = true;
-			
 			GAssetSys()->Tick(mDelta);
 
-			if(!gIsEditor)
-			{
-				result = GameWindow::PeekMessages();
-				if (!result) return false;
-			}
+
 
 			//ticking alive worlds
 			{
-				result = mInterface->OnBeforeWorldsTick();
-				if (!result) return false;
+				result &= mInterface->OnBeforeWorldsTick();
 
 				unsigned numWorld = mWorlds.Length();
 				//ticking world
@@ -191,12 +238,9 @@ namespace UPO
 						mWorlds[i]->Tick(mDelta);
 					}
 				}
+				result &= mInterface->OnAfterWorldsTick();
+				
 
-				result = mInterface->OnAfterWorldsTick();
-				if (!result) return false;
-
-				///////////////wait for render command to finish
-				EnqueueRenderCommandAndWait([]() {});
 
 				//removing destroyed worlds if any
 				if (mAnyWorldRemoved)
@@ -211,24 +255,37 @@ namespace UPO
 						return false;
 					});
 				}
+				
+				
+				//after this we can change the WorldRS and update it, maybe renderer is doing postProcess or swamping buffer
+				WaitForFetch();
+
+				for (GameWindow* gw : GameWindow::Instances)
+				{
+					if (gw->mCanvas)
+					{
+						gw->mCanvas->Swap();
+					}
+				}
 
 				/////////////fetching changes
 				EnqueueRenderCommand([this]()
 				{
-					unsigned numWorld = mWorlds.Length();
+					unsigned nWorld = mWorlds.Length();
 
-					for (unsigned i = 0; i < numWorld; i++)
+					for (unsigned i = 0; i < nWorld; i++)
 					{
 						mWorlds[i]->GetRS()->Fetch();
 					}
-
 					mFetchCompleteEvent.SetSignaled();
 
-					for (unsigned i = 0; i < numWorld; i++)
+					for (unsigned i = 0; i < nWorld; i++)
 					{
 						mWorlds[i]->GetRS()->AfterFetch();
 					}
 				});
+
+
 
 				DuringFetch();
 
@@ -252,10 +309,6 @@ namespace UPO
 
 
 
-	UAPI AssetCommendQueue* UGetAssetCommandQueue()
-	{
-		return &gEngine.mAssetCommands;
-	}
 
 	UAPI void LaunchEngine(IEngineInterface* itf)
 	{
@@ -284,7 +337,10 @@ namespace UPO
 	World* IEngineInterface::CreateWorld()
 	{
 		World* world = new World;
-		gEngine.mWorlds.Add(world);
+		EnqueueRenderCommandAndWait([world]() {
+			gEngine.mWorlds.Add(world);
+		});
+		
 		return world;
 	}
 
@@ -297,15 +353,9 @@ namespace UPO
 		}
 	}
 
-	GameWindow* IEngineInterface::CreateGameWindow(const GameWindowCreationParam& cp)
-	{
-		return GameWindow::Create(cp);
-	}
 
-	void IEngineInterface::DeleteGameWindow(GameWindow* gw)
-	{
-		GameWindow::Destroy(gw);
-	}
+
+
 
 	IEngineInterface* IEngineInterface::Get()
 	{

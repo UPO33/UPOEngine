@@ -18,12 +18,6 @@ namespace UPO
 	UCLASS_END_IMPL(AssetID)
 
 
-	//////////////////////////////////////////////////////////////////////////
-	void Asset::PostLoad()
-	{
-		OnInit();
-		OnInitRS();
-	}
 
 	bool Asset::NeedsRelease()
 	{
@@ -89,6 +83,11 @@ namespace UPO
 		{
 			mRefs.RemoveSwap(objPtr);
 		}
+	}
+
+	void Asset::MetaBeforePropertyChange(const PropertyInfo* prp)
+	{
+
 	}
 
 	void Asset::MetaAfterPropertyChange(const PropertyInfo*)

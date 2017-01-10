@@ -5,6 +5,8 @@
 #include "../Core/UCommandQueue.h"
 #include "../Core/UBound.h"
 
+#include "UEngineBase.h"
+
 namespace UPOEd
 {
 	class AssetConverter;
@@ -18,10 +20,6 @@ namespace UPO
 	class AssetSys;
 	class AssetEntry;
 
-	//////////////////////////////////////////////////////////////////////////
-	using AssetCommendQueue = TCommandPool<100000, true>;
-	//definition in UEngine.cpp
-	UAPI AssetCommendQueue* UGetAssetCommandQueue();
 
 	//////////////////////////////////////////////////////////////////////////
 	class UAPI AssetID
@@ -76,8 +74,6 @@ namespace UPO
 
 
 	private:
-		void PostLoad();
-		
 		bool NeedsRelease();
 
 	public:
@@ -104,26 +100,17 @@ namespace UPO
 
 		void AddRef(Object*);
 		void RemoveRef(Object*);
-		
-		virtual void OnConstruct() {};
-		
-		virtual void OnInit() {};
-		virtual void OnRelease() {};
 
-		virtual void OnInitRS() {};
 
-		virtual void OnReleaseRS() {};
+		virtual void OnCreate() {};
+		virtual void OnDestroy() {};
+
 
 		virtual void OnTick(float delta) {}
 		virtual void OnFrame(float delta) {}
 
+		void MetaBeforePropertyChange(const PropertyInfo*);
 		void MetaAfterPropertyChange(const PropertyInfo*);
-
-		template<typename Lambda> void EnqueueRenderCommend(const Lambda& proc)
-		{
-			UGetAssetCommandQueue()->Enqueue(proc);
-		}
-
 	};
 
 

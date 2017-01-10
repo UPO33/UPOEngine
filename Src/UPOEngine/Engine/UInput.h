@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Core/UBasic.h"
+#include "../Core/UVector.h"
 
 namespace UPO
 {
@@ -165,19 +166,20 @@ namespace UPO
 		static bool IsKeyPressed(EKeyCode key);
 		static bool IsKeyReleased(EKeyCode key);
 		
+		static Vec2 GetMousePosition();
+		static Vec2 GetMouseVelocity();
 
-		static void GetMousePosition(int& outX, int& outY);
-		static void GetMouseVelocity(int& outX, int& outY);
+
 		//positive value indicates that the wheel was rotated forward, negative indicates backward
 		static int  GetMouseWheelDelta();
-
-
 
 
 		static void SetKeyState(EKeyCode key, bool down);
 		static void SetMouseWheelDelta(int value);
 		static void SetMousePos(int x, int y);
 		static void Tick();
+
+		static void Reset();
 	};
 
 

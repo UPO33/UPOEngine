@@ -72,17 +72,15 @@ namespace UPO
 #endif
 	//////////////////////////////////////////////////////////////////////////
 
-	bool AStaticMesh::IsRSReady() const
-	{
-		return mRS;
-	}
 
-	void AStaticMesh::AddRSCompleteListener(EntityStaticMesh* receiver, TMFP<void, AStaticMeshRS*> proc)
-	{
+	UCLASS_BEGIN_IMPL(AStaticMesh)
+		UPROPERTY(mContent)
+		UPROPERTY(mFlipUV)
+		UPROPERTY(mGenerateSmoothNormal)
+	UCLASS_END_IMPL(AStaticMesh)
 
-	}
-
-	void AStaticMesh::OnInit()
+	
+	void AStaticMesh::OnCreate()
 	{
 		Assimp::Importer importer = Assimp::Importer();
 		unsigned flag = aiProcess_Triangulate | aiProcess_GenNormals | aiProcess_GenUVCoords | aiProcess_FlipUVs;
@@ -92,27 +90,22 @@ namespace UPO
 			ULOG_ERROR("failed to lead StaticMesh");
 		}
 	}
-	//////////////////////////////////////////////////////////////////////////
-	void AStaticMesh::OnInitRS()
-	{
 
-	}
-	//////////////////////////////////////////////////////////////////////////
-	void AStaticMesh::OnRelease()
-	{
-
-	}
-	//////////////////////////////////////////////////////////////////////////
-	void AStaticMesh::OnReleaseRS()
+	void AStaticMesh::OnDestroy()
 	{
 
 	}
 
+	void AStaticMesh::MetaBeforePropertyChange(const PropertyInfo* prp)
+	{
 
-	UCLASS_BEGIN_IMPL(AStaticMesh)
-		UPROPERTY(mContent)
-		UPROPERTY(mFlipUV)
-		UPROPERTY(mGenerateSmoothNormal)
-	UCLASS_END_IMPL(AStaticMesh)
+	}
+
+	void AStaticMesh::MetaAfterPropertyChange(const PropertyInfo* prp)
+	{
+		EnqueueRenderCommandAndWait([]() {
+
+		});
+	}
 
 };

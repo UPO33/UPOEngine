@@ -1,6 +1,6 @@
 #pragma once
 
-#include "UEntity.h"
+#include "UEntityPrimitive.h"
 #include "UStaticMesh.h"
 #include "UMaterial.h"
 
@@ -16,15 +16,16 @@ namespace UPO
 		EGF_CastShadow,
 		EGF_ReceiveShadow,
 	};
+
+
 	//////////////////////////////////////////////////////////////////////////
-	class UAPI EntityStaticMesh : public Entity
+	class UAPI EntityStaticMesh : public EntityPrimitive
 	{
 		UCLASS(EntityStaticMesh, Entity)
 
 		AStaticMesh*	mMesh;
 		AMaterial*		mMaterial;
 		
-		void RSMeshFinished(AStaticMeshRS*);
 	public:
 
 		void SetMesh(AStaticMesh*);

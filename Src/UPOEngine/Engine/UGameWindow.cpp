@@ -4,6 +4,7 @@
 #include "UEngineBase.h"
 
 #include "../GFX/UPrimitiveBatch.h"
+#include "../GFXCore/UGFXCore.h"
 
 #ifdef UPLATFORM_WIN
 #include "UGameWindow_Win.h"
@@ -17,8 +18,20 @@ namespace UPO
 	TArray<GameWindow*> GameWindow::Instances;
 
 
-	bool GameWindow::Init(const GameWindowCreationParam& param)
+	void GameWindow::BeginRender()
 	{
+		mFrameTimer.Start();
+	}
+
+	void GameWindow::EndRender()
+	{
+		mFrameElapsedSeconds = mFrameTimer.SinceSeconds();
+	}
+
+	bool GameWindow::InitAndRegister(const GameWindowCreationParam& param)
+	{
+		UASSERT(!mRegistered);
+
 		mCreationParam = param;
 		OnCreateWindow();
 		CreateSwapChain();
@@ -27,10 +40,93 @@ namespace UPO
 
 		EnqueueRenderCommandAndWait([this]() {
 			Instances.Add(this);
+			mRegistered = true;
 		});
 		return true;
 	}
 
+
+	bool GameWindow::Release()
+	{
+		if (!mRegistered) return true;
+
+		EnqueueRenderCommandAndWait([this]()
+		{
+			if (mPrimitiveBatch) DestroyPrimitiveBatch();
+			mPrimitiveBatch = nullptr;
+			if (mCanvas) DestroyCanvas();
+			mCanvas = nullptr;
+			if (mSwapchain) DestroySwapChain();
+			mSwapchain = nullptr;
+
+			Instances.RemoveShift(Instances.Find(this));
+		});
+		this->OnDestroyWindow();
+		return true;
+	}
+
+	GameWindow::GameWindow()
+	{
+		mHasFocus = false;
+		mRegistered = false;
+	}
+
+	GameWindow::~GameWindow()
+	{
+		if (!mRegistered) return;
+
+		EnqueueRenderCommandAndWait([this]()
+		{
+			if (mPrimitiveBatch) DestroyPrimitiveBatch();
+			mPrimitiveBatch = nullptr;
+			if (mCanvas) DestroyCanvas();
+			mCanvas = nullptr;
+			if (mSwapchain) DestroySwapChain();
+			mSwapchain = nullptr;
+
+			Instances.RemoveShift(Instances.Find(this));
+		});
+		this->OnDestroyWindow();
+	}
+
+	bool GameWindow::CreateCanvas()
+	{
+		mCanvas = new Canvas(this);
+		return true;
+	}
+
+	bool GameWindow::DestroyCanvas()
+	{
+		if (mCanvas) delete mCanvas;
+		mCanvas = nullptr;
+		return true;
+	}
+
+	bool GameWindow::CreateSwapChain()
+	{
+		ULOG_MESSAGE("");
+		GFXSwapChainDesc scDesc;
+		scDesc.mGameWindow = this;
+		scDesc.mSampleCount = Max(mCreationParam.mSampleCount, 1U);
+		scDesc.mVSyncEnable = mCreationParam.mVSyncEnable;
+		scDesc.mFullScreem = mCreationParam.mFulllScreen;
+
+		mSwapchain = gGFX->CreateSwapChain(scDesc);
+		if (mSwapchain == nullptr)
+		{
+			return false;
+		}
+
+		return true;
+	}
+
+	bool GameWindow::DestroySwapChain()
+	{
+		if (mSwapchain) delete mSwapchain;
+			mSwapchain = nullptr;
+		
+		return true;
+	}
 
 	void GameWindow::SetWorld(World* world)
 	{
@@ -48,7 +144,7 @@ namespace UPO
 
 	}
 
-	GameWindow* GameWindow::Create(const GameWindowCreationParam& param)
+	GameWindow* GameWindow::CreateLauncherWin(const GameWindowCreationParam& param)
 	{
 #ifdef UPLATFORM_WIN
 		GameWindow* gw = new GameWindowWin();
@@ -57,7 +153,7 @@ namespace UPO
 #error
 #endif
 
-		if (gw->Init(param))
+		if (gw->InitAndRegister(param))
 		{
 			return gw;
 		}
@@ -69,33 +165,14 @@ namespace UPO
 	}
 
 
-	void GameWindow::Destroy(GameWindow* gw)
-	{
-		if (gw)
-		{
-			EnqueueRenderCommandAndWait([gw]()
-			{
-				if (gw->mPrimitiveBatch) gw->DestroyPrimitiveBatch();
-				gw->mPrimitiveBatch = nullptr;
-				if (gw->mCanvas) gw->DestroyCanvas();
-				gw->mCanvas = nullptr;
-				if (gw->mSwapchain) gw->DestroySwapChain();
-				gw->mSwapchain = nullptr;
-
-				Instances.RemoveShift(Instances.Find(gw));
-			});
-			gw->OnDestroyWindow();
-			delete gw;
-		}
-
-	}
 
 	GameWindowCreationParam::GameWindowCreationParam(InitConfig)
 	{
 		mFulllScreen = GEngineConfig()->AsBool("Window.FullScreen");
 		mSize.mX = GEngineConfig()->AsNumber("Window.Width");
 		mSize.mY = GEngineConfig()->AsNumber("Window.Height");
-
+		mSampleCount = GEngineConfig()->AsNumber("GFX.MultiSample");
+		mVSyncEnable = GEngineConfig()->AsBool("GFX.VSync");
 	}
 
 #if 0

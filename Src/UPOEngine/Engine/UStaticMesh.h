@@ -45,24 +45,20 @@ namespace UPO
 		bool				mFlipUV = false;
 		bool				mGenerateSmoothNormal = false;
 
-		struct RSFinishedListener
-		{
-			ObjectPtr				mObject;
-			TMFP<void, void*>		mProc;
-		};
+
 		/*
 		Material*	mMaterial;
 		*/
 	public:
 		AStaticMeshRS* GetRS() const { return mRS; }
-		bool IsRSReady() const;
-		void AddRSCompleteListener(EntityStaticMesh* receiver, TMFP<void, AStaticMeshRS*> proc);
-		
+
 	protected:
-		virtual void OnInit() override;
-		virtual void OnInitRS() override;
-		virtual void OnRelease() override;
-		virtual void OnReleaseRS() override;
+		virtual void OnCreate() override;
+		virtual void OnDestroy() override;
+
+	public:
+		void MetaBeforePropertyChange(const PropertyInfo* prp);
+		void MetaAfterPropertyChange(const PropertyInfo* prp);
 	};
 
 

@@ -29,6 +29,7 @@ namespace UPO
 		EEF_RenderDataTransformDirty = 1 << 8,
 		EEF_RenderDataMiscDirty = 1 << 9,
 
+
 		EEF_CastShadow = 1 << 10,
 		EEF_RecieveShadow = 1 << 11,
 		EEF_Visible = 1 << 12,
@@ -225,7 +226,6 @@ namespace UPO
 		unsigned	mPrivateIndex;
 
 
-		template<typename T = Entity> T* Owner() const { return mGS; }
 
 		virtual void OnFetch(unsigned flag){}
 	};

@@ -18,15 +18,18 @@ namespace UPO
 		bool	mRenderStaticMeshes = true;
 		bool	mRenderPrimitiveBatch = true;
 		bool	mRenderCanvas = false;
+		bool	mShowFPS = true;
 	};
 
-	struct GameWindowCreationParam
+	struct UAPI GameWindowCreationParam
 	{
 		Vec2I		mSize = Vec2I(400, 400);
 		bool		mFulllScreen = false;
 		wchar_t*	mWindowClassName = L"UPOEngine";
 		bool		mCreateCanvas = true;
 		bool		mCreatePrimitiveBatch = true;
+		unsigned	mSampleCount = 1;
+		bool		mVSyncEnable = false;
 
 		GameWindowCreationParam(){}
 		GameWindowCreationParam(InitConfig);
@@ -42,42 +45,60 @@ namespace UPO
 		PrimitiveBatch*			mPrimitiveBatch = nullptr;
 		Canvas*					mCanvas = nullptr;	//main canvas that cover whole window
 		GFXSwapChain*			mSwapchain = nullptr;
+		GameWindowRenderOptions	mOptions;
+		GameWindowCreationParam mCreationParam;
+		Color					mClearColor = Color(0.9f, 0.9f, 0.9f, 0);
+		bool					mHasFocus;
+
+		void BeginRender();
+		void EndRender();
+
+		double GetFrameElapsedSeconds() const { return mFrameElapsedSeconds; }
 
 	protected:
 		World*					mWorld = nullptr;	//world to render from
-		GameWindowRenderOptions	mOptions;
-		GameWindowCreationParam mCreationParam;
+
+		double					mFrameElapsedSeconds = 0;
+		ChronometerAccurate		mFrameTimer;
 
 		void*					mWindowHandle = nullptr;
 
 		bool					mIsReady = false;
 		bool					mRegistered = false;
 
-		bool Init(const GameWindowCreationParam& param);
+		
 
 	public:
+
+		GameWindow();
+		~GameWindow();
+
+		bool InitAndRegister(const GameWindowCreationParam& param);
+		bool Release();
 
 		virtual void CreatePrimitiveBatch() {};
 		virtual void DestroyPrimitiveBatch() {};
 
-		virtual void CreateCanvas() {};
-		virtual void DestroyCanvas() {};
+		virtual bool CreateCanvas();;
+		virtual bool DestroyCanvas();;
 
-		virtual void CreateSwapChain() {};
-		virtual void DestroySwapChain() {};
+		virtual bool CreateSwapChain();
+		virtual bool DestroySwapChain();
 
 		virtual void OnCreateWindow() {};
 		virtual void OnDestroyWindow() {};
 
-		virtual void GetWinSize(Vec2I& out) {}
+		virtual void GetWinSize(Vec2I& out) = 0;
 		virtual void* GetWinHandle() { return mWindowHandle; }
 
 
 		void SetWorld(World*);
 		inline World* GetWorld() const { return mWorld; }
+
+
 		static bool PeekMessages();
 
-		static GameWindow* Create(const GameWindowCreationParam& param);
-		static void Destroy(GameWindow*);
+		//create and register a launcher window
+		static GameWindow* CreateLauncherWin(const GameWindowCreationParam& param);
 	};
 };

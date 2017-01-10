@@ -178,31 +178,7 @@ namespace UPO
 
 		}
 
-		void WorldRS::PerformFetch()
-		{
-			UASSERT(IsRenderThread());
 
-			mPendingAdd = mGS->mEntitiesPendingAddToRS;
-			mPendingDestroy = mGS->mEntitiesPendingDestroyFromRS;
-
-			for (Entity* ent : mGS->mEntitiesRenderDataDirty)
-			{
-				if (ent->FlagTest(EEF_Alive | EEF_RenderDataDirty))
-					ent->mRS->OnFetch();
-			}
-
-			for (size_t i = 0; i < mCameras.Length(); i++)
-			{
-				mCameras[i]->OnFetch();
-			}
-
-			mRenderer->mPrimitiveBatch->Swap();
-		}
-
-		void WorldRS::CollectMeshesForRender()
-		{
-			
-		}
 
 
 		void WorldRS::Render()
@@ -231,31 +207,35 @@ namespace UPO
 			{
 				for (Entity* ent : *mPendingAdd)
 				{
-					AddToScene(ent);
+					AddRS(ent);
 				}
 				mPendingAdd->RemoveAll();
 			}
 
 			//fetching dirty entities
-			//TODO: make parallel
-			for (Entity* ent : mGS->mEntitiesRenderDataDirty)
 			{
-				if (ent->FlagTest(EEF_Alive | EEF_RenderDataDirty))
+				for (Entity* ent : mGS->mEntitiesRenderDataDirty)
 				{
-					ent->GetRS()->OnFetch(ent->mEntityFlag);
+					unsigned entityFlag = ent->mEntityFlag;
+					//remove render dirty flags from entity
+					ent->mEntityFlag.Clear(EEF_RenderDataDirty | EEF_RenderDataTransformDirty | EEF_RenderDataMiscDirty);
+					ent->GetRS()->OnFetch(entityFlag);
 
-					ent->mEntityFlag.Clear(EEF_RenderDataDirty | EEF_RenderDataTransformDirty |EEF_RenderDataMiscDirty);
 				}
+				mGS->mEntitiesRenderDataDirty.RemoveAll();
 			}
-			mGS->mEntitiesRenderDataDirty.RemoveAll();
 
 
 
 			//fetching cameras are done every frame
-			for (EntityCameraRS* camera : mCameras)
 			{
-				camera->OnFetch();
+				for (EntityCameraRS* camera : mCameras)
+				{
+					camera->Fetch();
+				}
 			}
+
+
 			mIsFetching = false;
 		}
 
@@ -266,7 +246,7 @@ namespace UPO
 			ent->GetRS()->~EntityRS();
 		}
 
-		void WorldRS::AddToScene(Entity* from)
+		void WorldRS::AddRS(Entity* from)
 		{
 			if (auto sm = from->Cast<EntityStaticMesh>())
 			{

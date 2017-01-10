@@ -13,27 +13,7 @@ namespace UPO
 		ULOG_MESSAGE("");
 	}
 
-	void ATest::OnInit()
-	{
-		ULOG_MESSAGE("");
-	}
-
-	void ATest::OnInitRS()
-	{
-		ULOG_MESSAGE("");
-	}
-
-	void ATest::OnRelease()
-	{
-		ULOG_MESSAGE("");
-	}
-
-	void ATest::OnReleaseRS()
-	{
-		ULOG_MESSAGE("");
-	}
-
-
+	
 
 
 

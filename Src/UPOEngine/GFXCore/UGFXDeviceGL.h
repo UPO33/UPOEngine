@@ -9,7 +9,7 @@ namespace UPO
 	//////////////////////////////////////////////////////////////////////////
 	class GFXDeviceGL;
 
-
+#if 0
 	//////////////////////////////////////////////////////////////////////////
 	GLenum ToGLType(EMapFlag in)
 	{
@@ -41,7 +41,7 @@ namespace UPO
 	public:
 		GLuint mHandle;
 
-		GFXVertexBufferGL(GLuint handle, const GFXVertexBuffer_Desc& desc) : mHandle(handle)
+		GFXVertexBufferGL(GLuint handle, const GFXVertexBufferDesc& desc) : mHandle(handle)
 		{
 			mDesc = desc;
 		}
@@ -68,7 +68,7 @@ namespace UPO
 	public:
 		GLuint mHandle;
 
-		GFXIndexBufferGL(GLuint handle, const GFXIndexBuffer_Desc& desc) : mHandle(handle)
+		GFXIndexBufferGL(GLuint handle, const GFXIndexBufferDesc& desc) : mHandle(handle)
 		{
 			mDesc = desc;
 		}
@@ -90,6 +90,7 @@ namespace UPO
 			glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
 		}
 	};
+
 
 
 	class GFXDeviceGL : public GFXDevice
@@ -156,4 +157,5 @@ namespace UPO
 		//////////////////////////////////////////////////////////////////////////
 
 	};
+#endif // 0
 };

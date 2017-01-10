@@ -10,15 +10,7 @@ namespace UPO
 
 	}
 
-	void APhysMaterial::OnInit()
-	{
 
-	}
-
-	void APhysMaterial::OnRelease()
-	{
-
-	}
 
 
 	UCLASS_BEGIN_IMPL(APhysMaterial, UATTR_Instanceable())
