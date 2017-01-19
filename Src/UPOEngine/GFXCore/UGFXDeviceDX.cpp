@@ -38,6 +38,9 @@ namespace UPO
 		IDXGIAdapter* adapter = nullptr;
 		int preferedAdapterIndex = 0;
 
+		{
+			
+		}
 		// Create a DirectX graphics interface factory.
 		HRESULT result = CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&giFactory);
 		if (FAILED(result))
@@ -107,6 +110,7 @@ namespace UPO
 	//////////////////////////////////////////////////////////////////////////
 	GFXSwapChain* GFXDeviceDX::CreateSwapChain(const GFXSwapChainDesc& param)
 	{
+		UASSERT(IsGameThread());
 		UASSERT(param.mGameWindow);
 
 		HWND hwnd = (HWND)param.mGameWindow->GetWinHandle();
@@ -382,6 +386,27 @@ namespace UPO
 		// 				return ret;
 		// 			}
 		// 			ULOG_ERROR("failed to create constant buffer");
+		return nullptr;
+	}
+
+	GFXConstantBuffer* GFXDeviceDX::CreateConstantBuffer(unsigned size)
+	{
+		size = RoundUpToMulP2(size, 16);
+
+		D3D11_BUFFER_DESC desc;
+		desc.MiscFlags = 0;
+		desc.StructureByteStride = 0;
+		desc.BindFlags = D3D11_BIND_FLAG::D3D11_BIND_CONSTANT_BUFFER;
+		desc.ByteWidth = size;
+		desc.CPUAccessFlags =  D3D11_CPU_ACCESS_WRITE;
+		desc.Usage = D3D11_USAGE::D3D11_USAGE_DYNAMIC;
+
+		ID3D11Buffer* handle = nullptr;
+		if (SUCCEEDED(mDevice->CreateBuffer(&desc, nullptr, &handle)))
+		{
+			return new GFXConstantBufferDX(handle, GFXConstantBufferDesc());
+		}
+		ULOG_ERROR("failed to create constant buffer");
 		return nullptr;
 	}
 
@@ -836,7 +861,9 @@ namespace UPO
 		}
 		else if (param.mFlag.Test(ETextureFlag::ECPURead))
 		{
-			textureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
+			textureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+			if(param.mFlag.Test(ETextureFlag::ECPUWrite))
+				textureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 			textureDesc.Usage = D3D11_USAGE_STAGING;
 		}
 		else if (param.mFlag.Test(ETextureFlag::ECPUWrite))
@@ -861,12 +888,6 @@ namespace UPO
 		textureDesc.SampleDesc.Quality = 0;
 		textureDesc.MiscFlags = 0;
 		DXGI_FORMAT pixelFormat = ToDXType(param.mFormat);
-		if (param.mFlag.Test(ETextureFlag::EDepthStencil) && !DirectX::IsDepthStencil(pixelFormat))
-		{
-			ULOG_FATAL("invalid pixel format for DepthStencil");
-			return nullptr;
-		}
-
 		textureDesc.Format = pixelFormat;
 
 // 		size_t pitch = 0, slicePitch = 0;
@@ -903,7 +924,6 @@ namespace UPO
 				rvDesc.Texture2D.MipLevels = 1;
 			}
 			result = mDevice->CreateShaderResourceView(texture, &rvDesc, &shaderResourceView);
-			DXERRORFATAL(result);
 		}
 
 		/////////////////////create render target view
@@ -921,11 +941,10 @@ namespace UPO
 				rtvDesc.Texture2D.MipSlice = 0;
 			}
 			result = mDevice->CreateRenderTargetView(texture, &rtvDesc, &renderTargetView);
-			DXERRORFATAL(result);
 		}
 
 
-		//////////////////create depth stencil
+		//////////////////create depth stencil view
 		if (param.mFlag.Test(ETextureFlag::EDepthStencil))
 		{
 			D3D11_DEPTH_STENCIL_VIEW_DESC	dsvDesc;
@@ -942,7 +961,6 @@ namespace UPO
 			}
 
 			result = mDevice->CreateDepthStencilView(texture, &dsvDesc, &depthStencilView);
-			DXERRORFATAL(result);
 		}
 
 		GFXShaderResourceView* gfxShaderResourceView = nullptr;
@@ -1079,8 +1097,8 @@ namespace UPO
 	}
 
 
-
-	void GFXDeviceDX::SetRenderTarget(GFXRenderTargetView** renderTargets, unsigned numRenderTargets, GFXTexture2D* depthStencil)
+	//////////////////////////////////////////////////////////////////////////
+	void GFXDeviceDX::SetRenderTarget(GFXRenderTargetView** renderTargets, unsigned numRenderTargets, GFXDepthStencilView* depthStencil)
 	{
 		ID3D11RenderTargetView* rtvs[GFX_MAX_RENDER_TARGET];
 		for (unsigned i = 0; i < numRenderTargets; i++)
@@ -1096,6 +1114,7 @@ namespace UPO
 		mImmediateContext->OMSetRenderTargets(numRenderTargets, rtvs, dsv);
 	}
 
+	//////////////////////////////////////////////////////////////////////////
 	void GFXDeviceDX::SetRasterizerState(GFXRasterizerStateHandle state)
 	{
 		mImmediateContext->RSSetState(state ? state.HandleAs<ID3D11RasterizerState*>() : nullptr);
@@ -1320,12 +1339,57 @@ namespace UPO
 		return mapped.pData;
 	}
 
+	//////////////////////////////////////////////////////////////////////////
+	void* GFXDeviceDX::Map(GFXTexture2D* texture, EMapFlag flag, unsigned mipIndex, unsigned& outRowPitch)
+	{
+		UASSERT(texture);
+		ID3D11Texture2D* dxTexture = texture->HandleAs<ID3D11Texture2D*>();
+		D3D11_MAPPED_SUBRESOURCE mapped;
+		DXERRORFATAL(mImmediateContext->Map(dxTexture, mipIndex, ToDXType(flag), 0, &mapped));
+		outRowPitch = mapped.RowPitch;
+		return mapped.pData;
+	}
+
 	void GFXDeviceDX::Unmap(GFXBuffer* buffer)
 	{
 		UASSERT(buffer);
 		mImmediateContext->Unmap(buffer->HandleAs<ID3D11Buffer*>(), 0);
 	}
+	//////////////////////////////////////////////////////////////////////////
+	void GFXDeviceDX::Unmap(GFXTexture2D* texture, unsigned mipIndex)
+	{
+		UASSERT(texture);
+		ID3D11Texture2D* dxTexture = texture->HandleAs<ID3D11Texture2D*>();
+		mImmediateContext->Unmap(dxTexture, mipIndex);
+	}
+	//////////////////////////////////////////////////////////////////////////
+	void GFXDeviceDX::CopyResource(GFXResource* dst, GFXResource* src)
+	{
+		UASSERT(dst && src && dst != src);
+		UASSERT(typeid(dst) == typeid(src));
 
+		ID3D11Resource* dstDX = dst->HandleAs<ID3D11Resource*>();
+		ID3D11Resource* srcDX = src->HandleAs<ID3D11Resource*>();
+		
+		UASSERT(dstDX != srcDX);
+
+		mImmediateContext->CopyResource(dstDX, srcDX);
+	}
+	//////////////////////////////////////////////////////////////////////////
+	void GFXDeviceDX::CopySubresourceRegion(GFXTexture2D* dst, unsigned dstMipIndex, unsigned dstX, unsigned dstY, GFXTexture2D* src, unsigned srcMipIndex, unsigned srcX, unsigned srcW, unsigned srcY, unsigned srcH)
+	{
+		UASSERT(dst && src && dst != src);
+
+		ID3D11Texture2D* dstDX = dst->HandleAs<ID3D11Texture2D*>();
+		ID3D11Texture2D* srcDX = src->HandleAs<ID3D11Texture2D*>();
+
+		UASSERT(dstDX && srcDX && dstDX != srcDX);
+
+		D3D11_BOX dxBox = { srcX, srcY, 0, srcX + srcW, srcY + srcH, 1 };
+
+		mImmediateContext->CopySubresourceRegion(dstDX, dstMipIndex, dstX, dstY, 0, srcDX, srcMipIndex, &dxBox);
+	}
+	//////////////////////////////////////////////////////////////////////////
 	bool GFXSwapChainDX::Resize(const Vec2I& newSize)
 	{
 		ULOG_MESSAGE("Resizing... NewSize %", newSize);
@@ -1384,12 +1448,12 @@ namespace UPO
 		if (mDesc.mVSyncEnable)
 		{
 			// Lock to screen refresh rate.
-			HandleAs<IDXGISwapChain*>()->Present(1, 0);
+			DXERRORFATAL(HandleAs<IDXGISwapChain*>()->Present(1, 0));
 		}
 		else
 		{
 			// Present as fast as possible.
-			HandleAs<IDXGISwapChain*>()->Present(0, 0);
+			DXERRORFATAL(HandleAs<IDXGISwapChain*>()->Present(0, 0));
 		}
 
 		return true;

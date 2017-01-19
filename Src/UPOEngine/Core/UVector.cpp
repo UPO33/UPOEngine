@@ -26,6 +26,15 @@ namespace UPO
 
 	//////////////////////////////////////////////////////////////////////////
 	const Color32 Color32::BLACK(0, 0, 0, 255);
+
+	Color32::Color32(const Color& color)
+	{
+		mRGBA[0] = (uint8)(color.mR * 255.0f);
+		mRGBA[1] = (uint8)(color.mG * 255.0f);
+		mRGBA[2] = (uint8)(color.mB * 255.0f);
+		mRGBA[3] = (uint8)(color.mA * 255.0f);
+	}
+
 	const Color32 Color32::WHITE(255, 255, 255, 255);
 	const Color32 Color32::RED(255, 0, 0, 255);
 	const Color32 Color32::GREEN(0, 255, 0, 255);

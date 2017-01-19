@@ -40,10 +40,6 @@ namespace UPO
 	//////////////////////////////////////////////////////////////////////////
 	Entity::Entity()
 	{
-		static String StrEntityName = "Entity00000000000";
-		static Name NameEntity = "Entity";
-		static unsigned EntityCTorCounter = 0;
-
 		mParent = nullptr;
 		
 #ifndef UUSE_ARRAYCHILD
@@ -51,10 +47,6 @@ namespace UPO
 		mChildHead = mDownEntity = mUpEntity = nullptr;
 #endif
 		mEntityFlag = EEF_Default;
-
-		StrEntityName.SetFormatted("%s_%i", GetClassInfo()->GetName().CStr(), EntityCTorCounter++);
-
-		mName = StrEntityName;
 
 		mTickRegistered = false;
 		mTickPendingAdd = false;
@@ -70,7 +62,7 @@ namespace UPO
 	void Entity::TagRenderDirty(unsigned flags)
 	{
 		if (mRS == nullptr) return;
-
+		
 		if (FlagTest(EEF_Visible | EEF_Alive))
 		{
 			if (!FlagTest(EEF_RenderDataDirty))
@@ -98,7 +90,7 @@ namespace UPO
 	//////////////////////////////////////////////////////////////////////////
 	bool Entity::IsRoot() const
 	{
-		return mParent == mWorld->mRootEntity;
+		return (mParent == nullptr || mParent == mWorld->mRootEntity);
 	}
 	//////////////////////////////////////////////////////////////////////////
 	Entity* Entity::GetParent() const
@@ -183,7 +175,7 @@ namespace UPO
 		if (mIsWorldTransformInvDirty)
 		{
 			mWorldTransformInv = mWorldTransform;
-			mWorldTransformInv.InvertAffine();
+			mWorldTransformInv.Invert();
 		}
 		return mWorldTransformInv;
 	}
@@ -210,6 +202,19 @@ namespace UPO
 		OnCalcBound();
 		UpdateChildrenTransform();
 	}
+
+	void Entity::SetLocalTransform(const Vec3& location, const Vec3& rotation, const Vec3& scale)
+	{
+		Matrix4 trs; trs.MakeTransform(location, rotation, scale);
+		this->SetLocalTransform(trs);
+	}
+
+	void Entity::SetLocalTransform(const Vec3& location, const Quat& rotation, const Vec3& scale)
+	{
+		Matrix4 trs; trs.MakeTransform(location, rotation, scale);
+		this->SetLocalTransform(trs);
+	}
+
 	//////////////////////////////////////////////////////////////////////////
 	void Entity::SetWorldTransform(const Transform& worldTrs)
 	{
@@ -219,6 +224,18 @@ namespace UPO
 		TagRenderTransformDirty();
 		OnCalcBound();
 		UpdateChildrenTransform();
+	}
+
+	void Entity::SetWorldTransform(const Vec3& location, const Vec3& rotation, const Vec3& scale)
+	{
+		Matrix4 trs; trs.MakeTransform(location, rotation, scale);
+		this->SetWorldTransform(trs);
+	}
+
+	void Entity::SetWorldTransform(const Vec3& location, const Quat& rotation, const Vec3& scale)
+	{
+		Matrix4 trs; trs.MakeTransform(location, rotation, scale);
+		this->SetWorldTransform(trs);
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -284,10 +301,7 @@ namespace UPO
 #endif
 	}
 
-	void Entity::Tick()
-	{
 
-	}
 
 	//////////////////////////////////////////////////////////////////////////
 	void Entity::Init(Entity* parent, World* world)

@@ -80,72 +80,87 @@ namespace UPO
 		"</body></html>";
 
 	//////////////////////////////////////////////////////////////////////////
+	void UGetLegibleThreadName(unsigned threadID, char outThreadName[32])
+	{
+		if (threadID == gGameThreadID)
+			StrCopy(outThreadName, "GT", 32);
+		else if (threadID == gRenderThreadID)
+			StrCopy(outThreadName, "RT", 32);
+		else
+			sprintf_s(outThreadName, 32, "0x%x", threadID);
+	}
+	//////////////////////////////////////////////////////////////////////////
+	const char* UGetLegibleFileName(const char* fullfilename)
+	{
+		const char* strFilename = StrFindRNChar(fullfilename, PATH_SEPARATOR_CHAR, 1);
+		if (strFilename == nullptr) strFilename = StrFindRNChar(fullfilename, PATH_SEPARATOR_CHAR, 0);
+		if (strFilename == nullptr) strFilename = fullfilename;
+		return strFilename;
+	}
+	//////////////////////////////////////////////////////////////////////////
+	const char* UEnumToStr(ELogType in)
+	{
+		static const char* LUTLogTypeToStr[(unsigned)ELogType::ELT_Max] = { "message", "success", "warn", "error", "fatal", "assert" };
+		return LUTLogTypeToStr[(unsigned)in];
+	}
+	//////////////////////////////////////////////////////////////////////////
 	class UAPI LogImpl : public Log
 	{
 	public:
-		static const unsigned LOG_CAPACITY = 2048;
 		static const unsigned MAX_LISTENERS = 32;
 
 		CriticalSection							mLock;
-// 		File									mOutFile;
 		TFP<void, const LogEntry&>				mListeners[MAX_LISTENERS];
-		unsigned								mNumListeners;
-		bool mWriteToSTDConsole = true;
-		FILE* mOutFile = nullptr;
+		unsigned								mNumListeners = 0;
+		bool									mWriteToSTDConsole = true;
+		bool									mWroteToFile = false;
+		TCircularQueue<LogEntry, 1024>			mLogs;
+
 
 		LogImpl()
 		{
-// 			mOutFile.Open("log.html", EFileOpenMode::Write);
-// 			mOutFile.WriteBytes(gLogHTMLBegin, StrLen(gLogHTMLBegin));
-			fopen_s(&mOutFile, "log.html", "wb");
-			fwrite(gLogHTMLBegin, 1, StrLen(gLogHTMLBegin), mOutFile);
+			ZeroType(mListeners);
 		}
 		~LogImpl()
 		{
-			CloseLogFile();
+			if (!mWroteToFile) WriteLogsToHTMLFile();
+			mWroteToFile = true;
 		}
-		void CloseLogFile()
+		void WriteLogsToHTMLFile()
 		{
-// 			if (mOutFile.IsOpen())
-// 			{
-// 				mOutFile.WriteBytes(gLogHTMLEnd, StrLen(gLogHTMLEnd));
-// 				mOutFile.Close();
-// 			}
-			if (mOutFile)
+			FILE* outFile = nullptr;
+			fopen_s(&outFile, "log.html", "wb");
+			fwrite(gLogHTMLBegin, 1, StrLen(gLogHTMLBegin), outFile);
+			if (outFile == nullptr) return;	//failed to create log file
+			
+			//writing logs...
+			while (LogEntry* log = mLogs.BeginPop())
 			{
-				fwrite(gLogHTMLEnd, 1, StrLen(gLogHTMLEnd), mOutFile);
-				fclose(mOutFile);
+				char strThread[32];
+				UGetLegibleThreadName(log->mThreadID, strThread);
+
+				fprintf(outFile, "<p class=%s> [%s] [%s] [%d] [%s] &nbsp&nbsp&nbsp&nbsp&nbsp %s</p>",
+					UEnumToStr(log->mType), UGetLegibleFileName(log->mFileName), log->mFunctionName, log->mLineNumber, strThread, log->mText);
+
+				mLogs.EndPop();
 			}
+
+			fwrite(gLogHTMLEnd, 1, StrLen(gLogHTMLEnd), outFile);
+			fclose(outFile);
+
+			mWroteToFile = true;
 		}
 		void WriteLog(const LogEntry& log)
 		{
-			char strThreadID[32];
-			sprintf_s(strThreadID, sizeof(strThreadID), "0x%x", log.mThreadID);
-			const char* strThread = strThreadID;
-			if (log.mThreadID == gGameThreadID) strThread = "GT";
-			if (log.mThreadID == gRenderThreadID) strThread = "RT";
-
-			const char* LUTLogTypeToStr[(unsigned)ELogType::ELT_Max] = { "message", "success", "warn", "error", "fatal", "assert" };
-			const char* strLogType = LUTLogTypeToStr[(unsigned)log.mType];
-				
-			const char* strFilename = StrFindRNChar(log.mFileName, PATH_SEPARATOR_CHAR, 1);
-			if (strFilename == nullptr) strFilename = StrFindRNChar(log.mFileName, PATH_SEPARATOR_CHAR, 0);
-			if (strFilename == nullptr) strFilename = log.mFileName;
-
-			const char* strFuncname = log.mFunctionName;
-			unsigned lineNumber = log.mLineNumber;
-
-			//write to html file
-			if(mOutFile)
-			{
-				char buffer1[1024];
-				sprintf_s(buffer1, sizeof(buffer1), "<p class=%s> [%s] [%s] [%d] [%s] &nbsp&nbsp&nbsp&nbsp&nbsp %s</p>", strLogType, strFilename, strFuncname, lineNumber, strThread, log.mText);
-				fwrite(buffer1, 1, StrLen(buffer1), mOutFile);
-			}
 			if(mWriteToSTDConsole)
 			{
 				Console::MatchColor(log.mType);
-				printf("[%s] [%s] [%d] [%s]  %s\n", strFilename, strFuncname, lineNumber, strThread, log.mText);
+
+				char strThread[32];
+				UGetLegibleThreadName(log.mThreadID, strThread);
+
+				printf("[%s] [%s] [%d] [%s]  %s\n", UGetLegibleFileName(log.mFileName), log.mFunctionName, log.mLineNumber, strThread, log.mText);
+
 			}
 		}
 		void CallListeners(const LogEntry& log)
@@ -170,22 +185,26 @@ namespace UPO
 		}
 		void Add(ELogType type, const char* file, const char* funcName, unsigned line, const char* text)
 		{
-			LogEntry newEntry;
-			newEntry.mType = type;
-			newEntry.mLineNumber = line;
-			newEntry.mThreadID = Thread::ID();
-			StrCopy(newEntry.mFileName, file, LogEntry::MAX_FILE_NAME);
-			StrCopy(newEntry.mFunctionName, funcName, LogEntry::MAX_FUNCTION_NAME);
-			StrCopy(newEntry.mText, text, LogEntry::MAX_LOG_LENGTH);
-
 			mLock.Enter();
-			WriteLog(newEntry);
-			CallListeners(newEntry);
-// 			if (type == ELT_Fatal || type == ELT_Assert)
-// 			{				
-// 				CloseLogFile();
-// 				AppCrash();
-// 			}
+			
+			if (mLogs.IsFull()) mLogs.Pop(LogEntry());
+
+			LogEntry* newEntry = mLogs.Push();
+
+			newEntry->mType = type;
+			newEntry->mLineNumber = line;
+			newEntry->mThreadID = Thread::ID();
+			StrCopy(newEntry->mFileName, file, LogEntry::MAX_FILE_NAME);
+			StrCopy(newEntry->mFunctionName, funcName, LogEntry::MAX_FUNCTION_NAME);
+			StrCopy(newEntry->mText, text, LogEntry::MAX_LOG_LENGTH);
+
+			WriteLog(*newEntry);
+			CallListeners(*newEntry);
+			if (type == ELT_Fatal || type == ELT_Assert)
+			{				
+				WriteLogsToHTMLFile();
+				AppCrash();
+			}
 			mLock.Leave();
 		}
 		

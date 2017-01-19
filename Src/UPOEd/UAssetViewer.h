@@ -6,36 +6,54 @@
 
 namespace UPOEd
 {
+	//////////////////////////////////////////////////////////////////////////
+	class AssetViewer;
+	class AssetWindowBase;
+	class AssetViewer_Default;
+
+	//////////////////////////////////////////////////////////////////////////
 	class AssetViewer : public QMainWindow
 	{
-		Asset* mAttachedAsset = nullptr;
+		friend AssetWindowBase;
+
+		static QList<AssetWindowBase*>	SOpenAssets;
+
 	public:
-		AssetViewer(QWidget* parent = nullptr);
-		
-		virtual void AttachAsset(Asset* asset) { mAttachedAsset = asset; }
-		virtual void Tick() {}
-
-		static AssetViewer* Current;
-
+		static void Tick();
 		static void OpenAsset(AssetEntry* asset);
-		static void Close();
-
-		static AssetViewer* MakeCorrespondingView(Asset* asset, QWidget* parentWidget = nullptr);
+		//return the viewer if any
+		static AssetWindowBase* GetViewerOfAsset(AssetEntry* entry);
+		static AssetWindowBase* MakeCorrespondingView(const ClassInfo* assetClass, QWidget* parentWidget = nullptr);
 	};
 
 	//////////////////////////////////////////////////////////////////////////
-	class AssetViewer_Default : public AssetViewer
+	class AssetWindowBase : public QMainWindow
+	{
+		friend AssetViewer;
+
+		Object* mRefHelper; // only is used as loader reference
+
+	protected:
+		TObjectPtr<Asset> mAttachedAsset;
+	public:
+		AssetWindowBase(QWidget* parent = nullptr);
+		~AssetWindowBase();
+		virtual void AttachAsset(Asset* asset);
+		virtual void Tick() {}
+		virtual void closeEvent(QCloseEvent *event) override;
+	};
+
+	//////////////////////////////////////////////////////////////////////////
+	class AssetViewer_Default : public AssetWindowBase
 	{
 		PropertyBrowserWidget* mPropertyBrowser;
 	public:
-		AssetViewer_Default(QWidget* parent = nullptr) : AssetViewer(parent)
-		{
-			mPropertyBrowser = new PropertyBrowserWidget(this);
-			setCentralWidget(mPropertyBrowser);
-		}
+		AssetViewer_Default(QWidget* parent = nullptr);
 		virtual void Tick() override;
 		virtual void AttachAsset(Asset*) override;
 		virtual void closeEvent(QCloseEvent *event) override;
 
 	};
+
+
 };

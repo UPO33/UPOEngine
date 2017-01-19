@@ -82,11 +82,16 @@ namespace UPOEd
 
 		bool OpenProject(const QString& projectFilePath);
 		void CloseCurrentProject();
+		
 	public:
 		MainWindow(QWidget *parent = nullptr, Qt::WindowFlags flags = Qt::WindowFlags());
+		~MainWindow();
 		float mTickCounter = 0;
 		void Tick();
-		
+
+		virtual void closeEvent(QCloseEvent *event) override;
+
+
 // 		void dragEnterEvent(QDragEnterEvent *e) override
 // 		{
 // 			if (e->mimeData()->hasUrls()) {
@@ -101,7 +106,6 @@ namespace UPOEd
 // 				ULOG_MESSAGE("dropped file %s", fileName);
 // 			}
 // 		}
-		void InitWorld();
 	};
 
 	extern MainWindow* gMainWindow;

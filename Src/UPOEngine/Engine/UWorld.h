@@ -13,6 +13,8 @@ namespace UPO
 	class EntityCamera;
 	class GameWindow;
 	class Canvas;
+	class PrimitiveBatch;
+	class InputState;
 
 	//////////////////////////////////////////////////////////////////////////
 	struct WorldTickResult
@@ -33,6 +35,14 @@ namespace UPO
 		EWF_Max
 	};
 	//////////////////////////////////////////////////////////////////////////
+	enum class EWorldType
+	{
+		EGame,
+		EEditor,
+		EPlayInEditor,
+	};
+
+	//////////////////////////////////////////////////////////////////////////
 	struct EntityCreationParam
 	{
 		ClassInfo*	mClass = nullptr;
@@ -47,6 +57,35 @@ namespace UPO
 	typedef TArray<Entity*>	EntityArray;
 
 	//////////////////////////////////////////////////////////////////////////
+	class UAPI WorldEditorData
+	{
+	public:
+		World*		mOwner;
+		Vec3		mCameraPosition;
+		Vec3		mCameraRotation;
+		float		mCameraFOV;
+		float		mNearZPlane;
+		float		mFazZPlane;
+
+		WorldEditorData(World*);
+		~WorldEditorData();
+
+		void MoveGlobal(Vec3 offset);
+		void RotateGlobal(Vec3 offset);
+		void MoveLocal(Vec3 offset);
+
+		void Tick();
+	};
+
+	//////////////////////////////////////////////////////////////////////////
+	struct WorldInitParam
+	{
+		EWorldType		mWorldType = EWorldType::EEditor;
+		Name			mName = "World";
+		bool			mStartPlaying = false;
+	};
+
+	//////////////////////////////////////////////////////////////////////////
 	class UAPI World : public Asset
 	{
 		UCLASS(World, Asset)
@@ -59,7 +98,6 @@ namespace UPO
 		bool					mIsPlaying = false;
 		bool					mIsPaused = false;
 		bool					mIsFirstTick = false;
-		float					mSecondsSincePlay = 0;
 		bool					mIsInTick = false;
 		bool					mDoExitPlay = false;
 		AWorldSetting*			mWorldSetting = nullptr;
@@ -79,8 +117,11 @@ namespace UPO
 		WorldTicking		mTicking;
 		WorldTimer			mTimer;
 
-		float	mDeltaTime = 0;
-		float	mDeltaScale = 1;
+		float	mDeltaTime;
+		float	mDeltaTimeUnscaled;
+		float	mDeltaScale;
+		float	mSecondsSincePlay;
+		float	mSecondsSincePlayUnscaled;
 
 		bool	mIsGamePaused = false;
 
@@ -93,11 +134,10 @@ namespace UPO
 		EntityArray*		mEntitiesPendingDestroyFromRS;
 		EntityArray			mEntitiesRenderDataDirty;
 
-		volatile long		mPendingIndex;	//world uses mPendingIndex, rs uses mPendingIndex ^ 1;
 		Event				mFetchCompleted;
 		Event				mTickEndEvent;
-		EntityCamera*		mEditorCamera;
-		
+		EWorldType			mWorldType;
+		EntityCamera*		mFreeCamera = nullptr;
 
 	public:
 		TDelegateMulti<void, Entity*>	mOnEntityCreated;
@@ -105,7 +145,7 @@ namespace UPO
 		bool							mIsAlive = true;
 		int								mPriority = 1;
 		GameWindow*						mMainWindow = nullptr;
-		TArray<GameWindow*>				mGameWindows;	//game windows that are using this world, a world can be shared
+		PrimitiveBatch*					mPrimitiveBatch = nullptr;
 
 	public:
 		void PushToPendingAddToRS(Entity* ent);
@@ -119,7 +159,7 @@ namespace UPO
 		WorldTicking* GetTicking() { return &mTicking; }
 		WorldTimer* GetTimer() { return &mTimer; }
 
-		World();
+		World(const WorldInitParam& param = WorldInitParam());
 		~World();
 		
 		WorldRS* GetRS() const { return mRS; }
@@ -135,8 +175,10 @@ namespace UPO
 
 		void SetDeltaScale(float scale) { mDeltaScale = scale; }
 		float GetDeltaScale() const { return mDeltaScale; }
-		float GetDeltaTime() const { return mDeltaScale; }
-
+		float GetDeltaTime() const { return mDeltaTime; }
+		float GetDeltaTimeUnscaled() const { return mDeltaTimeUnscaled; }
+		float GetSecondsSincePlay() const { return mSecondsSincePlay; }
+		float GetSecondsSincePlayUnscaled() const { return mSecondsSincePlayUnscaled; }
 
 		//////////////////////////////////////////////////////////////////////////
 		Entity* CreateEntity(EntityCreationParam& param);
@@ -149,8 +191,8 @@ namespace UPO
 		//////////////////////////////////////////////////////////////////////////
 		void SingleTick(WorldTickResult& result);
 		void Tick(float delta);
-		void PerformBeginPlay();
-		void PerformEndPlay();
+		void CheckPerformBeginPlay();
+		void CheckPerformEndPlay();
 		void PerformTick();
 		void KillDestroyedEntities();
 
@@ -172,6 +214,10 @@ namespace UPO
 		bool ProjectScreenToWorld(const Vec2& screenPos, Vec3& outWorldPos, EntityCamera* camera);
 
 		Canvas* GetCanvas() const;
+		PrimitiveBatch* GetPrimitiveBatch() const;
+		InputState* GetInputState() const;
+
+		EWorldType GetType() const { return mWorldType; }
 	};
 	//////////////////////////////////////////////////////////////////////////
 

@@ -122,14 +122,14 @@ namespace UPO
 
 	Object* ObjectSys::AllocObject(const ClassInfo* classInfo)
 	{
-		return (Object*)_aligned_malloc(classInfo->GetSize(), classInfo->GetAlign());
+		return (Object*)MemAllocAligned(classInfo->GetSize(), classInfo->GetAlign());
 	}
 
 
 
 	void ObjectSys::FreeObject(Object* object)
 	{
-		_aligned_free(object);
+		MemFreeAligned(object);
 	}
 	ObjectSys::ObjectSys()
 	{
@@ -165,7 +165,7 @@ namespace UPO
 	Object* ObjectSys::NewObject(const ClassInfo* classInfo, size_t classSize)
 	{
 		UASSERT(classInfo && classSize);
-		Object* newObj = (Object*)_aligned_malloc(classSize, classInfo->GetAlign());
+		Object* newObj = (Object*)MemAllocAligned(classSize, classInfo->GetAlign());
 		UASSERT(newObj);
 		newObj->mClassInfo = (ClassInfo*)classInfo;
 		newObj->mRefData = nullptr;

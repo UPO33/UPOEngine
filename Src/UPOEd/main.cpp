@@ -3,7 +3,7 @@
 #include "UEditorConfig.h"
 #include "UD3DRenderWidget.h"
 #include "UStartupWindow.h"
-
+#include "../UPOEngine/Engine/UInput.h"
 #include <qfilesystemwatcher.h>
 
 
@@ -51,15 +51,21 @@ namespace UPOEd
 			return true;
 		}
 
-		virtual bool OnTick() override
+		virtual bool OnBeforeWorldsTick() override
 		{
 			QApplication::processEvents();
 
-			gMainWindow->Tick();
+			
 
 			return gMainWindow->isVisible();
 		}
-
+		virtual bool OnAfterWorldsTick() override
+		{
+// 			Input::Tick();
+// 			Input::SetMouseWheelDelta(0);
+			gMainWindow->Tick();
+			return true;
+		}
 		virtual bool OnRelease() override
 		{
 			QApplication::exit();
@@ -67,15 +73,6 @@ namespace UPOEd
 			return true;
 		}
 
-		virtual GameWindow* OnCreateGameWindow() override
-		{
-
-			return gMainWindow->mMainViewport;
-		}
-
-		virtual void OnReleaseGameWindow() override
-		{
-		}
 
 	};
 	void ParseCmdLine(int argc, const char** argv)
@@ -132,7 +129,19 @@ namespace UPOEd
 	//////////////////////////////////////////////////////////////////////////
 	int Main(int argc, char** argv)
 	{
+		{
+			//Right ^ Up == Forward
+			Vec3 res = Vec3(0, 1, 0) ^ Vec3(0, 0, 1);
+			ULOG_ERROR("res %", res);
+			Matrix4 mat;
+			mat.MakeRotationDir(Vec3(1,0,1));
 
+			ULOG_ERROR("% % % %", mat.GetRow(0), mat.GetRow(1), mat.GetRow(2), mat.GetRow(3));
+			ULOG_ERROR("%", mat.GetRotationEuler());
+			mat.MakeRotationY(40);
+			ULOG_ERROR("%", mat.GetRotationEuler());
+		}
+		
 
 		gQApp = new QApplication(argc, argv);
 
@@ -187,11 +196,7 @@ namespace UPOEd
 			return 0;
 		}
 
-		//setting log file
-		{
-// 			String logFile = ToString(strProjectToOpen);
-// 			GLog()->SetOutFile(logFile.SubStr(0, logFile.FindRN(PATH_SEPARATOR_CHAR)));
-		}
+
 
 		{
 			String enginePath = argv[0];
@@ -202,7 +207,6 @@ namespace UPOEd
 			projectPath.Replace('\\', '/');
 			projectPath = projectPath.SubStr(0, projectPath.FindRN('/'));
 
-			GApp()->mIsEditor = true;
 			GApp()->mProjectPath = projectPath;
 			GApp()->mProjectAssetsPath = projectPath + '/'/*PATH_SEPARATOR_CHAR*/ + "Assets";
 			GApp()->mEnginePath = enginePath;

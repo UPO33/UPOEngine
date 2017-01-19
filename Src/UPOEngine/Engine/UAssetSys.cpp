@@ -195,6 +195,8 @@ namespace UPO
 		fullFileName = GetProjectAssetsPath() + PATH_SEPARATOR_CHAR + filename;
 		if (File::OpenReadFull(fullFileName, outFileContent))
 			return true;
+		
+		return false;
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -618,6 +620,7 @@ namespace UPO
 		{
 			mFilename = newName;
 			Renamed();
+			return true;
 		}
 		else
 		{

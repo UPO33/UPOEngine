@@ -154,6 +154,10 @@ namespace UPO
 		bool IsObject() const;
 		bool IsAsset() const;
 		bool IsBaseOf(const ClassInfo* base) const;
+		template<typename T> bool IsBaseOf() const
+		{
+			return IsBaseOf(T::GetClassInfoStatic());
+		}
 		bool IsAbstract() const { return mIsAbstract; }
 
 		//calls default constructor on object

@@ -25,18 +25,10 @@ namespace UPO
 		virtual bool OnAfterWorldsTick() { return true; }
 		virtual bool OnRelease() { return true; }
 
-		virtual GameWindow* OnCreateGameWindow() { return nullptr; }
-		virtual void OnReleaseGameWindow() {}
-
-		virtual void OnAfterDeviceCreation() {};
-		virtual void OnBeforeRendererRelease() {};
-
 		void Quit();
-		void LoadWorld(Name assetName);
-		void SetWorld(World*);
-		void LoadWorldAsync(Name assetName);
 
-		World* CreateWorld();
+
+		World* CreateWorld(const WorldInitParam&);
 		void DeleteWorld(World*);
 		
 		static IEngineInterface* Get();

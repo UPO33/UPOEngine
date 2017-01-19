@@ -16,6 +16,11 @@ namespace UPO
 	class World;
 	class WorldRS;
 
+
+
+	//////////////////////////////////////////////////////////////////////////
+	class GridDraw;
+
 	//////////////////////////////////////////////////////////////////////////
 	class UAPI Renderer
 	{
@@ -23,22 +28,36 @@ namespace UPO
 		GameWindow* mGameWnd;
 		GFXSwapChain* mSwapChain;
 		WorldRS*	mWorldRS;
-		PrimitiveBatch* mPrimitiveBatch;
 		Canvas* mCanvas;
+		PrimitiveBatch* mPrimitiveBatch;
 		DefferdRenderTargets* mRenderTargets = nullptr;
-		class TestQuadRE* mQuad;
-		CriticalSection mSwapChainLock;
+		Vec2 mViewportSize;
+		
+		GFXVertexBuffer* mTestTriVBuffer;
+		GFXInputLayout* mTestTriLayout;
+		GFXConstantBuffer* mTestCBuffer;
+
+		TArray<EntityCameraRS*>	mCamerasToRender;
+		GFXConstantBuffer*		mCBPerFrame;
+		GFXConstantBuffer*		mCBPerCamera;
+		int						mCurRenderingCameraIndex = -1;
+
+		GridDraw*		mGridDraw = nullptr;
 
 		Renderer();
 		~Renderer();
 
-		static Renderer* New();
-		static void Delete(Renderer*);
 
 		virtual void RenderGameWin(GameWindow*);
 
 		void Render();
+		void RenderWorld();
 		void CheckRenderTargetResizing();
+
+		void RenderStaticMeshes();
+
+		void UpdatePerFrameBuffer();
+		void UpdatePerCameraCBuffer(EntityCameraRS*);
 	};
 
 

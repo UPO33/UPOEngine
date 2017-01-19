@@ -1,10 +1,11 @@
 #pragma once
 
 #include "UEntity.h"
-
+#include "UCanvas.h"
 
 namespace UPO
 {
+
 	class UAPI EntityTest : public Entity
 	{
 		UCLASS(EntityTest, Entity)
@@ -24,6 +25,7 @@ namespace UPO
 		void OnConstruct() override;
 		void OnDestroy() override;
 
+		TArray<CanvasTextureItem> mTextureItems;
 	};
 
 	class EntityTestRS

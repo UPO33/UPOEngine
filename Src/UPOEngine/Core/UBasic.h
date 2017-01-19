@@ -331,7 +331,7 @@ namespace UPO
 			out << *format++;
 		}
 	}
-	template<typename T, typename... TArgs> void SPrintAuto(StringStreamOut& out, const char* format, T value, TArgs... args)
+	template<typename T, typename... TArgs> void SPrintAuto(StringStreamOut& out, const char* format, const T& value, TArgs&... args)
 	{
 		while (*format)
 		{
@@ -375,7 +375,7 @@ namespace UPO
 		void AddVariadic(ELogType type, const char* file, const char* funcName, unsigned line, const char* format, ...);
 		void AddRaw(ELogType type, const char* file, const char* funcName, unsigned line, const char* message);
 
-		template<typename... TArgs> void Add(ELogType type, const char* file, const char* funcName, unsigned line, const char* format, TArgs... args)
+		template<typename... TArgs> void Add(ELogType type, const char* file, const char* funcName, unsigned line, const char* format, const TArgs&... args)
 		{
 			StringStreamOut streamMessage;
 			SPrintAuto(streamMessage, format, args...);

@@ -15,6 +15,7 @@
 #include "core/UDelegate.h"
 #include "core/UPlane.h"
 #include "Engine/UEntityTest.h"
+#include <DirectXMath.h>
 
 namespace UPO
 {
@@ -84,26 +85,26 @@ namespace UPO
 			AssetSys::Get()->CollectAssetEntries();
 
 			GameWindowCreationParam gwcp = InitConfig();
-			gwcp.mVSyncEnable = false;
-
+			gwcp.mVSyncEnable = true;
 
 
 			mGameWnd = GameWindow::CreateLauncherWin(gwcp);
-			mGameWnd2 = GameWindow::CreateLauncherWin(gwcp);
 
-			UASSERT(mGameWnd);
-			UASSERT(mGameWnd2);
+			WorldInitParam wip;
+			wip.mStartPlaying = true;
+			wip.mWorldType = EWorldType::EEditor;
 
-			mStartupWorld = GEngine()->CreateWorld();
+			mStartupWorld = GEngine()->CreateWorld(wip);
 			mStartupWorld->CreateEntity<EntityTest>(nullptr);
-			mStartupWorld->SetPlaying();
-
 			mGameWnd->SetWorld(mStartupWorld);
 
-			mStartupWorld = GEngine()->CreateWorld();
-			mStartupWorld->CreateEntity<EntityTest>(nullptr);
-			mStartupWorld->SetPlaying();
-			mGameWnd2->SetWorld(mStartupWorld);
+// 
+// 			mStartupWorld = GEngine()->CreateWorld();
+// 			mStartupWorld->CreateEntity<EntityTest>(nullptr);
+// 			mStartupWorld->SetPlaying();
+// 			mGameWnd2->SetWorld(mStartupWorld);
+
+			
 
 			return true;
 		}
@@ -170,15 +171,17 @@ namespace UPO
 	
 
 
-	float AngleEq(Vec3 a, Vec3 b)
+
+	void Test(SVec2 f)
+	{
+
+	}
+	bool AngleEquality(Vec3 a, Vec3& b)
 	{
 		Matrix4 m0, m1;
 		m0.MakeRotationXYZ(a);
 		m1.MakeRotationXYZ(b);
-		return (Dot(m0.GetColumn(2) , m1.GetColumn(2)));
-	}
-	void Test(SVec2 f)
-	{
+		return m0.GetRow(2) | m1.GetRow(2);
 
 	}
 	float PointPlaneDist(const Vec3& planeNormal, const Vec3& planePoint, const Vec3& point)
@@ -186,48 +189,105 @@ namespace UPO
 		return Dot(planeNormal, point - planePoint);
 	}
 
-
+	Vec3 Floor(const Vec3& v)
+	{
+		return Vec3(::floor(v.mX), ::floor(v.mY), ::floor(v.mZ));
+	}
+	Vec4 TOUPO(DirectX::XMFLOAT4 v)
+	{
+		return Vec4(v.x, v.y, v.z, v.w);
+	}
+	float TruncateDecimal(const float value, const float decimal)
+	{
+		return ((int)(value * decimal)) / decimal;
+	}
+	Vec3 TruncateDecimal(const Vec3& v, const float decimal)
+	{
+		return Vec3(
+			((int)(v.mX * decimal)) / decimal,
+			((int)(v.mY * decimal)) / decimal,
+			((int)(v.mZ * decimal)) / decimal
+			);
+	}
 	void DebugTest()
 	{
-// 		Matrix4 rotation;
-// 		for (size_t i = 0; i < 10; i++)
-// 		{
-// 			Vec3 ang = Vec3(i * 10, 90 , 0);
-// 			rotation.MakeRotationXYZ(ang);
-// 			Vec3 v0 = rotation.GetRotationEuler1();
-// 		}
+		{
+			Quat q0 = Quat::MakeEuler(Vec3(45, 0, 0)) * Quat::MakeEuler(Vec3(0,90,0));
+			Matrix4 mat;
+			mat.MakeRotationQuat(q0);
+			
+			Vec3 point = Vec3(0, 0, 1);
+			ULOG_MESSAGE("rotated %  %", TruncateDecimal(q0.Rotate(point), 100), TruncateDecimal(mat.GetInverse().TransformVec3W1(point), 100));
+
+		}
+
+		{
+			Vec4 vPos = Vec4(10, 0, 0, 1);
+			Matrix4 matProj, matWorld, matView, matLocalToClip;
+			
 
 
-		UPO::Plane p0(Vec3(0, 0, 0), Vec3(0,1,0));
-		Vec3 pos = Vec3(123, -23, 55);
-		Vec3 p1 = p0.ProjectPoint(pos);
-		
-// 		String s = "sdfsd";
-// 		ULOG_MESSAGE("%", s);
-// 		ULOG_WARN("% % %", (p1 - pos).Length(), p0.DotCoord(pos), PointPlaneDist(Vec3(0, 1, 0), Vec3(0, 0, 0), pos) );
-// 		int tmp = 0;
-// 		std::cin >> tmp;
+			matWorld.MakeTransform(Vec3(100,0,0), Vec3(0,0,0), Vec3(1));
+			matProj.MakePerspective(60, 1, 1, 100);
+			matLocalToClip = matWorld * matProj;
+			Vec4 projectedPoint = matLocalToClip.TransformVec4(vPos);
+			
+			ULOG_MESSAGE("projPoint %", projectedPoint);
+			float ww = projectedPoint.mW;
+			projectedPoint /= ww;
+			ULOG_MESSAGE("projPoint %", projectedPoint);
+
+
+		}
+
+		{
+// 			using namespace DirectX;
+// 			DirectX::XMFLOAT4 vPos(0, 0, 1, 1);
+// 			Vec4 projectedPoint(0, 0, 0, 0);
+// 			DirectX::XMMATRIX dxProjMatrix = DirectX::XMMatrixPerspectiveFovRH(60 * DEG2RAD, 1, 1, 11);
+// 			DirectX::XMVECTOR dxProjectedPoint = DirectX::XMVector4Transform(DirectX::XMLoadFloat4(&vPos), dxProjMatrix);
+// 			DirectX::XMStoreFloat4((XMFLOAT4*)&projectedPoint, dxProjectedPoint);
+// 			
+// 
+// 			projectedPoint /= projectedPoint.mW;
+// 
+// 			ULOG_MESSAGE("projPoint %", projectedPoint);
+		}
+
+
+
+
+// 		system("pause");
 	}
 
 
 	//////////////////////////////////////////////////////////////////////////
 	UAPI void TestMain(int argc, const char** argv)
 	{
+		try
+		{
+			DebugTest();
 
-		DebugTest();
+
+			ParseCommandLine(argc, argv);
+
+			gIsEditor = false;
+
+			// 		auto m1 = ModuleSys::Get()->LoadModule("testmodule1.dll");
+			// 		auto m2 = ModuleSys::Get()->LoadModule("testmodule2.dll");
+			// 
+			// 		ModuleSys::Get()->UnloadModule(m1);
+			// 		ModuleSys::Get()->UnloadModule(m2);
+
+			LaunchEngine(new EngineLauncher);
+		}
+		catch (const std::exception&)
+		{
+			ULOG_ERROR("");
+		}
 
 
-		ParseCommandLine(argc, argv);
 
-		gIsEditor = false;
-		
-// 		auto m1 = ModuleSys::Get()->LoadModule("testmodule1.dll");
-// 		auto m2 = ModuleSys::Get()->LoadModule("testmodule2.dll");
-// 
-// 		ModuleSys::Get()->UnloadModule(m1);
-// 		ModuleSys::Get()->UnloadModule(m2);
-
-		LaunchEngine(new EngineLauncher);
 	}
 	
 };

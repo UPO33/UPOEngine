@@ -2,25 +2,26 @@
 
 namespace UPOEd
 {
-	String gSMeshExts[] = { "obj", "fbx" };
-	String gTexture2DExts[] = { "png", "bmp", "jpg", "jpeg", "dds", "tiff" };
+	String gStaticMeshExts[] = { "obj", "fbx", "3ds", };
+	String gTexture2DExts[] = { "png", "bmp", "jpg", "jpeg", "dds", "tiff", "tga" };
 
-	bool ExtIsTexture2D(const String& ext) 
+
+	bool UExtIsTexture2D(const String& ext) 
 	{
 		for (auto item : gTexture2DExts)
 			if (ext == item) return true;
 		return false;
 	}
-	bool ExtIsSMesh(const String& ext)
+	bool UExtIsStaticMesh(const String& ext)
 	{
-		for (auto item : gSMeshExts)
+		for (auto item : gStaticMeshExts)
 			if (ext == item) return true;
 		return false;
 	}
 
 	bool AssetConverter::ExtIsSupported(const String& ext)
 	{
-		return ExtIsTexture2D(ext) || ExtIsSMesh(ext);
+		return UExtIsTexture2D(ext) || UExtIsStaticMesh(ext);
 	}
 
 
@@ -60,8 +61,8 @@ namespace UPOEd
 			} while (!validName);
 		}
 
-		if (ExtIsTexture2D(ext)) return Convert_Texture(fileContent, name, folderToStoreAssetIn);
-		if (ExtIsSMesh(ext)) return Convert_SMesh(fileContent, name, folderToStoreAssetIn);
+		if (UExtIsTexture2D(ext)) return Convert_Texture(fileContent, name, folderToStoreAssetIn);
+		if (UExtIsStaticMesh(ext)) return Convert_SMesh(fileContent, name, folderToStoreAssetIn);
 	}
 
 	bool AssetConverter::Convert_Texture(Buffer& fileContent, String name, AssetEntry* folderToStoreAssetIn)
@@ -71,17 +72,43 @@ namespace UPOEd
 		entry->mInstance = assetTexture2D;
 		assetTexture2D->mEntry = entry;
 
-		assetTexture2D->mContent = fileContent;
+		{
+			assetTexture2D->mContent = fileContent;
 
-		if (assetTexture2D->Save())
-			return true;
-
-		return false;
+			if (assetTexture2D->Save())
+			{
+				DeleteObject(assetTexture2D);
+				return true;
+			}
+			else
+			{
+				DeleteObject(assetTexture2D);
+				return false;
+			}
+		}
 	}
 
 	bool AssetConverter::Convert_SMesh(Buffer& fileContent, String name, AssetEntry* folderToStoreAssetIn)
 	{
-		return false;
+		AssetEntry* entry = folderToStoreAssetIn->CreateChild(name, false, AssetID::GetNewID(), AStaticMesh::GetClassInfoStatic()->GetName());
+		AStaticMesh* assetStaticMesh = NewObject<AStaticMesh>();
+		entry->mInstance = assetStaticMesh;
+		assetStaticMesh->mEntry = entry;
+
+		{
+			assetStaticMesh->mContent = fileContent;
+
+			if (assetStaticMesh->Save())
+			{
+				DeleteObject(assetStaticMesh);
+				return true;
+			}
+			else
+			{
+				DeleteObject(assetStaticMesh);
+				return false;
+			}
+		}
 	}
 
 };

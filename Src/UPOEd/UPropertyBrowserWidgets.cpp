@@ -232,7 +232,7 @@ namespace UPOEd
 		Vec3 scale = Vec3(ui->mSX->value(), ui->mSY->value(), ui->mSZ->value());
 
 		Transform newTransform;
-		newTransform.MakeTranslationRotationScale(position, rotation, scale);
+		newTransform.MakeTransform(position, rotation, scale);
 
 		mTransform = newTransform;
 

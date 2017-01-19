@@ -1,28 +1,35 @@
-#include "Common.hlsl"
+#include "DefferdCommon.hlsl"
+
+/*
+cbuffer CBGlobal : register(b0)
+{
+    matrix gWorldToCLip;
+};
+*/
 
 struct VSIn
 {
-    float3 position : POSITION;
+    float3 pos : POSITION;
     float4 color : COLOR;
 };
 
 struct PSIn
 {
     float4 position : SV_Position;
-    /*nointerpolation*/ float4 color : COLOR;
+    float4 color : COLOR;
 };
 
-PSIn VSMain(VSIn input)
+
+void VSMain(in VSIn input, out PSIn output)
 {
-    PSIn output = (PSIn) 0;
-    /*
-    float4 viewPos = mul(float4(input.position, 1), gView);
-    output.position = mul(viewPos, gProj);
-    */
+    
+#if 0
+    output.position = mul(float4(input.pos, 1), gWorldToCLip);
+#else
+    output.position = mul(gCamera.mWorldToCilp, float4(input.pos, 1));
+#endif
     output.color = input.color;
-   
-    output.position = mul(float4(input.position, 1), gViewProj);
-    return output;
+    //return mul(float4(pos, 1), gWorldToCLip);
 }
 
 float4 PSMain(PSIn input) : SV_Target

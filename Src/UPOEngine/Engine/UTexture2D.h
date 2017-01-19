@@ -32,12 +32,6 @@ namespace UPO
 		class GFXSamplerState*	mSampler = nullptr;
 		class GFXTexture2D*		mTexture = nullptr;
 		class ATexture2D*		mGS = nullptr;
-
-		
-		void ReCreateSampler();
-		void RecreatreTexture();
-
-		
 	};
 
 	//////////////////////////////////////////////////////////////////////////
@@ -48,9 +42,9 @@ namespace UPO
 		UCLASS(ATexture2D, Asset)
 
 	private:
-		Buffer		mContent;
-		Texture2DSamplerInfo mSampler;
-		ATexture2DRS*	mRS;
+		Buffer					mContent;
+		Texture2DSamplerInfo	mSampler;
+		ATexture2DRS*			mRS;
 
 
 		virtual void OnCreate() override;

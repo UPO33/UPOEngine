@@ -60,13 +60,11 @@ namespace UPO
 		friend AssetEntry;
 		friend UPOEd::AssetConverter;
 
-	private:
 		Flag				mAssetFlag = EAssetFlag::EAF_Defaul;
 		AssetEntry*			mEntry = nullptr;
 		TArray<ObjectPtr>	mRefs;
 		Name				mTag;
 		unsigned			mPrivateIndex;
-		AssetSys*			mAssetSys;
 
 	public:
 		void*				mEdData = nullptr;

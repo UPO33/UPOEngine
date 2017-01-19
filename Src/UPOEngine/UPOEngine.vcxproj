@@ -107,6 +107,7 @@
     <ClInclude Include="GFX\URenderer.h" />
     <ClInclude Include="GFX\UDefferdRenderTargets.h" />
     <ClInclude Include="GFX\UScreenDrawer.h" />
+    <ClInclude Include="GFX\USelectionBuffer.h" />
     <ClInclude Include="GFX\UTestQuad.h" />
     <ClInclude Include="Meta\UClassInfo.h" />
     <ClInclude Include="Meta\UEnumInfo.h" />
@@ -197,6 +198,7 @@
     <ClCompile Include="GFX\URenderer.cpp" />
     <ClCompile Include="GFX\UDefferdRenderTargets.cpp" />
     <ClCompile Include="GFX\UScreenDrawer.cpp" />
+    <ClCompile Include="GFX\USelectionBuffer.cpp" />
     <ClCompile Include="GFX\UTestQuad.cpp" />
     <ClCompile Include="Meta\UClassInfo.cpp" />
     <ClCompile Include="Meta\UEnumInfo.cpp" />

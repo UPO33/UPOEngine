@@ -5,6 +5,8 @@
 
 namespace UPO
 {
+	static const size_t MALLOC_MAX_ALIGN = 8;
+
 	inline void MemCopy(void* dst, const void* src, size_t size) { ::memcpy(dst, src, size); }
 	inline void MemMove(void* dst, const void* src, size_t size) { ::memmove(dst, src, size); }
 	inline void MemZero(void* dst, size_t size) { ::memset(dst, 0, size); }
@@ -15,18 +17,23 @@ namespace UPO
 	inline void* MemRealloc(void* memory, size_t newSize) { return ::realloc(memory, newSize); }
 	inline void  MemFree(void* memory) { ::free(memory); }
 
+	inline void* MemAllocAligned(size_t size, size_t align) { return ::_aligned_malloc(size, align); }
+	inline void* MemReallocAligned(void* memory, size_t newSize, size_t newAlignment) { return ::_aligned_realloc(memory, newSize, newAlignment); }
+	inline void  MemFreeAligned(void* memory) { ::_aligned_free(memory); }
+
 	//MemNew and MemDelete should be paired
-	//allocate memory for T, doesn't call constructor
+	//allocate memory sizeof(T) and alifnof(T), doesn't call constructor
 	template < typename T> T* MemNew(const bool zeromemory = false)
 	{
-		T* ptr = (T*)MemAlloc(sizeof(T));
+		T* ptr = (T*)MemAllocAligned(sizeof(T), alignof(T));
 		if (zeromemory) MemZero(ptr, sizeof(T));
 		return ptr;
 	}
+	//MemNew and MemDelete should be paired
 	//free allocated memory of T, doesn't call destructor
 	template< typename T> void MemDelete(T* ptr)
 	{
-		MemFree(ptr);
+		MemFreeAligned(ptr);
 	}
 
 

@@ -207,8 +207,13 @@ namespace UPO
 
 			uint16 numProperty = 0;
 
+
 			if (classInfo->Has_MetaSerialize())
 			{
+				//dbg
+				{
+					ULOG_MESSAGE("writing MetaSerialize %", classInfo->GetName());
+				}
 				classInfo->Call_MetaSerialize(object, memStream);
 				numProperty = 0xFFff;
 			}
@@ -220,6 +225,9 @@ namespace UPO
 
 					if (prp->GetAttributes().HasAttrib(EAT_Volatile)) continue;
 
+					//dbg
+					ULOG_MESSAGE("writing MetaSerialize %", prp->GetName());
+
 					WriteClassProperty(prp, prp->Map(object), memStream);
 					numProperty++;
 				}
@@ -227,7 +235,7 @@ namespace UPO
 
 
 			uint16 classIndex = ClassToIndex(classInfo);
-			uint32 writtenSize = (uint16)memStream.GetSeek();
+			uint32 writtenSize = memStream.GetSeek();
 
 			stream.RW(classIndex);
 			stream.RW(numProperty);

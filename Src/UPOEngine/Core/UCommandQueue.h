@@ -109,6 +109,10 @@ namespace UPO
 			
 			mWaitEvent.Wait();
 		}
+		void SetConsumerThread(ThreadID id)
+		{
+			mConsumerThreadID = id;
+		}
 		void RunTillQuit()
 		{
 			mRuning = true;
@@ -116,7 +120,6 @@ namespace UPO
 
 			while (mRuning)
 			{
-
 				if (ICMD* cmd = BeginDequeue())
 				{
 					cmd->~ICMD();

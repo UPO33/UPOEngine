@@ -84,6 +84,8 @@
     <ClCompile Include="UAssetConverter.cpp" />
     <ClCompile Include="UAssetConverterMesh.cpp" />
     <ClCompile Include="UAssetConverterTexture.cpp" />
+    <ClCompile Include="UAssetViewerStaticMesh.cpp" />
+    <ClCompile Include="UAssetViewerTexture.cpp" />
     <ClCompile Include="UNewProjectDialog.cpp" />
     <ClCompile Include="UEngineEd.cpp" />
     <ClCompile Include="UEntityBrowser.cpp" />
@@ -115,10 +117,11 @@
     <ClInclude Include="GeneratedFiles\ui_asset_browser.h" />
     <ClInclude Include="GeneratedFiles\ui_NewProjectDialog.h" />
     <ClInclude Include="GeneratedFiles\ui_StartupWindow.h" />
+    <ClInclude Include="GeneratedFiles\ui_TextureViewer.h" />
     <ClInclude Include="GeneratedFiles\ui_TransformProperty.h" />
     <ClInclude Include="UAssetConverter.h" />
-    <ClInclude Include="UAssetConverterMesh.h" />
-    <ClInclude Include="UAssetConverterTexture.h" />
+    <ClInclude Include="UAssetViewerStaticMesh.h" />
+    <ClInclude Include="UAssetViewerTexture.h" />
     <ClInclude Include="UNewProjectDialog.h" />
     <ClInclude Include="UEngineEd.h" />
     <ClInclude Include="UEntityBrowser.h" />
@@ -200,6 +203,18 @@
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="TransformProperty.ui">
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTDIR)\bin\uic.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Uic%27ing %(Identity)...</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\GeneratedFiles\ui_%(Filename).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(QTDIR)\bin\uic.exe" -o ".\GeneratedFiles\ui_%(Filename).h" "%(FullPath)"</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTDIR)\bin\uic.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Uic%27ing %(Identity)...</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.\GeneratedFiles\ui_%(Filename).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"$(QTDIR)\bin\uic.exe" -o ".\GeneratedFiles\ui_%(Filename).h" "%(FullPath)"</Command>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="TextureViewer.ui">
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTDIR)\bin\uic.exe;%(AdditionalInputs)</AdditionalInputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Uic%27ing %(Identity)...</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\GeneratedFiles\ui_%(Filename).h;%(Outputs)</Outputs>

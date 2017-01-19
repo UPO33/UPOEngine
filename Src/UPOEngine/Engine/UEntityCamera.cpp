@@ -1,6 +1,7 @@
 #include "UEntityCamera.h"
 #include "../Meta/UMeta.h"
 #include "UWorldRS.h"
+#include "UGameWindow.h"
 
 namespace UPO
 {
@@ -14,7 +15,7 @@ namespace UPO
 		UPROPERTY(mFarClip, UATTR_Range(0.02f, 9999999.0f))
 		UPROPERTY(mOrthoSize)
 		UPROPERTY(mViewportOffset, UATTR_Range(0,1))
-		UPROPERTY(mViewPortScale, UATTR_Range(0,1))
+		UPROPERTY(mViewPortSize, UATTR_Range(0,1))
 		UPROPERTY(mSuperiority, UATTR_Range(-1000, 1000))
 	UCLASS_END_IMPL(EntityCamera);
 
@@ -29,7 +30,7 @@ namespace UPO
 		mFarClip = 10000.0f;
 		mOrthoSize = Vec2(100, 100);
 		mViewportOffset = Vec2(0, 0);
-		mViewPortScale = Vec2(1, 1);
+		mViewPortSize = Vec2(1, 1);
 		mSuperiority = 0;
 	}
 
@@ -40,7 +41,15 @@ namespace UPO
 	}
 
 
+	//initialize without adding to world rs
+	EntityCameraRS::EntityCameraRS()
+	{
+		mGS = nullptr;
+		mPrivateIndex = ~0U;
+		mRSFlag = 0;
 
+	}
+	//initialize and add to WorldRS
 	EntityCameraRS::EntityCameraRS(EntityCamera* from, WorldRS* wrs)
 	{
 		ZeroType(*this);
@@ -52,10 +61,11 @@ namespace UPO
 
 		Fetch();
 	}
-
+	//remove from WorldRS
 	EntityCameraRS::~EntityCameraRS()
 	{
-		mOwner->mCameras.RemoveAtSwap(mPrivateIndex);
+		if(mPrivateIndex != ~0U)
+			mOwner->mCameras.RemoveAtSwap(mPrivateIndex);
 	}
 
 	bool EntityCameraRS::ShouldBeReanderd() const
@@ -71,7 +81,11 @@ namespace UPO
 	void EntityCameraRS::Fetch()
 	{
 		EntityCamera* gs = (EntityCamera*)mGS;
+		FetchFrom(gs);
+	}
 
+	void EntityCameraRS::FetchFrom(EntityCamera* gs)
+	{
 		mRender = gs->mRender;
 		mPerspective = gs->mPerspective;
 		mFieldOfView = gs->mFieldOfView;
@@ -79,26 +93,39 @@ namespace UPO
 		mFarClip = gs->mFarClip;
 		mOrthoSize = gs->mOrthoSize;
 		mViewportOffset = gs->mViewportOffset;
-		mViewPortScale = gs->mViewPortScale;
+		mViewPortSize = gs->mViewPortSize;
 		mSuperiority = gs->mSuperiority;
 
-		mWorldMatrix = gs->GetWorldTransform();
+
+		mMatrixViewInv = gs->GetWorldTransform();
+		mMatrixViewInv.RemoveScaling();
 	}
 
-	void EntityCameraRS::Update()
+	void EntityCameraRS::Bake()
 	{
 		if (mPerspective)
 		{
-			mProjMatrix.MakePerspective(mFieldOfView, 1, mNearClip, mFarClip);
+			float aspect = 1;
+			if (mOwner->mMainWindow)
+			{
+				Vec2I wndSize = mOwner->mMainWindow->GetWinSize();
+				Vec2 vv = mViewPortSize * Vec2(wndSize.mX, wndSize.mY);
+				aspect = vv.mX / vv.mY;
+			}
+			
+			mMatrixProj.MakePerspective(mFieldOfView, aspect, mNearClip, mFarClip);
 		}
 		else
 		{
-			mProjMatrix.MakeOrtho(mOrthoSize.mX, mOrthoSize.mY, mNearClip, mFarClip);
+			mMatrixProj.MakeOrtho(mOrthoSize.mX, mOrthoSize.mY, mNearClip, mFarClip);
 		}
 
-		mViewMatrix = mWorldMatrix;
-		mViewMatrix.RemoveScaling();
-		mViewMatrix.InvertGeneral();
+		mMatrixView = mMatrixViewInv.GetInverse();
+		mMatrixProjInv = mMatrixProj.GetInverse();
+		mMatrixWorldToClip = mMatrixView * mMatrixProj;
+		mMatrixClipToWorld = mMatrixWorldToClip.GetInverse();
 	}
+
+
 
 };

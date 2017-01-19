@@ -2,6 +2,7 @@
 
 #include "UBasic.h"
 #include "UInstruction.h"
+#include <atomic>
 
 namespace UPO
 {

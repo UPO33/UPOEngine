@@ -19,11 +19,16 @@ float2 Clip2UV(float4 v)
 }
 
 #ifdef USE_UVSPACE
-#define TRANSFORM_SPACE(v)   UV2NDC(v);
+#define TRANSFORM_SPACE(v)   UV2NDC(v)
 #else   
-#define TRANSFORM_SPACE(v) float4(v, float2(0, 1));
+#define TRANSFORM_SPACE(v) float4(v, float2(0, 1))
 #endif
 
+cbuffer CBBlobal : register(b0)
+{
+	float4 gColor;
+	matrix gMatrix;
+};
 
 struct VSIn
 {
@@ -50,7 +55,10 @@ SamplerState gSampler : register(s0)
 VSOut VSMain(VSIn input)
 {
     VSOut output = (VSOut) 0;
-    output.position = TRANSFORM_SPACE(input.position);
+    //float4 v = mul(float4(input.position, 0, 1), gMatrix);
+    float4 v = mul(gMatrix, float4(input.position, 0, 1));
+    output.position = TRANSFORM_SPACE(v.xy);
+    
     output.uv = input.uv;
     output.color = input.color;
     return output;

@@ -57,6 +57,7 @@ namespace UPO
 			state = 0;
 		}
 	};
+#if 0
 
 	//////////////////////////////////////////////////////////////////////////
 	template<typename T, size_t  Capacity> class TStaticQueue
@@ -89,7 +90,6 @@ namespace UPO
 		}
 	};
 
-#if 0
 	//////////////////////////////////////////////////////////////////////////
 	template<typename T, size_t Capacity> class TStaticQueue
 	{
@@ -180,28 +180,177 @@ namespace UPO
 	};
 #endif
 
-// 	template<typename T, size_t Capacity> class TRingBuffer
-// 	{
-// 		volatile size_t		mHead = 0;
-// 		volatile size_t		mTail = 0;
-// 		T					mElements[Capacity];
-// 
-// 	public:
-// 		bool IsEmpty() const { return mHead == mTail; }
-// 		bool IsFull() const { ((mTail + 1) % Capacity) == mHead; }
-// 
-// 		T* Write()
-// 		{
-// 			mElements[mTail]
-// 			mTail = (mTail + 1) % Capacity;
-// 			return true;
-// 		}
-// 		bool Dequeue(T& out)
-// 		{
-// 			if (mHead == mTail) return false;
-// 			out = mElements[mHead];
-// 			mHead = (mHead + 1) % Capacity;
-// 			return true;
-// 		}
-// 	};
+	//////////////////////////////////////////////////////////////////////////
+	template<typename T, unsigned _Capacity> class TCircularQueue
+	{
+
+
+
+		static_assert(_Capacity > 2, "");
+
+		unsigned					mRead = 0;
+		unsigned					mWrite = 0;
+		alignas(alignof(T)) char	mElements[sizeof(T[_Capacity])];
+
+	public:
+		typedef T ElementType;
+		static const unsigned CAPACITY = _Capacity;
+
+		bool IsEmpty() const { return mRead == mWrite; }
+		bool IsFull() const { return ((mWrite + 1) % _Capacity) == mRead; }
+
+		template<typename... TArgs> T* Push(TArgs... args)
+		{
+			if (IsFull()) return nullptr;
+
+			T* ptr = (T*)(mElements + mWrite * sizeof(T));
+
+			new ((void*)ptr) T(args...);
+
+			mWrite = (mWrite + 1) % _Capacity;
+			return ptr;
+		}
+		bool Pop(T& out)
+		{
+			if (IsEmpty()) return false;
+
+			T* ptr = (T*)(mElements + mRead * sizeof(T));
+			out = *ptr;
+			ptr->~T();
+			mRead = (mRead + 1) % _Capacity;
+			return true;
+		}
+
+		T* BeginPush()
+		{
+			if (IsFull()) return nullptr;
+
+			T* ptr = (T*)(mElements + mWrite * sizeof(T));
+
+			return ptr;
+		}
+		void EndPush()
+		{
+			mWrite = (mWrite + 1) % _Capacity;
+		}
+
+		T* BeginPop()
+		{
+			if (IsEmpty()) return nullptr;
+
+			T* ptr = (T*)(mElements + mRead * sizeof(T));
+			return ptr;
+		}
+		void EndPop()
+		{
+			mRead = (mRead + 1) % _Capacity;
+		}
+	};
+
+	//////////////////////////////////////////////////////////////////////////
+	template<typename T, unsigned _Capacity> class TCircularQueueSQSP
+	{
+		static_assert(_Capacity > 2, "");
+
+		/*
+		only producer writes to mWrite and only consumer writes to mRead
+		*/
+
+		std::atomic<unsigned>		mRead = 0;
+		std::atomic<unsigned>		mWrite = 0;
+		alignas(alignof(T)) char	mElements[sizeof(T[_Capacity])];
+
+	public:
+		typedef T ElementType;
+		static const unsigned CAPACITY = _Capacity;
+
+		bool IsEmpty() const { return mRead.load() == mWrite.load(); }
+		bool IsFull() const
+		{
+			return ((mWrite.load() + 1) % _Capacity) == mRead.load();
+		}
+
+
+		template<typename... TArgs> T* Push(TArgs... args)
+		{
+			unsigned curWrite = mWrite.load(std::memory_order_relaxed);
+			unsigned nextWrite = (curWrite + 1) % _Capacity;
+			if (nextWrite == mRead.load(std::memory_order_acquire)) return nullptr; //null if full
+
+			T* ptr = (T*)(mElements + curWrite * sizeof(T));
+
+			new ((void*)ptr) T(args...);
+
+			mWrite.store(nextWrite, std::memory_order_release);
+			return ptr;
+		}
+		bool Pop(T& out)
+		{
+			unsigned curRead = mRead.load(std::memory_order_relaxed);
+			if (curRead == mWrite.load(std::memory_order_acquire)) return false;	//return false if empty
+
+			T* ptr = (T*)(mElements + curRead * sizeof(T));
+			out = *ptr;
+			ptr->~T();
+			mRead.store((curRead + 1) % _Capacity, std::memory_order_release);
+			return true;
+		}
+
+		T* BeginPush()
+		{
+			unsigned curWrite = mWrite.load(std::memory_order_relaxed);
+			unsigned nextWrite = (curWrite + 1) % _Capacity;
+			if (nextWrite == mRead.load(std::memory_order_acquire)) return nullptr; //null if full
+
+			T* ptr = (T*)(mElements + curWrite * sizeof(T));
+
+			return ptr;
+		}
+		void EndPush()
+		{
+			mWrite.store((mWrite.load(std::memory_order_relaxed) + 1) % _Capacity, std::memory_order_release);
+		}
+
+		T* BeginPop()
+		{
+			unsigned curRead = mRead.load(std::memory_order_relaxed);
+			if (curRead == mWrite.load(std::memory_order_acquire)) return false;	//return false if empty
+
+			T* ptr = (T*)(mElements + curRead * sizeof(T));
+			out = *ptr;
+			return ptr;
+		}
+		void EndPop()
+		{
+			mRead.store((mRead.load(std::memory_order_relaxed) + 1) % _Capacity, std::memory_order_release);
+		}
+	};
+
+
+	template<typename T, unsigned Capacity> class TRingBuffer
+	{
+		unsigned		mHead = 0;
+		unsigned		mTail = 0;
+		T				mElements[Capacity];
+
+	public:
+		bool IsEmpty() const { return mHead == mTail; }
+		bool IsFull() const { ((mTail + 1) % Capacity) == mHead; }
+
+		//always return valid pointer
+		T* Write()
+		{
+			T* ret = mElements + mTail;
+			mTail = (mTail + 1) % Capacity;
+			ret;
+		}
+		//returns null if empty
+		T* Read()
+		{
+			if (mHead == mTail) return nullptr;
+			T* ret = mElements + mHead;
+			mHead = (mHead + 1) % Capacity;
+			return ret;
+		}
+	};
 };

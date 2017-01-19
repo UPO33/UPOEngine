@@ -81,17 +81,18 @@ namespace UPO
 
 		static T* Alloc(size_t size)
 		{
-// 			ULOG_MESSAGE("%zu bytes allocated", size);
-			return (T*)MemAlloc(size);
+			if(alignof(T) <= MALLOC_MAX_ALIGN) return (T*)MemAlloc(size);
+			else return (T*)MemAllocAligned(size, alignof(T));
 		}
 		static T* Realloc(T* memory, size_t newSize)
 		{
-// 			ULOG_SUCCESS("%zu bytes allocated ", newSize);
-			return (T*)MemRealloc(memory, newSize);
+			if(alignof(T) <= MALLOC_MAX_ALIGN) return (T*)MemRealloc(memory, newSize);
+			else return (T*)MemReallocAligned(memory, newSize, alignof(T));
 		}
 		static void Free(T* memory)
 		{
-			MemFree(memory);
+			if(alignof(T) <= MALLOC_MAX_ALIGN) MemFree(memory);
+			else MemFreeAligned(memory);
 		}
 		static void CallDCTor(T* elements, size_t numElement)
 		{
@@ -350,7 +351,6 @@ namespace UPO
 		//POD only, doest call ctor dtor
 		void Reverse()
 		{
-			int temp;
 			int start = 0;
 			int end = mLength - 1;
 			while (start < end)

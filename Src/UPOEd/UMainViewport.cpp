@@ -1,4 +1,6 @@
 #include "UMainViewport.h"
+#include "UPropertyBrowser.h"
+#include "UMainWindow.h"
 
 #include "../UPOEngine/Engine/UInput.h"
 
@@ -22,26 +24,41 @@ namespace UPOEd
 	{
 		this->setFocusPolicy(Qt::FocusPolicy::ClickFocus);
 		this->setMouseTracking(true);
+		this->setContextMenuPolicy(Qt::ContextMenuPolicy::CustomContextMenu);
+
+		// 		connect(this, &MainViewport::customContextMenuRequested, this, [this](const QPoint& p) {
+		// 			PropertyBrowserWidget* pbw = new PropertyBrowserWidget(this);
+		// 			pbw->AttachObject(NewObject<TestObject>());
+		// 			pbw->setAutoFillBackground(false);
+		// 			pbw->setGeometry(p.x(), p.y(), 100, 100);
+		// 			pbw->show();
+
+		// 			QMenu* menu = new QMenu(this);
+		// 			menu->addAction("asdad");
+		// 			menu->addAction("asdadsd");
+		// 			menu->addAction("asdadsdf");
+		// 			menu->popup(p);
+		// 		});
 	}
 
 	void MainViewport::mousePressEvent(QMouseEvent *event)
 	{
-		Input::SetKeyState(ToEKeyCode(event->button()), true);
+		if (GetInputState()) GetInputState()->SetKeyState(ToEKeyCode(event->button()), true);
 	}
 
 	void MainViewport::mouseReleaseEvent(QMouseEvent *event)
 	{
-		Input::SetKeyState(ToEKeyCode(event->button()), false);
+		if (GetInputState()) GetInputState()->SetKeyState(ToEKeyCode(event->button()), false);
 	}
 
 	void MainViewport::mouseMoveEvent(QMouseEvent *event)
 	{
-		Input::SetMousePos(event->x(), event->y());
+		if (GetInputState()) GetInputState()->SetMousePos(event->x(), event->y());
 	}
 
 	void MainViewport::wheelEvent(QWheelEvent *event)
 	{
-		Input::SetMouseWheelDelta(event->delta());
+		if (GetInputState()) GetInputState()->SetMouseWheelDelta(event->delta());
 	}
 
 
@@ -80,23 +97,28 @@ namespace UPOEd
 	void MainViewport::keyPressEvent(QKeyEvent *event)
 	{
 		EKeyCode key = UGetEKeyCodeFromQKeyEvent(event);
-		Input::SetKeyState(key, true);
+		ULOG_MESSAGE("key %", EnumToStr(key));
+		if (GetInputState()) GetInputState()->SetKeyState(key, true);
+
 	}
 
 	void MainViewport::keyReleaseEvent(QKeyEvent *event)
 	{
 		EKeyCode key = UGetEKeyCodeFromQKeyEvent(event);
-		Input::SetKeyState(key, false);
+		ULOG_MESSAGE("key %", EnumToStr(key));
+		if (GetInputState()) GetInputState()->SetKeyState(key, false);
 	}
 
 	void MainViewport::focusInEvent(QFocusEvent *event)
 	{
 		ULOG_MESSAGE("The method or operation is not implemented.");
+		event->accept();
 	}
 
 	void MainViewport::focusOutEvent(QFocusEvent *event)
 	{
 		ULOG_MESSAGE("The method or operation is not implemented.");
+		event->accept();
 	}
 
 	void MainViewport::enterEvent(QEvent *event)
@@ -107,6 +129,12 @@ namespace UPOEd
 	void MainViewport::leaveEvent(QEvent *event)
 	{
 		ULOG_MESSAGE("The method or operation is not implemented.");
+	}
+
+	void MainViewport::Tick()
+	{
+		this->GetInputState()->Tick();
+		this->GetInputState()->SetMouseWheelDelta(0);
 	}
 
 }

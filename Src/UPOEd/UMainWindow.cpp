@@ -236,8 +236,12 @@ namespace UPOEd
 		setStatusBar(mStatusBar);
 		setMinimumSize(QSize(500, 500));
 
-		mMainViewport = new MainViewport(this);
+		mMainViewport = new MainViewport(nullptr);
 		setCentralWidget(mMainViewport);
+		GameWindowCreationParam gwcp;
+		gwcp.mVSyncEnable = false;
+		mMainViewport->InitAndReg(gwcp);
+		mMainViewport->mOptions.mRenderGrid = true;
 
 		mTestObject = NewObject<TestObject>();
 		
@@ -264,16 +268,28 @@ namespace UPOEd
 
 		//////////////////////////////////////////////////////////////////////////TEST World
 		{
-			mActiveWorld = IEngineInterface::Get()->CreateWorld();
+			WorldInitParam wip;
+			wip.mStartPlaying = true;
+			mActiveWorld = IEngineInterface::Get()->CreateWorld(wip);
+			mMainViewport->SetWorld(mActiveWorld);
 			mActiveWorld->CreateEntity<Entity>(nullptr);
+// 			mActiveWorld->CreateEntity<EntityTest>(nullptr);
 			Entity* parent = mActiveWorld->CreateEntity<Entity>(nullptr);
 			for (size_t i = 0; i < 4; i++)
 			{
 				mActiveWorld->CreateEntity<Entity>(parent);
 			}
-			IEngineInterface::Get()->SetWorld(mActiveWorld);
 			mEntityBrowser->AttachWorld(mActiveWorld);
 		};
+
+		QToolBar* toolbar=  this->addToolBar("tiilbar");
+		toolbar->addAction("Play");
+		toolbar->addAction("Save");
+	}
+
+	MainWindow::~MainWindow()
+	{
+		ULOG_MESSAGE("");
 	}
 
 	void MainWindow::Tick()
@@ -283,14 +299,24 @@ namespace UPOEd
 		if (mEntityBrowser) mEntityBrowser->Tick();
 		if (mMainViewport) mMainViewport->Tick();
 
-		if (AssetViewer::Current) AssetViewer::Current->Tick();
+		AssetViewer::Tick();
 
 		if (mLog) mLog->Tick();
 	}
 
-	void MainWindow::InitWorld()
+
+
+	void MainWindow::closeEvent(QCloseEvent *event)
 	{
-		mActiveWorld = new UPO::World();
+		if (mMainViewport)
+		{
+			mMainViewport->ReleaseAndUnreg();
+			delete mMainViewport;
+			mMainViewport = nullptr;
+		}
+
+		event->accept();
 	}
+
 
 };

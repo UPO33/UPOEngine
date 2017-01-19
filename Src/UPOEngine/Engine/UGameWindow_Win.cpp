@@ -47,6 +47,7 @@ namespace UPO
 		ZeroType(msg);
 
 		Input::Tick();
+		Input::SetMouseWheelDelta(0);
 
 		// Handle the windows messages.
 		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
@@ -73,7 +74,6 @@ namespace UPO
 		case WM_DESTROY:
 		{
 // 			PostQuitMessage(0);
-			ULOG_WARN("%", gGameWindows.Length());
 			return 0;
 		}
 
@@ -82,9 +82,8 @@ namespace UPO
 		{
 			if (GameWindowWin* gw = UFindGameWindowByHWND(hwnd))
 			{
-
-				delete gw;
-
+				GameWindow::Destroy(gw);
+				
 				if (gGameWindows.Length() == 0)
 					PostQuitMessage(0);
 			}
@@ -151,7 +150,8 @@ namespace UPO
 		unsigned screenWidth = GetSystemMetrics(SM_CXSCREEN);
 		unsigned screenHeight = GetSystemMetrics(SM_CYSCREEN);
 
-		unsigned dwStyleBorder = WS_SYSMENU | WS_CAPTION | WS_MINIMIZEBOX | WS_SIZEBOX;
+		//WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX
+		unsigned dwStyleBorder = WS_SYSMENU | WS_CAPTION | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SIZEBOX;
 		unsigned dwStyleNoborder = WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_POPUP;
 
 		// Setup the screen settings depending on whether it is running in full screen or in windowed mode.
@@ -200,9 +200,8 @@ namespace UPO
 		SetForegroundWindow((HWND)mWindowHandle);
 		SetFocus((HWND)mWindowHandle);
 
-// 		SendMessage((HWND)mWindowHandle, WM_SETREDRAW, true, 0);
-		// Hide the mouse cursor.
 		ShowCursor(true);
+		SetCursorPos(posX + screenWidth / 2, posY + screenHeight / 2);
 
 		gGameWindows.Add(this);
 		ULOG_MESSAGE("game window created");
@@ -233,15 +232,6 @@ namespace UPO
 
 	LRESULT GameWindowWin::MessageHandler(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam)
 	{
-		// 			Input::SetMouseState(EMouseButton::EMB_WheelForward, false);
-		// 			Input::SetMouseState(EMouseButton::EMB_WheelBackward, false);
-		Input::SetKeyState(EKC_MouseWheelForward, false);
-		Input::SetKeyState(EKC_MouseWheelBackward, false);
-		Input::SetMouseWheelDelta(0);
-
-
-
-
 		switch (umsg)
 		{
 // 		case WM_DESTROY:
@@ -260,12 +250,14 @@ namespace UPO
 		case WM_KILLFOCUS:	//before win loses focus
 		{
 			ULOG_MESSAGE("WM_KILLFOCUS");
+			mHasFocus = false;
 			return 0;
 		}
 		case WM_SETFOCUS: //after win got focus
 		{
 			ULOG_MESSAGE("WM_SETFOCUS");
 			Input::Reset();
+			mHasFocus = true;
 			return 0;
 		};
 		case WM_KEYDOWN:
@@ -285,8 +277,15 @@ namespace UPO
 			return 0;
 		}
 		case WM_MOUSEMOVE:
-			Input::SetMousePos(GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam));
+		{
+			int mouseX = GET_X_LPARAM(lparam);
+			int mouseY = GET_Y_LPARAM(lparam);
+			ULOG_MESSAGE("mouse move % %", mouseX, mouseY);
+			mMousePosition.mX = mouseX;
+			mMousePosition.mY = mouseY;
+			Input::SetMousePos(mouseX, mouseY);
 			return 0;
+		}
 		case WM_LBUTTONDOWN:
 			Input::SetKeyState(EKC_MouseLeft, true);
 			// 				Input::SetMouseState(EMouseButton::EMB_Left, true);
@@ -316,18 +315,24 @@ namespace UPO
 		case WM_MOUSEWHEEL:
 		{
 			//A positive value indicates that the wheel was rotated forward,
-			unsigned zDelta = GET_WHEEL_DELTA_WPARAM(wparam);
+			int zDelta = GET_WHEEL_DELTA_WPARAM(wparam);
 			ULOG_MESSAGE("mouse wheel delta %", zDelta);
 			Input::SetMouseWheelDelta(zDelta);
-			// 				if (zDelta > 0)
-			// 					Input::SetMouseState(EMouseButton::EMB_WheelForward, true);
-			// 				if (zDelta < 0)
-			// 					Input::SetMouseState(EMouseButton::EMB_WheelBackward, true);
 			if (zDelta > 0)
 				Input::SetKeyState(EKC_MouseWheelForward, true);
 			if (zDelta < 0)
 				Input::SetKeyState(EKC_MouseWheelBackward, true);
 
+			return 0;
+		}
+		case WM_MOUSELEAVE:
+		{
+			ULOG_MESSAGE("mouse leave");
+			return 0;
+		}
+		case WM_MOUSEHOVER:
+		{
+			ULOG_MESSAGE("mouse hover");
 			return 0;
 		}
 		case WM_SIZE:

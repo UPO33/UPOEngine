@@ -1,11 +1,13 @@
 #pragma once
 
 #include "UEntity.h"
+#include "../Core/UFrustum.h"
 
 namespace UPO
 {
 	//////////////////////////////////////////////////////////////////////////
 	struct Frustum;
+	class WorldEditorData;
 
 	//////////////////////////////////////////////////////////////////////////
 	class UAPI EntityCamera : public Entity
@@ -19,7 +21,7 @@ namespace UPO
 		float				mFarClip;
 		Vec2				mOrthoSize;
 		Vec2				mViewportOffset;
-		Vec2				mViewPortScale;
+		Vec2				mViewPortSize;
 		int					mSuperiority;	//cameras are rendered from less superiority
 		
 
@@ -32,12 +34,17 @@ namespace UPO
 	class UAPI EntityCameraRS : public EntityRS
 	{
 	public:
+		EntityCameraRS();
 		EntityCameraRS(EntityCamera* from, WorldRS* wrs);
 		~EntityCameraRS();
 
-		Matrix4		mProjMatrix;
-		Matrix4		mViewMatrix;
-		Matrix4		mWorldMatrix;
+		Matrix4		mMatrixProj;
+		Matrix4		mMatrixProjInv;
+		Matrix4		mMatrixView;
+		Matrix4		mMatrixViewInv;
+		Matrix4		mMatrixWorldToClip;
+		Matrix4		mMatrixClipToWorld;
+		Frustum		mFrustum;
 
 		bool				mRender;
 		bool				mPerspective;
@@ -46,19 +53,21 @@ namespace UPO
 		float				mFarClip;
 		Vec2				mOrthoSize;
 		Vec2				mViewportOffset;
-		Vec2				mViewPortScale;
+		Vec2				mViewPortSize;
 		int					mSuperiority;
+
 
 		//cameras fetch is performed every frame without considering dirty flags
 		void Fetch();
-		
+		void FetchFrom(EntityCamera*);
+
 		EntityCamera* GS() const { return (EntityCamera*)mOwner; }
 
 		bool ShouldBeReanderd() const;
 		void GetFrustum(Frustum& out);
-		void Update();
+		//make matrices and ... from existing data 
+		void Bake();
 	};
-
 
 
 };

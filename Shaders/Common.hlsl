@@ -31,20 +31,26 @@ Both modes provide equivalent edge antialiasing. However, supersampling provides
 shading quality by invoking the pixel shader more frequently.
 */
 
-cbuffer CBPerFrame : register(b0)
+struct PerFrameData
 {
-    matrix gProj;
-    matrix gView;
-    matrix gViewProj;
-    float3 gCameraForward;
-    float gTime;
-    float3 gCameraPosition;
-    float4 gAmbientColor;
-    float4 gSunColor;
-    float3 gSunDir;
-    float gPadding0;
-
+    float4 mSunDir;
+    float4 mSunColor;
+    float4 mRandomColor;
 };
+
+struct PerCameraData
+{
+    matrix mProjection;
+    matrix mInvProjection;
+    matrix mView;
+    matrix mInvView;
+    matrix mWorldToCilp;
+    matrix mClipToWorld;
+    float3 mWorldPosition;
+    float padding0;
+};
+
+
 
 float4 UV2NDC(float2 uv)
 {

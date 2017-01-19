@@ -41,31 +41,49 @@ namespace UPO
 		struct TextItem
 		{
 			static const unsigned MaxLen = 256;
-			wchar_t mText[MaxLen];
-			Vec2 mPosition;
-			Color mColor;
-			float mScale;
+
+			wchar_t			mText[MaxLen];
+			Vec2			mPosition;
+			Color			mColor;
+			float			mScale;
 		};
 		struct TextureQuadItem
 		{
 			struct Vertex
 			{
-				Vec2 mPosition;
-				Vec2 mUV;
-				Color mColor;
+				Vec2	mPosition;
+				Vec2	mUV;
+				Color	mColor;
 
 			}  mVertices[4];
 
 			ATexture2DRS*	mTexture;
 		};
 
+		struct DebugTextItem
+		{
+			static const unsigned MaxLen = 256;
+
+			wchar_t		mText[MaxLen];
+			float		mLifeTimeSeconds;
+			Color32		mColor;
+
+		};
+
 		TArray<TextItem>			mTextItems[2];
 		TArray<TextItem>*			mRTTextItems;
 		TArray<TextItem>*			mGTTextItems;
 
-		TArray<TextureQuadItem>		mTextureQuads[2];
+		TArray<TextItem>* GetGTTextItems() { return mGTTextItems; }
+		TArray<TextItem>* GetRTTextItems() { return mRTTextItems; }
+
+		TArray<TextureQuadItem>				mTextureQuads[2];
 		volatile TArray<TextureQuadItem>*	mGTTextureQuads;
 		volatile TArray<TextureQuadItem>*	mRTTextureQuads;
+
+		TArray<DebugTextItem>	mDebugTextItems[2];
+		TArray<DebugTextItem>*	mGTDebugTextItems;
+		TArray<DebugTextItem>*	mRTDebugTextItems;
 
 		TArray<TextureQuadItem>* GetGTTextureQuads() const { return (TArray<TextureQuadItem>*)mGTTextureQuads; }
 		TArray<TextureQuadItem>* GetRTTextureQuads() const { return (TArray<TextureQuadItem>*)mRTTextureQuads; }
@@ -87,6 +105,13 @@ namespace UPO
 		DirectX::SpriteFont*		mSpriteFont = nullptr;
 		DirectX::SpriteBatch*		mSpriteBatch = nullptr;
 
+		GFXConstantBuffer*			mCBuffer = nullptr;
+
+		struct CBData
+		{
+			Color mColor;
+			Matrix4 mMatrix;
+		};
 		void CreateResources();
 
 	public:
@@ -94,14 +119,17 @@ namespace UPO
 		~Canvas();
 
 		void Resize(Vec2I newSize);
+
 		void DrawColorQuad(Vec2 position, Vec2 size, Color32 color);
 		void DrawString(const String& text, Vec2 position, const Color& color, float scale = 1);
+		void AddDebugString(const String& text, const Color32& color = Color32::GREEN, float lifeTimeSeconds = 2);
 
 // 		void DrawTexture(ATexture2D* texture, Vec2 position, Vec2 size, Color color);
 // 		void DrawTexture(ATexture2D* texture, Vec2 position, Vec2 size, Color color, Vec2 u);
 		
 		void Draw(const CanvasTextureItem& item);
 
+		void RefineDebugTextItems(float deltaSeconds);
 
 		void Render();
 		void Swap();

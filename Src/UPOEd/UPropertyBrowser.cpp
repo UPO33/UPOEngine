@@ -283,6 +283,9 @@ namespace UPOEd
 	//////////////////////////////////////////////////////////////////////////
 	void PropertyBrowserWidget::Tick()
 	{
+		//if object remove 
+		if (!mObject) ReFillTree();
+
 		QTreeWidgetItem* root = mTree->invisibleRootItem();
 		TickTreeItem(root);
 	}

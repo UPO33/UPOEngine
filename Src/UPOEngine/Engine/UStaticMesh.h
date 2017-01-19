@@ -13,13 +13,15 @@ namespace UPO
 	class UAPI AStaticMeshRS
 	{
 	public:
-		Flag					mFlag;
 		class GFXVertexBuffer*	mVertexBuffer;
 		class GFXIndexBuffer*	mIndexBuffer;
 		unsigned				mVertexCount;
 		unsigned				mIndexCount;
 		AABB					mBound;
 		AStaticMesh*			mOwner;
+
+		AStaticMeshRS(AStaticMesh*);
+		~AStaticMeshRS();
 	};
 
 
@@ -27,6 +29,9 @@ namespace UPO
 	class UAPI AStaticMesh : public Asset
 	{
 		UCLASS(AStaticMesh, Asset)
+
+		friend AStaticMeshRS;
+		friend UPOEd::AssetConverter;
 
 	public:
 		struct VertexType
@@ -44,19 +49,21 @@ namespace UPO
 		AABB				mBound;
 		bool				mFlipUV = false;
 		bool				mGenerateSmoothNormal = false;
-
+		TArray<VertexType>	mVertices;
+		TArray<IndexType>	mIndices;
 
 		/*
 		Material*	mMaterial;
 		*/
-	public:
-		AStaticMeshRS* GetRS() const { return mRS; }
 
-	protected:
+		void UpdateBound();
 		virtual void OnCreate() override;
 		virtual void OnDestroy() override;
 
 	public:
+		AStaticMeshRS* GetRS() const { return mRS; }
+
+
 		void MetaBeforePropertyChange(const PropertyInfo* prp);
 		void MetaAfterPropertyChange(const PropertyInfo* prp);
 	};

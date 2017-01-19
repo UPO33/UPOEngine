@@ -31,7 +31,10 @@ namespace UPO
 	{
 		return XMLoadFloat4((XMFLOAT4*)color.mRGBA);
 	}
-
+	inline XMVECTOR ToXMVECTOR(const Color32& color)
+	{
+		return XMLoadFloat4((XMFLOAT4*)(Color(color).mRGBA));
+	}
 	void Canvas::CreateResources()
 	{
 		UASSERT(IsRenderThread());
@@ -102,7 +105,11 @@ namespace UPO
 			mSpriteFont = new DirectX::SpriteFont(((GFXDeviceDX*)gGFX)->GetDXDevice(), L"arial.spritefont");
 			UASSERT(mSpriteFont);
 		}
-
+		//cbuffer
+		{
+			mCBuffer = gGFX->CreateConstantBuffer(sizeof(CBData));
+			UASSERT(mCBuffer);
+		}
 	}
 
 	Canvas::Canvas(GameWindow* viewport)
@@ -119,6 +126,9 @@ namespace UPO
 
 		mGTTextureQuads = mTextureQuads + 0;
 		mRTTextureQuads = mTextureQuads + 1;
+
+		mGTDebugTextItems = mDebugTextItems + 0;
+		mRTDebugTextItems = mDebugTextItems + 1;
 
 
 		EnqueueRenderCommandAndWait([this] { 
@@ -153,57 +163,20 @@ namespace UPO
 
 		//return (screenpos / screenSize * Vec2(2,-2)) - 1;
 	}
-// 	void Canvas::DrawTexture(ATexture2D* texture, Vec2 pos, Vec2 size, Vec2 origin, float rotationDeg, Color color)
-// 	{
-// // 		if (texture == nullptr || texture->GetRS() == nullptr) return;
-// 		
-// 		USCOPE_LOCK(mSwapLock);
-// 		mGTTextureQuads->AddUnInit();
-// 		TextureQuadItem& item = mGTTextureQuads->LastElement();
-// 		item.mTexture = texture ? texture->GetRS() : nullptr;
-// 
-// 		//0,0
-// 		item.mVertex[0].mPosition = pos;
-// 		item.mVertex[0].mColor = color;
-// 		item.mVertex[0].mUV = Vec2(0);
-// 		//1,0
-// 		item.mVertex[1].mPosition.mX = pos.mX + size.mX;
-// 		item.mVertex[1].mPosition.mY = pos.mY;
-// 		item.mVertex[1].mColor = color;
-// 		item.mVertex[1].mUV = Vec2(1,0);
-// 		//0,1
-// 		item.mVertex[2].mPosition.mX = pos.mX;
-// 		item.mVertex[2].mPosition.mY = pos.mY + size.mY;
-// 		item.mVertex[2].mColor = color;
-// 		item.mVertex[2].mUV = Vec2(0,1);
-// 		//1,0
-// 		item.mVertex[3].mPosition.mX = pos.mX + size.mX;
-// 		item.mVertex[3].mPosition.mY = pos.mY;
-// 		item.mVertex[3].mColor = color;
-// 		item.mVertex[3].mUV = Vec2(1,0);
-// 		//1,1
-// 		item.mVertex[4].mPosition = pos + size;
-// 		item.mVertex[4].mColor = color;
-// 		item.mVertex[4].mUV = Vec2(1,1);
-// 		//0,1
-// 		item.mVertex[5].mPosition.mX = pos.mX;
-// 		item.mVertex[5].mPosition.mY = pos.mY + size.mY;
-// 		item.mVertex[5].mColor = color;
-// 		item.mVertex[5].mUV = Vec2(0, 1);
-// 
-// // 		if(!UseUVSpace)
-// // 		{
-// // 			for (size_t i = 0; i < 6; i++)
-// // 			{
-// // 				Vec2 v = ScreenToNDC(item.mVertex[i].mPosition, mViewportSize);
-// // 				item.mVertex[i].mPosition = v;
-// // 				ULOG_WARN("%", item.mVertex[i].mPosition);
-// // 			}
-// // 		}
-// 
-// 		return;
-// 	}
 
+	void Canvas::AddDebugString(const String& text, const Color32& color, float lifeTimeSeconds)
+	{
+		USCOPE_LOCK(mSwapLock);
+
+		auto textsItems = mGTDebugTextItems;
+		textsItems->AddUnInit();
+		auto& item = textsItems->LastElement();
+		item.mColor = color;
+		item.mLifeTimeSeconds = lifeTimeSeconds;
+		size_t numCharConverted = 0;
+		mbstowcs_s(&numCharConverted, item.mText, text.CStr(), DebugTextItem::MaxLen);
+		
+	}
 
 	void Canvas::Draw(const CanvasTextureItem& item)
 	{
@@ -249,13 +222,23 @@ namespace UPO
 	}
 
 
+	void Canvas::RefineDebugTextItems(float deltaSeconds)
+	{
+
+
+	}
+
 	void Canvas::Render()
 	{
 		gGFX->SetBlendState(mAlphaBlend);
 		gGFX->SetRasterizerState(mRasterState);
 		gGFX->SetDepthStencilState(mDepthState);
 
+		mSwapLock.Enter();
 		auto textureQuads = GetRTTextureQuads();
+		auto textItems = GetRTTextItems();
+		auto debugTextItems = mRTDebugTextItems;
+		mSwapLock.Leave();
 
 		///////////////////////////draw Texture Quads
 		if (unsigned numQuad = textureQuads->Length())
@@ -264,7 +247,19 @@ namespace UPO
 			gGFX->SetInputLayout(mInputLayoutQuadTexture);
 			gGFX->SetPrimitiveTopology(EPrimitiveTopology::ETriangleList);
 			gGFX->SetIndexBuffer(mIndexBuffer);
-			
+
+
+			//cbuffer
+			{
+				auto mapped = gGFX->Map<CBData>(mCBuffer, EMapFlag::EWriteDiscard);
+				mapped->mColor = Color(RandFloat01(), 0, 0, 1);
+				mapped->mMatrix = Matrix4::IDENTITY;
+				gGFX->Unmap(mCBuffer);
+			}
+
+			gGFX->SetConstentBuffer(mCBuffer, 0, EShaderType::EVertex);
+			gGFX->SetConstentBuffer(mCBuffer, 0, EShaderType::EPixel);
+
 			//filling vertex buffer with quads
 			auto ptrMapped = gGFX->Map<TextureQuadItem::Vertex>(mVertexBuffer, EMapFlag::EWriteDiscard);
 			for (unsigned iQuad = 0; iQuad < numQuad; iQuad++)
@@ -279,48 +274,60 @@ namespace UPO
 			{
 				gGFX->SetVertexBuffer(mVertexBuffer, 0, sizeof(TextureQuadItem::Vertex), iQuad * sizeof(TextureQuadItem::Vertex[4]));
 
-				GFXTexture2D* textures[] = { GlobalResources::GetDefaultTexture2D() };
-				GFXSamplerStateHandle samplers[] = { GlobalResources::GetDefaultSampler() };
-				gGFX->SetResourceView(textures, 0, EShaderType::EPixel);
-				gGFX->SetSamplerState(samplers, 0, EShaderType::EPixel);
+				GFXTexture2D* texturesToBind[] = {  GlobalResources::GetDefaultTexture2D() };
+				GFXSamplerStateHandle samplersToBind[] = { GlobalResources::GetDefaultSampler() };
+				if (ATexture2DRS* texture = textureQuads->ElementAt(iQuad)->mTexture)
+				{
+					if (texture->mTexture) texturesToBind[0] = texture->mTexture;
+					if (texture->mSampler) samplersToBind[0] = texture->mSampler;
+				}
+
+				gGFX->SetResourceView(texturesToBind, 0, EShaderType::EPixel);
+				gGFX->SetSamplerState(samplersToBind, 0, EShaderType::EPixel);
 
 				gGFX->DrawIndexed(6);
 			}
-			//test
-// 			{
-// 				this->TestTriangleScreen();
-// 				auto ptrMapped = gGFX->Map<TextureQuadItem>(mVertexBuffer, EMapFlag::EWriteDiscard);
-// 				*ptrMapped = mRTTextureQuads->LastElement();
-// 				gGFX->Unmap(mVertexBuffer);
-// 				GFXTexture2D* textures[] = { GlobalResources::GetDefaultTexture2D() };
-// 				GFXSamplerStateHandle samplers[] = { GlobalResources::GetDefaultSampler() };
-// 				gGFX->SetResourceView(textures, 0, EShaderType::EPixel);
-// 				gGFX->SetSamplerState(samplers, 0, EShaderType::EPixel);
-// 				gGFX->Draw(3);
-// 			}
 			textureQuads->RemoveAll();
 		}
 
 
 
-		//draw strings
-		if(unsigned numText = mRTTextItems->Length())
+		///////////////draw strings
+		if(unsigned numText = textItems->Length())
 		{
-			
 			mSpriteBatch->Begin();
-			for (TextItem& textItem : *mGTTextItems)
+			for (TextItem& textItem : *textItems)
 			{
 				XMFLOAT2 pos(textItem.mPosition.mX, textItem.mPosition.mY);
 				mSpriteFont->DrawString(mSpriteBatch, textItem.mText, pos, ToXMVECTOR(textItem.mColor), 0, XMFLOAT2(0, 0), textItem.mScale * 0.5f);
 			}
-			
+
 			mSpriteBatch->End();
-			mRTTextItems->RemoveAll();
+			textItems->RemoveAll();
 
 		}
 
+		///////////draw debug text
+		if (unsigned numDebugText = debugTextItems->Length())
+		{
+			mSpriteBatch->Begin();
+			XMFLOAT2 position = XMFLOAT2(2, 40);
+			float scale = 0.4f;
+			float height = XMVectorGetY(mSpriteFont->MeasureString(L"QWERTY")) * scale;
+			for (auto& item : *debugTextItems)
+			{
+				position.y += height;
+				XMVECTOR color = ToXMVECTOR(item.mColor);
+				mSpriteFont->DrawString(mSpriteBatch, item.mText, position, color, 0, XMFLOAT2(0, 0), scale);
+			}
+			mSpriteBatch->End();
 
-
+			float delta = gDeltaSeconds;
+			mRTDebugTextItems->RemoveIf([delta](DebugTextItem& item) {
+				item.mLifeTimeSeconds -= delta;
+				return (item.mLifeTimeSeconds <= 0);
+			});
+		}
 	}
 
 	void Canvas::Swap()
@@ -328,6 +335,11 @@ namespace UPO
 		USCOPE_LOCK(mSwapLock);
 		UPO::Swap(mGTTextItems, mRTTextItems);
 		UPO::Swap(mGTTextureQuads, mRTTextureQuads);
+
+		{
+			*mRTDebugTextItems += *mGTDebugTextItems;
+			mGTDebugTextItems->RemoveAll();
+		}
 	}
 
 	Canvas::~Canvas()

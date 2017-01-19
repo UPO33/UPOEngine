@@ -8,7 +8,14 @@ namespace UPO
 	{
 	public:
 		Vec2I					mSize;
-		GFXTexture2D*			mIDRenderTarget = nullptr;
+		GFXTexture2D*			mIDBuffer = nullptr;
+		GFXTexture2D*			mDepthStencil = nullptr;
+		
+		GFXTexture2D*			mGBufferA;
+		GFXTexture2D*			mGBufferB;
+
+		void BinGBuffers(bool clear);
+		
 
 		DefferdRenderTargets(Vec2I size);
 		~DefferdRenderTargets();

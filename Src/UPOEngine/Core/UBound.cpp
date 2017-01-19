@@ -3,23 +3,42 @@
 namespace UPO
 {
 
-	void AABB::MakeFromPoints(const Vec3* points, unsigned numPoints)
-	{
-		UASSERT(points && numPoints > 2);
+// 	void AABB::MakeFromPoints(const Vec3* points, unsigned numPoints)
+// 	{
+// 		UASSERT(points && numPoints >= 2);
+// 
+// 		Vec3 vMin = Min(points[0], points[1]);
+// 		Vec3 vMax = Max(points[0], points[1]);
+// 
+// 		for (unsigned i = 2; i < numPoints; i++)
+// 		{
+// 			vMin = Min(vMin, points[i]);
+// 			vMax = Max(vMax, points[i]);
+// 		}
+// 
+// 		mMin = vMin;
+// 		mMax = vMax;
+// 	}
 
-		Vec3 vMin = Min(points[0], points[1]);
-		Vec3 vMax = Max(points[0], points[1]);
+	template<typename T> T& ElemAtStride(const void* array, unsigned index, unsigned stride)
+	{
+		  return *((T*)(((char*)array) + index * stride));
+	}
+	AABB AABB::MakeFromPoints(const void* points, unsigned numPoints, unsigned stride)
+	{
+		UASSERT(points && stride > 0 && numPoints >= 2);
+
+		Vec3 vMin = Min(ElemAtStride<Vec3>(points, 0, stride), ElemAtStride<Vec3>(points, 1, stride));
+		Vec3 vMax = Max(ElemAtStride<Vec3>(points, 0, stride), ElemAtStride<Vec3>(points, 1, stride));
 
 		for (unsigned i = 2; i < numPoints; i++)
 		{
-			vMin = Min(vMin, points[i]);
-			vMax = Max(vMax, points[i]);
+			vMin = Min(vMin, ElemAtStride<Vec3>(points, i, stride));
+			vMax = Max(vMax, ElemAtStride<Vec3>(points, 1, stride));
 		}
 
-		mMin = vMin;
-		mMax = vMax;
+		return AABB(vMin, vMax);
 	}
-
 
 	int AABB::Intersect(const Plane& plane)
 	{

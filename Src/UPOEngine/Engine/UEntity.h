@@ -53,7 +53,7 @@ namespace UPO
 		ERD_Transform,
 	};
 	//////////////////////////////////////////////////////////////////////////
-	class UAPI Entity : public Object
+	class UAPI alignas(16) Entity : public Object
 	{
 		UCLASS(Entity, Object)
 
@@ -117,9 +117,10 @@ namespace UPO
 
 		World* GetWorld() const { return mWorld; }
 
+		//return pointer to render state if any
 		template< typename TRSClass = EntityRS> TRSClass* GetRS() const { return (TRSClass*)mRS; }
 		
-		//return pointer to render state data, this funtion is used in OnCreateRS()
+		//return pointer to render state data
 		void* GetRSMemory() const { return mRS; }
 
 		const Matrix4& GetWorldTransform() const { return mWorldTransform; }
@@ -128,8 +129,13 @@ namespace UPO
 		const AABB& GetBound() const;
 
 		void SetLocalTransform(const Transform&);
+		void SetLocalTransform(const Vec3& location, const Vec3& rotation = Vec3::ZERO, const Vec3& scale = Vec3::ONE);
+		void SetLocalTransform(const Vec3& location, const Quat& rotation = Quat::IDENTITY, const Vec3& scale = Vec3::ONE);
+
 		void SetWorldTransform(const Transform&);
-		
+		void SetWorldTransform(const Vec3& location, const Vec3& rotation = Vec3::ZERO, const Vec3& scale = Vec3::ONE);
+		void SetWorldTransform(const Vec3& location, const Quat& rotation = Quat::IDENTITY, const Vec3& scale = Vec3::ONE);
+
 		bool IsAlive() const { return mEntityFlag.Test(EEF_Alive); }
 		bool IsRegistered() const { return mWorld != nullptr; }
 
@@ -185,7 +191,7 @@ namespace UPO
 		void RemoveChildFromList(Entity* child);
 		void AddChildToList(Entity* child);
 
-		void Tick();
+
 
 		void Init(Entity* parent, World* world);
 

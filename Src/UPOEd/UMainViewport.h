@@ -30,5 +30,7 @@ namespace UPOEd
 
 		virtual void leaveEvent(QEvent *event) override;
 
+
+		void Tick();
 	};
 };

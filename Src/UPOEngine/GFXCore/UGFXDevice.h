@@ -140,10 +140,10 @@ namespace UPO
 		R32G32_UINT = 17,
 		R32G32_SINT = 18,
 
-		R32G8X24_TYPELESS = 19,
-		D32_FLOAT_S8X24_UINT = 20,
-		R32_FLOAT_X8X24_TYPELESS = 21,
-		X32_TYPELESS_G8X24_UINT = 22,
+		R32G8X24_TYPELESS = 19,	//32 bits for the red channel, 8 bits for the green channel, and 24 bits are unused.
+		D32_FLOAT_S8X24_UINT = 20,	//his format supports 32-bit depth, 8-bit stencil, and 24 bits are unused.⁵
+		R32_FLOAT_X8X24_TYPELESS = 21, //32-bit red channel, 8 bits are unused, and 24 bits are unused.⁵
+		X32_TYPELESS_G8X24_UINT = 22, //32 bits unused, 8 bits for green channel, and 24 bits are unused.
 		R10G10B10A2_TYPELESS = 23,
 		R10G10B10A2_UNORM = 24,
 		R10G10B10A2_UINT = 25,
@@ -164,15 +164,15 @@ namespace UPO
 		R16G16_SINT = 38,
 
 		R32_TYPELESS = 39,
-		D32_FLOAT = 40,	//valid for depth
+		D32_FLOAT = 40,	//32 bits for depth
 		R32_FLOAT = 41,
 		R32_UINT = 42,
 		R32_SINT = 43,
 
 		R24G8_TYPELESS = 44,
-		D24_UNORM_S8_UINT = 45,	//valid for depth
-		R24_UNORM_X8_TYPELESS = 46,
-		X24_TYPELESS_G8_UINT = 47,
+		D24_UNORM_S8_UINT = 45,	//A 32-bit z-buffer format that supports 24 bits for depth and 8 bits for stencil.
+		R24_UNORM_X8_TYPELESS = 46, //24 bits red channel and 8 bits unused
+		X24_TYPELESS_G8_UINT = 47,// 24 bits unused and 8 bits green channel
 
 		R8G8_TYPELESS = 48,
 		R8G8_UNORM = 49,
@@ -942,12 +942,23 @@ namespace UPO
 		float mHeight;
 		float mMinDepth;	//Minimum depth of the viewport. Ranges between 0 and 1.
 		float mMaxDepth;	//Maximum depth of the viewport. Ranges between 0 and 1.
+
+		GFXViewport(){}
+		GFXViewport(Vec2 topLeft, Vec2 size, float minDepth, float maxDepth)
+		{
+			mTopLeftX = topLeft.mX;
+			mTopLeftY = topLeft.mY;
+			mWidth = size.mX;
+			mHeight = size.mY;
+			mMinDepth = minDepth;
+			mMaxDepth = maxDepth;
+		}
 	};
 	inline Vec3 UNDCToScreenSpace(const Vec3 ndc, const GFXViewport& viewport)
 	{
 		//https://msdn.microsoft.com/en-us/library/windows/desktop/bb205126(v=vs.85).aspx
-		float X = (ndc.mX + 1) * viewport.mWidth * 0.5 + viewport.mTopLeftX;
-		float Y = (1 - ndc.mY) * viewport.mHeight * 0.5 + viewport.mTopLeftY;
+		float X = (ndc.mX + 1) * viewport.mWidth * 0.5f + viewport.mTopLeftX;
+		float Y = (1 - ndc.mY) * viewport.mHeight * 0.5f + viewport.mTopLeftY;
 		float Z = viewport.mMinDepth + ndc.mZ * (viewport.mMaxDepth - viewport.mMinDepth);
 		return Vec3(X, Y, Z);
 	}
@@ -978,7 +989,9 @@ namespace UPO
 		//////////////////////////////////////////////////////////////////////////buffers
 		virtual GFXIndexBuffer* CreateIndexBuffer(const GFXIndexBufferDesc&) = 0;
 		virtual GFXVertexBuffer* CreateVertexBuffer(const GFXVertexBufferDesc&) = 0;
+		//DEPRECATED
 		virtual GFXConstantBuffer* CreateConstantBuffer(const GFXConstantBufferDesc&) = 0;
+		virtual GFXConstantBuffer* CreateConstantBuffer(unsigned size) = 0;
 
 		//////////////////////////////////////////////////////////////////////////states
 		virtual GFXDepthStencilState* CreateDepthStencilState(const GFXDepthStencilStateDesc&) = 0;
@@ -1006,8 +1019,8 @@ namespace UPO
 
 
 		virtual void SetDepthStencilState(GFXDepthStencilStateHandle state) = 0;
-		virtual void SetRenderTarget(GFXRenderTargetView** renderTargets, unsigned numRenderTargets, GFXTexture2D* depthStencil) = 0;
-		template<unsigned N> void SetRenderTarget(GFXRenderTargetView*(&renderTargets)[N], GFXTexture2D* depthStencil)
+		virtual void SetRenderTarget(GFXRenderTargetView** renderTargets, unsigned numRenderTargets, GFXDepthStencilView* depthStencil) = 0;
+		template<unsigned N> void SetRenderTarget(GFXRenderTargetView*(&renderTargets)[N], GFXDepthStencilView* depthStencil)
 		{
 			SetRenderTarget(renderTargets, N, depthStencil);
 		}
@@ -1102,6 +1115,14 @@ namespace UPO
 		virtual void* Map(GFXBuffer*, EMapFlag) = 0;
 		virtual void Unmap(GFXBuffer*) = 0;
 		template<typename T> T* Map(GFXBuffer* buffer, EMapFlag flag) { return (T*)Map(buffer, flag); }
+
+		virtual void CopyResource(GFXResource* dst, GFXResource* src) = 0;
+		virtual void CopySubresourceRegion(GFXTexture2D* dst, unsigned dstMipIndex, unsigned dstX, unsigned dstY, GFXTexture2D* src, unsigned srcMipIndex,
+			unsigned srcX, unsigned srcW, unsigned srcY, unsigned srcH) = 0;
+
+
+		virtual void* Map(GFXTexture2D*, EMapFlag, unsigned mipIndex, unsigned& outRowPitch) = 0;
+		virtual void Unmap(GFXTexture2D*, unsigned mipIndex) = 0;
 	};
 	//////////////////////////////////////////////////////////////////////////
 	extern UAPI GFXDevice* gGFX;

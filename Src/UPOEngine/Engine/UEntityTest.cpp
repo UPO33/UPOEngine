@@ -3,6 +3,8 @@
 #include "UInput.h"
 #include "UWorld.h"
 #include "UCanvas.h"
+#include "UGameWindow.h"
+#include "../GFX/UPrimitiveBatch.h"
 
 namespace UPO
 {
@@ -45,31 +47,35 @@ namespace UPO
 		
 	}
 
-	TArray<CanvasTextureItem> gTextureItems;
+	
 
 	void EntityTest::OnTick()
 	{
 		Parent::OnTick();
 
-		if (Input::IsKeyReleased(EKeyCode::EKC_Any))
-			ULOG_MESSAGE("");
-
-		if (Input::IsKeyPressed(EKeyCode::EKC_MouseLeft))
-		{
-			ULOG_MESSAGE("mouse clickead at %", Input::GetMousePosition());
-			CanvasTextureItem item;
-			item.mPosition = Input::GetMousePosition() - Vec2(100);
-			item.mSize = Vec2(200);
-			gTextureItems.Add(item);
-		}
-
 		if (auto canvas = GetWorld()->GetCanvas())
 		{
-			for (auto& item : gTextureItems)
+			if (GetWorld()->GetInputState()->IsKeyPressed(EKC_MouseLeft))
+			{
+				canvas->AddDebugString(String("mouse clicked"), Color32::GREEN, 2);
+			}
+			for (auto& item : mTextureItems)
 			{
 				canvas->Draw(item);
 			}
 		}
+// 		if (auto batch = GetWorld()->GetPrimitiveBatch())
+// 		{
+// 			for (int i = -64; i < 64; i++)
+// 			{
+// 				batch->DrawLine(Vec3(i * 5, 0, 100), Color32::BLUE, Vec3(i * 5, 0, -100), Color::BLUE);
+// 				batch->DrawLine(Vec3(-100, 0, i * 5), Color::RED, Vec3(100, 0, i * 5), Color::RED);
+// 			}
+// 			batch->DrawLine(Vec3(0), Color32::RED, Vec3(10, 0, 0), Color32::RED);
+// 			batch->DrawLine(Vec3(0), Color32::GREEN, Vec3(0, 10, 0), Color32::GREEN);
+// 			batch->DrawLine(Vec3(0), Color32::BLUE, Vec3(0, 0, 10), Color32::BLUE);
+// 
+// 		}
 	}
 
 	void EntityTest::OnConstruct()

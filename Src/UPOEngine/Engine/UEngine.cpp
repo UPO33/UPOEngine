@@ -10,12 +10,14 @@
 #include "UEngineBase.h"
 #include "../Misc/UMisc.h"
 #include "../GFXCore/UGFXDeviceDX.h"
+#include "../GFX/UPrimitiveBatch.h"
 
 namespace UPO
 {
 	unsigned	gGameTickCounter = 0;
 	unsigned	gRenderTickCounter = 0;
-	
+
+
 	TRenderCommandQueue gGame2RenderQueue;
 
 	extern CriticalSection gSwapChainLock;
@@ -32,9 +34,6 @@ namespace UPO
 		bool mLoop;
 
 		volatile bool mLoopGT = true;
-		volatile bool mLoopRT = true;
-		volatile float mDelta = 0;	//render writes, game only reads
-		volatile bool mCompilingGlobalShader = false;
 
 		//when render thread was released this event is signaled
 		Event	mFetchCompleteEvent;
@@ -63,14 +62,24 @@ namespace UPO
 
 			ULOG_MESSAGE("Initilizing Engine...");
 
-			Thread::CreateLambda([](){
+			gSeparateRenderThread = GEngineConfig()->AsBool("Engine.SeparateRenderThread", true);
 
+			if(gSeparateRenderThread)	//create a thread for rendering
+			{
+				Thread::CreateLambda([]() {
+
+					gRenderThreadID = Thread::ID();
+
+					ULOG_MESSAGE("Render Thread Created");
+
+					gGame2RenderQueue.RunTillQuit();
+				});
+			}
+			else
+			{
 				gRenderThreadID = Thread::ID();
-	
-				ULOG_MESSAGE("Render Thread Created");
-
-				gGame2RenderQueue.RunTillQuit();
-			});
+				gGame2RenderQueue.SetConsumerThread(Thread::ID());
+			}
 
 			EnqueueRenderCommandAndWait([this](){
 				
@@ -78,8 +87,7 @@ namespace UPO
 				GlobalShaders::CompileAll();
 				GlobalResources::LoadGFXResources();
 
-				mRenderer = Renderer::New();
-				UASSERT(mRenderer);
+				mRenderer = new Renderer;
 			});
 
 
@@ -90,7 +98,7 @@ namespace UPO
 		void Loop()
 		{
 			double lastTime = 0;
-			mDelta = 1 / 60.0f;
+			gDeltaSeconds = 1 / 60.0f;
 
 			static unsigned FPSCounter = 0;
 			static double FPSSeconds = 0;
@@ -104,14 +112,14 @@ namespace UPO
 				bool result;
 
 				double curTime = timer.SinceSeconds();
-				mDelta = (float)(curTime - lastTime);
+				gDeltaSeconds = (float)(curTime - lastTime);
 				lastTime = curTime;
 
 				result = GTick();
 				if (!result) break;
 
 				FPSCounter++;
-				FPSSeconds += mDelta;
+				FPSSeconds += gDeltaSeconds;
 				if (FPSSeconds >= 1)
 				{
 					FPSSeconds -= 1;
@@ -156,11 +164,8 @@ namespace UPO
 #endif // 0
 		void Release()
 		{
-			for (GameWindow* gw : GameWindow::Instances)
-			{
-				delete gw;
-			}
-			GameWindow::Instances.RemoveAll();
+			GameWindow::DestroyAll();
+
 			for (World* world : mWorlds)
 			{
 				delete world;
@@ -177,8 +182,7 @@ namespace UPO
 		{
 			UASSERT(IsRenderThread());
 			ULOG_MESSAGE("");
-			delete mRenderer;
-			mRenderer = nullptr;
+			SafeDelete(mRenderer);
 
 
 			GlobalShaders::ReleaseAll();
@@ -195,9 +199,6 @@ namespace UPO
 			{
 				 gEngine.mRenderer->RenderGameWin(gw);
 			}
-
-			mFetchReadyEvent.SetSignaled();
-
 			for (GameWindow* gw : GameWindow::Instances)
 			{
 				if (gw  && gw->mSwapchain)
@@ -205,6 +206,9 @@ namespace UPO
 					gw->mSwapchain->Present();
 				}
 			}
+			
+			mFetchReadyEvent.SetSignaled();
+
 		}
 		//////////////////////////////////////////////////////////////////////////game thread tick
 		bool GTick()
@@ -221,7 +225,7 @@ namespace UPO
 				
 			});
 
-			GAssetSys()->Tick(mDelta);
+			GAssetSys()->Tick(gDeltaSeconds);
 
 
 
@@ -235,12 +239,13 @@ namespace UPO
 				{
 					if (mWorlds[i]->mIsAlive)
 					{
-						mWorlds[i]->Tick(mDelta);
+						gCurTickingWorld = mWorlds[i];
+						mWorlds[i]->Tick(gDeltaSeconds);
 					}
 				}
 				result &= mInterface->OnAfterWorldsTick();
 				
-
+				gCurTickingWorld = nullptr;
 
 				//removing destroyed worlds if any
 				if (mAnyWorldRemoved)
@@ -256,17 +261,19 @@ namespace UPO
 					});
 				}
 				
-				
+				for (GameWindow* gw : GameWindow::Instances)
+				{
+					if (auto canvas = gw->mCanvas) canvas->Swap();
+				}
+				for (World* world : mWorlds)
+				{
+					if (auto pb = world->GetPrimitiveBatch()) pb->Swap();
+				}
+
 				//after this we can change the WorldRS and update it, maybe renderer is doing postProcess or swamping buffer
 				WaitForFetch();
 
-				for (GameWindow* gw : GameWindow::Instances)
-				{
-					if (gw->mCanvas)
-					{
-						gw->mCanvas->Swap();
-					}
-				}
+
 
 				/////////////fetching changes
 				EnqueueRenderCommand([this]()
@@ -290,6 +297,7 @@ namespace UPO
 				DuringFetch();
 
 				mFetchCompleteEvent.Wait();
+
 			}
 
 
@@ -325,18 +333,11 @@ namespace UPO
 		gEngine.mLoopGT = false;
 	}
 
-	void IEngineInterface::LoadWorld(Name assetName)
-	{
 
-	}
 
-	void IEngineInterface::SetWorld(World* world)
+	World* IEngineInterface::CreateWorld(const WorldInitParam& param)
 	{
-	}
-
-	World* IEngineInterface::CreateWorld()
-	{
-		World* world = new World;
+		World* world = new World(param);
 		EnqueueRenderCommandAndWait([world]() {
 			gEngine.mWorlds.Add(world);
 		});

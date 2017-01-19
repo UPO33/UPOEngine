@@ -1,5 +1,7 @@
 #include "UInput.h"
 #include "../Meta/UMeta.h"
+#include "UWorld.h"
+#include "UGameWindow.h"
 
 #ifdef UPLATFORM_WIN
 
@@ -170,6 +172,8 @@ namespace UPO
 		}
 		return LUT[vk];
 	}
+
+	
 };
 #else
 
@@ -324,40 +328,78 @@ namespace UPO
 	InputData gCurInputData;
 	InputData gPreInputData;
 
+#define UINPUT_WORLDCHECK()	if (gCurTickingWorld && gCurTickingWorld->mMainWindow && !gCurTickingWorld->mMainWindow->HasFocus()) return false;
+
 	bool Input::IsKeyDown(EKeyCode key)
 	{
+		UINPUT_WORLDCHECK();
 		return gCurInputData.mkeys[key];
 	}
 
+	InputState::InputState()
+	{
+		MemZero(this, sizeof(InputState));
+	}
+	InputState::~InputState()
+	{
+		MemZero(this, sizeof(this));
+	}
+	bool InputState::IsKeyDown(EKeyCode key)
+	{
+		return mCurState.mkeys[key];
+	}
 	bool Input::IsKeyPressed(EKeyCode key)
 	{
+		UINPUT_WORLDCHECK();
 		return gCurInputData.mkeys[key] == true && gPreInputData.mkeys[key] == false;
 	}
-
+	bool InputState::IsKeyPressed(EKeyCode key)
+	{
+		return mCurState.mkeys[key] == true && mPreState.mkeys[key] == false;
+	}
 	bool Input::IsKeyReleased(EKeyCode key)
 	{
+		UINPUT_WORLDCHECK();
 		return gCurInputData.mkeys[key] == false && gPreInputData.mkeys[key] == true;
 	}
-
+	bool InputState::IsKeyReleased(EKeyCode key)
+	{
+		return mCurState.mkeys[key] == false && mPreState.mkeys[key] == true;
+	}
 	void Input::SetKeyState(EKeyCode key, bool down)
 	{
 		gCurInputData.mkeys[key] = down;
 	}
-
+	void InputState::SetKeyState(EKeyCode key, bool down)
+	{
+		mCurState.mkeys[key] = down;
+	}
 
 	void Input::SetMouseWheelDelta(int value)
 	{
 		gCurInputData.mMouseWheelDelta = value;
+	}
+	void InputState::SetMouseWheelDelta(int value)
+	{
+		mCurState.mMouseWheelDelta = value;
 	}
 
 	void Input::SetMousePos(int x, int y)
 	{
 		gCurInputData.mMousePosition = Vec2(x, y);
 	}
+	void InputState::SetMousePos(int x, int y)
+	{
+		mCurState.mMousePosition = Vec2(x, y);
+	}
 
 	void Input::Tick()
 	{
 		gPreInputData = gCurInputData;
+	}
+	void InputState::Tick()
+	{
+		MemCopy(&mPreState, &mCurState, sizeof(mCurState));
 	}
 
 
@@ -367,22 +409,37 @@ namespace UPO
 		ZeroType(gCurInputData);
 		ZeroType(gPreInputData);
 	}
-
+	void InputState::Reset()
+	{
+		ZeroType(mCurState);
+		ZeroType(mPreState);
+	}
 	Vec2 Input::GetMousePosition()
 	{
 		return gCurInputData.mMousePosition;
 	}
-
+	Vec2 InputState::GetMousePosition()
+	{
+		return mCurState.mMousePosition;
+	}
 
 	Vec2 Input::GetMouseVelocity()
 	{
 		return gCurInputData.mMousePosition - gPreInputData.mMousePosition;
 	}
-
+	Vec2 InputState::GetMouseVelocity()
+	{
+		return mCurState.mMousePosition - mPreState.mMousePosition;
+	}
 	int Input::GetMouseWheelDelta()
 	{
 		return gCurInputData.mMouseWheelDelta;
 	}
+	int InputState::GetMouseWheelDelta()
+	{
+		return mCurState.mMouseWheelDelta;
+	}
+
 
 
 

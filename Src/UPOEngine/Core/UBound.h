@@ -13,7 +13,7 @@ namespace UPO
 		AABB(InitZero) { mMin = mMax = Vec3(0); }
 		AABB(const Vec3& min, const Vec3& max) : mMin(min), mMax(max) {}
 
-		void MakeFromPoints(const Vec3* points, unsigned numPoints);
+		static AABB MakeFromPoints(const void* points, unsigned numPoints, unsigned stride);
 
 		inline Vec3 GetCenter() const
 		{
@@ -28,6 +28,15 @@ namespace UPO
 			return point > mMin && point < mMax;
 		}
 		int Intersect(const Plane&);
+
+		Vec3 GetCorner(bool positiveX, bool positiveY, bool positiveZ)
+		{
+			Vec3 ret;
+			ret.mX = positiveX ? mMax.mX : mMin.mX;
+			ret.mY = positiveY ? mMax.mY : mMin.mY;
+			ret.mZ = positiveZ ? mMax.mZ : mMin.mZ;
+			return ret;
+		}
 	};
 
 	struct SphereBound

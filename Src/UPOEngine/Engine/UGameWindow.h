@@ -11,14 +11,17 @@ namespace UPO
 	class Canvas;
 	class GFXSwapChain;
 	class Renderer;
+	class SelectionBuffer;
+	class InputState;
 
 	struct GameWindowRenderOptions
 	{
 		bool	mRealTime = true;
 		bool	mRenderStaticMeshes = true;
 		bool	mRenderPrimitiveBatch = true;
-		bool	mRenderCanvas = false;
+		bool	mRenderCanvas = true;
 		bool	mShowFPS = true;
+		bool	mRenderGrid = true;
 	};
 
 	struct UAPI GameWindowCreationParam
@@ -27,8 +30,6 @@ namespace UPO
 		bool		mFulllScreen = false;
 		wchar_t*	mWindowClassName = L"UPOEngine";
 		bool		mCreateCanvas = true;
-		bool		mCreatePrimitiveBatch = true;
-		unsigned	mSampleCount = 1;
 		bool		mVSyncEnable = false;
 
 		GameWindowCreationParam(){}
@@ -41,10 +42,10 @@ namespace UPO
 	public:
 		static TArray<GameWindow*>	Instances;
 
-	
-		PrimitiveBatch*			mPrimitiveBatch = nullptr;
 		Canvas*					mCanvas = nullptr;	//main canvas that cover whole window
 		GFXSwapChain*			mSwapchain = nullptr;
+		SelectionBuffer*		mSelectionBuffer = nullptr;
+		InputState*				mInputState = nullptr;
 		GameWindowRenderOptions	mOptions;
 		GameWindowCreationParam mCreationParam;
 		Color					mClearColor = Color(0.9f, 0.9f, 0.9f, 0);
@@ -54,6 +55,7 @@ namespace UPO
 		void EndRender();
 
 		double GetFrameElapsedSeconds() const { return mFrameElapsedSeconds; }
+		bool HasFocus() const { return mHasFocus; }
 
 	protected:
 		World*					mWorld = nullptr;	//world to render from
@@ -65,19 +67,23 @@ namespace UPO
 
 		bool					mIsReady = false;
 		bool					mRegistered = false;
-
+		Vec2I					mMousePosition;
 		
+
 
 	public:
 
 		GameWindow();
 		~GameWindow();
 
-		bool InitAndRegister(const GameWindowCreationParam& param);
-		bool Release();
+		Vec2I GetMousePosition() const { return mMousePosition; }
 
-		virtual void CreatePrimitiveBatch() {};
-		virtual void DestroyPrimitiveBatch() {};
+		bool InitAndReg(const GameWindowCreationParam& param);
+		bool ReleaseAndUnreg();
+
+		Canvas* GetCanvas() const { return mCanvas; }
+		InputState* GetInputState() const { return mInputState; }
+		GFXSwapChain* GetSwapchain() const { return mSwapchain; }
 
 		virtual bool CreateCanvas();;
 		virtual bool DestroyCanvas();;
@@ -91,6 +97,12 @@ namespace UPO
 		virtual void GetWinSize(Vec2I& out) = 0;
 		virtual void* GetWinHandle() { return mWindowHandle; }
 
+		Vec2I GetWinSize()
+		{
+			Vec2I ret;
+			GetWinSize(ret);
+			return ret;
+		}
 
 		void SetWorld(World*);
 		inline World* GetWorld() const { return mWorld; }
@@ -100,5 +112,8 @@ namespace UPO
 
 		//create and register a launcher window
 		static GameWindow* CreateLauncherWin(const GameWindowCreationParam& param);
+		static void Destroy(GameWindow* wnd);
+		//destroy all registered windows, its used for clean up
+		static void DestroyAll();
 	};
 };

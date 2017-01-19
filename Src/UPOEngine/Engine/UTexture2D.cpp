@@ -1,5 +1,5 @@
 #include "UTexture2D.h"
-
+#include "../GFXCore/UGlobalResources.h"
 #include "../Meta/UMeta.h"
 
 namespace UPO
@@ -14,7 +14,7 @@ namespace UPO
 	UCLASS_END_IMPL(Texture2DSamplerInfo)
 
 
-	UCLASS_BEGIN_IMPL(ATexture2D)
+	UCLASS_BEGIN_IMPL(ATexture2D, UATTR_Icon("Texture2D.png"))
 		UPROPERTY(mContent, UATTR_Hidden())
 		UPROPERTY(mSampler)
 	UCLASS_END_IMPL(ATexture2D)
@@ -38,7 +38,7 @@ namespace UPO
 		{
 			ATexture2DRS* rs = new ATexture2DRS;
 			
-			rs->mSampler = gGFX->CreateSamplerState(ToGFX(this->mSampler));
+			rs->mSampler = GlobalResources::GetSamplerState(ToGFX(this->mSampler));
 			if(!rs->mSampler) 
 				ULOG_ERROR("failed to create sampler for asset [%]", this->GetName());
 
@@ -61,9 +61,7 @@ namespace UPO
 		{
 			EnqueueRenderCommandAndWait([this]()
 			{
-				if (mRS->mSampler) delete mRS->mSampler;
-				mRS->mSampler = gGFX->CreateSamplerState(ToGFX(this->mSampler));
-
+				mRS->mSampler = GlobalResources::GetSamplerState(ToGFX(this->mSampler));
 			});
 		}
 	}
@@ -71,21 +69,12 @@ namespace UPO
 	void ATexture2D::OnDestroy()
 	{
 		EnqueueRenderCommandAndWait([this]() {
-			if (!mRS)return;
-
-			if (mRS->mSampler) delete mRS->mSampler;
+			if (!mRS) return;
 			if (mRS->mTexture) delete mRS->mTexture;
+			delete mRS;
+			mRS = nullptr;
 		});
-	}
-
-	void ATexture2DRS::ReCreateSampler()
-	{
-
-	}
-
-	void ATexture2DRS::RecreatreTexture()
-	{
-
+		
 	}
 
 };

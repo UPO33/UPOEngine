@@ -10,7 +10,7 @@
 namespace UPO
 {
 
-
+	//////////////////////////////////////////////////////////////////////////
 	WorldRS::WorldRS(World* owner)
 	{
 		MemZero(this, sizeof(this));
@@ -19,6 +19,23 @@ namespace UPO
 
 		mPendingAdd = new EntityArray;
 		mPendingDestroy = new EntityArray;
+
+		mFreeCamera = nullptr;
+		if (owner->mFreeCamera)
+		{
+			mFreeCamera = new (MemNew<EntityCameraRS>()) EntityCameraRS();
+			mFreeCamera->mGS = owner->mFreeCamera;
+			mFreeCamera->mOwner = this;
+			mFreeCamera->Fetch();
+		}
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	WorldRS::~WorldRS()
+	{
+		if (mFreeCamera) MemDelete(mFreeCamera);
+		mFreeCamera = nullptr;
+
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -122,30 +139,6 @@ namespace UPO
 
 		void WorldRS::Frame()
 		{
-			//make view Data
-			{
-				mViewData = RenderViewData();
-
-				TArray<EntityCameraRS*> camerasToRender;
-				//extract renderable cameras
-				for (EntityCameraRS* camera : mCameras)
-				{
-					if (camera->mRender)
-					{
-						camera->Update();
-					}
-				}
-				//sort by less superiority
-				camerasToRender.BubbleSort([](EntityCameraRS* a, EntityCameraRS* b) { return a->mSuperiority < b->mSuperiority; });
-
-				unsigned numCamera = Min(RenderViewData::MaxActiveCamera, camerasToRender.Length());
-				for (unsigned i = 0; i < numCamera; i++)
-				{
-					camerasToRender[i]->GetFrustum(mViewData.mFrustum[i]);
-				}
-
-			}
-
 
 
 		}
@@ -153,24 +146,24 @@ namespace UPO
 		void WorldRS::Culling()
 		{
 			//static mesh frustum cull
-			{
-				unsigned numStaticMesh = mStaticMeshesBounds.Length();
-				if (numStaticMesh)
-				{
-					MemZero(mStaticMeshesCullingState.Elements(), sizeof(unsigned) * numStaticMesh);
-
-					for (unsigned iStaticMesh = 0; iStaticMesh < numStaticMesh; iStaticMesh++)
-					{
-						for (unsigned iView = 0; iView < mViewData.mNum; iView++)
-						{
-							if (mViewData.mFrustum[iView].IsInside(mStaticMeshesBounds[iStaticMesh]))
-							{
-								mStaticMeshesCullingState[iStaticMesh] |= iView;
-							}
-						}
-					}
-				}
-			}
+// 			{
+// 				unsigned numStaticMesh = mStaticMeshesBounds.Length();
+// 				if (numStaticMesh)
+// 				{
+// 					MemZero(mStaticMeshesCullingState.Elements(), sizeof(unsigned) * numStaticMesh);
+// 
+// 					for (unsigned iStaticMesh = 0; iStaticMesh < numStaticMesh; iStaticMesh++)
+// 					{
+// 						for (unsigned iView = 0; iView < mViewData.mNum; iView++)
+// 						{
+// 							if (mViewData[iView].mFrustum.IsInside(mStaticMeshesBounds[iStaticMesh]))
+// 							{
+// 								mStaticMeshesCullingState[iStaticMesh] |= iView;
+// 							}
+// 						}
+// 					}
+// 				}
+// 			}
 		}
 
 		void WorldRS::RenderStaticMesh(unsigned index)
@@ -235,6 +228,8 @@ namespace UPO
 				}
 			}
 
+			if (mFreeCamera) mFreeCamera->Fetch();
+				
 
 			mIsFetching = false;
 		}
@@ -262,9 +257,27 @@ namespace UPO
 
 
 
-		WorldRS::~WorldRS()
-		{
 
+		//get the cameras that we should render
+		void WorldRS::GetDesiredCameras(TArray<EntityCameraRS*>& out)
+		{
+			if (mGS->GetType() == EWorldType::EEditor)
+			{
+				if(mFreeCamera) out.Add(mFreeCamera);
+			}
+			else
+			{
+				//extract renderable cameras
+				for (EntityCameraRS* camera : mCameras)
+				{
+					if (camera->mRender)
+					{
+						camera->Bake();
+					}
+				}
+				//sort by less superiority
+				out.BubbleSort([](EntityCameraRS* a, EntityCameraRS* b) { return a->mSuperiority < b->mSuperiority; });
+			}
 		}
 
 		void WorldRS::AfterFetch()
@@ -278,9 +291,11 @@ namespace UPO
 				mPendingDestroy->RemoveAll();
 			}
 
-
+			
 			for (EntityCameraRS* camera : mCameras)
-				camera->Update();
-		}
+				camera->Bake();
 
+			if (mFreeCamera) mFreeCamera->Bake();
+
+		}
 };

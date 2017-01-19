@@ -1,59 +1,86 @@
 
 #include "UAssetViewer.h"
+#include "UMainWindow.h"
+#include "UAssetViewerTexture.h"
+#include "UAssetViewerStaticMesh.h"
 
 namespace UPOEd
 {
+	//asset windows currently open
+	QList<AssetWindowBase*> AssetViewer::SOpenAssets;
 
-	AssetViewer::AssetViewer(QWidget* parent /*= nullptr*/) : QMainWindow(parent)
+	void AssetViewer::Tick()
 	{
-		auto toolbar = this->addToolBar("toolbar");
-
-		QAction* saveAction = toolbar->addAction("Save");
-		connect(saveAction, &QAction::triggered, this, [&](bool checked) {
-			if (mAttachedAsset)
-				mAttachedAsset->Save();
-		});
-
-		QAction* reloatAction = toolbar->addAction("Reload");
-		connect(reloatAction, &QAction::triggered, [](bool checked) {
-			ULOG_MESSAGE("TODO");
-		});
+		for (AssetWindowBase* aw : SOpenAssets)
+			aw->Tick();
 	}
 
-	AssetViewer* AssetViewer::Current = nullptr;
+
+
+
 
 	void AssetViewer::OpenAsset(AssetEntry* assetEntry)
 	{
 		UASSERT(assetEntry);
-
-		if (Current)
+		
+		//is already open ? set focus
+		if (AssetWindowBase* av = GetViewerOfAsset(assetEntry))
 		{
-			Current->close();
-			delete Current;
-			Current = nullptr;
+			av->activateWindow();
+			return;
 		}
 
-		assetEntry->LoadNow(nullptr);
+		AssetWindowBase* av = MakeCorrespondingView(assetEntry->GetClassInfo(), gMainWindow);
+		assetEntry->LoadNow(av->mRefHelper);
 		if (auto asset = assetEntry->GetInstance())
 		{
-			Current = MakeCorrespondingView(asset);
-			Current->AttachAsset(asset);
-			Current->show();
+			av->AttachAsset(asset);
+			av->show();
 		}
 		else
 		{
+			delete av;
 			ULOG_ERROR("failed to load asset [%]", assetEntry->GetName());
 		}
 	}
 
-	void AssetViewer::Close()
-	{
 
+
+	AssetWindowBase* AssetViewer::GetViewerOfAsset(AssetEntry* assetEntry)
+	{
+		if (!assetEntry) return nullptr;
+
+		if (Asset* ins = assetEntry->GetInstance())
+		{
+
+			for (AssetWindowBase* av : SOpenAssets)
+			{
+				if (av->mAttachedAsset.Get() == ins)
+				{
+					return av;
+				}
+			}
+		}
+
+		return nullptr;
 	}
 
-	AssetViewer* AssetViewer::MakeCorrespondingView(Asset* asset, QWidget* parentWidget)
+	AssetWindowBase* AssetViewer::MakeCorrespondingView(const ClassInfo* assetClass, QWidget* parentWidget)
 	{
+		if (assetClass->IsBaseOf<ATexture2D>())
+			return new AssetViewer_Texture2D(parentWidget);
+		if (assetClass->IsBaseOf<AStaticMesh>())
+			return new AssetViewer_StaticMesh(parentWidget);
+
 		return new AssetViewer_Default(parentWidget);
+	}
+
+
+
+	AssetViewer_Default::AssetViewer_Default(QWidget* parent /*= nullptr*/) : AssetWindowBase(parent)
+	{
+		mPropertyBrowser = new PropertyBrowserWidget(this);
+		setCentralWidget(mPropertyBrowser);
 	}
 
 	void AssetViewer_Default::Tick()
@@ -63,22 +90,55 @@ namespace UPOEd
 
 	void AssetViewer_Default::AttachAsset(Asset* asset)
 	{
-		AssetViewer::AttachAsset(asset);
-
-		this->setWindowTitle(ToQString(asset->GetName()));
-
+		AssetWindowBase::AttachAsset(asset);
 		mPropertyBrowser->AttachObject(asset);
-
-		
 	}
 
 	void AssetViewer_Default::closeEvent(QCloseEvent *event)
 	{
 		mPropertyBrowser->AttachObject(nullptr);
 
-		AssetViewer::closeEvent(event);
+		AssetWindowBase::closeEvent(event);
 
 		event->accept();
 	}
 
+	AssetWindowBase::AssetWindowBase(QWidget* parent /*= nullptr*/) : QMainWindow(parent, Qt::WindowStaysOnTopHint)
+	{
+		setAttribute(Qt::WA_DeleteOnClose);
+		mRefHelper = NewObject<Object>();
+		AssetViewer::SOpenAssets << this;
+
+		auto toolbar = this->addToolBar("toolbar");
+		
+		QAction* saveAction = toolbar->addAction("Save");
+		connect(saveAction, &QAction::triggered, this, [&](bool checked) {
+			if (mAttachedAsset)
+				mAttachedAsset->Save();
+		});
+	}
+
+	AssetWindowBase::~AssetWindowBase()
+	{
+		AssetViewer::SOpenAssets.removeOne(this);
+		if (mRefHelper) DeleteObject(mRefHelper);
+		mRefHelper = nullptr;
+	}
+
+	void AssetWindowBase::AttachAsset(Asset* asset)
+	{
+		mAttachedAsset = asset;
+		if(asset)
+			setWindowTitle(ToQString(asset->GetName()));
+	}
+
+	void AssetWindowBase::closeEvent(QCloseEvent *event)
+	{
+		AssetViewer::SOpenAssets.removeOne(this);
+		if (mRefHelper) DeleteObject(mRefHelper);
+		mRefHelper = nullptr;
+		event->accept();
+	}
+
 };
+

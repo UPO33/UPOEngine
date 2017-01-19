@@ -531,7 +531,20 @@ namespace UPO
 	}
 	inline DXGI_FORMAT GetFormatForDepthStencilView(DXGI_FORMAT format)
 	{
-		return format;
+		if (DirectX::IsDepthStencil(format))
+			return format;
+		switch (DirectX::MakeTypeless(format))
+		{
+		case DXGI_FORMAT_R32_TYPELESS:
+			return DXGI_FORMAT::DXGI_FORMAT_D32_FLOAT;
+		case DXGI_FORMAT_R24G8_TYPELESS:
+			return DXGI_FORMAT::DXGI_FORMAT_D24_UNORM_S8_UINT;
+		case DXGI_FORMAT_R32G8X24_TYPELESS:
+			return DXGI_FORMAT::DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
+		case DXGI_FORMAT_R16_TYPELESS:
+			return DXGI_FORMAT::DXGI_FORMAT_D16_UNORM;
+		}
+		return DXGI_FORMAT::DXGI_FORMAT_UNKNOWN;
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -567,6 +580,8 @@ namespace UPO
 		GFXVertexBuffer* CreateVertexBuffer(const GFXVertexBufferDesc& param) override;
 		//////////////////////////////////////////////////////////////////////////
 		GFXConstantBuffer* CreateConstantBuffer(const GFXConstantBufferDesc& param) override;
+		GFXConstantBuffer* CreateConstantBuffer(unsigned size) override;
+
 		//////////////////////////////////////////////////////////////////////////
 		GFXDepthStencilState* CreateDepthStencilState(const GFXDepthStencilStateDesc& param) override;
 		//////////////////////////////////////////////////////////////////////////
@@ -609,7 +624,7 @@ namespace UPO
 		//////////////////////////////////////////////////////////////////////////
 		void SetDepthStencilState(GFXDepthStencilStateHandle state) override;
 		//////////////////////////////////////////////////////////////////////////
-		void SetRenderTarget(GFXRenderTargetView** renderTargets, unsigned numRenderTargets, GFXTexture2D* depthStencil) override;
+		void SetRenderTarget(GFXRenderTargetView** renderTargets, unsigned numRenderTargets, GFXDepthStencilView* depthStencil) override;
 		//////////////////////////////////////////////////////////////////////////
 		void SetRasterizerState(GFXRasterizerStateHandle state) override;
 		//////////////////////////////////////////////////////////////////////////
@@ -640,6 +655,16 @@ namespace UPO
 
 		virtual void* Map(GFXBuffer*, EMapFlag) override;
 		virtual void Unmap(GFXBuffer*) override;
+
+		void CopyResource(GFXResource* dst, GFXResource* src) override;
+
+		void CopySubresourceRegion(GFXTexture2D* dst, unsigned dstMipIndex, unsigned dstX, unsigned dstY, GFXTexture2D* src, unsigned srcMipIndex,
+			unsigned srcX, unsigned srcW, unsigned srcY, unsigned srcH) override;
+
+
+		void* Map(GFXTexture2D* texture, EMapFlag flag, unsigned mipIndex, unsigned& outRowPitch) override;
+		void Unmap(GFXTexture2D* texture, unsigned mipIndex) override;
+
 		//////////////////////////////////////////////////////////////////////////
 // 		GFXTexture2D* LoadTextureFromFile(const char* filename)
 // 		{

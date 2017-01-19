@@ -18,24 +18,8 @@ namespace UPO
 	class World;
 	class Renderer;
 
-	struct RenderViewData
-	{
-		static const unsigned MaxActiveCamera = 32;
-		
-		Frustum		mFrustum[MaxActiveCamera];
-		Matrix4		mProjection[MaxActiveCamera];
-		Matrix4		mView[MaxActiveCamera];
-		Vec4		mWorldPosition;
-		Vec4		mForward;
-		unsigned	mNum;
-	};
 
-	struct RenderViewDataSingle
-	{
-		Frustum		mFrustum;
-		unsigned	mCullingMask;	//layer0, layer1, ...
-	};
-
+	//////////////////////////////////////////////////////////////////////////
 	class UAPI WorldRS
 	{
 		friend World;
@@ -50,7 +34,6 @@ namespace UPO
 		EntityArray*			mPendingAdd;
 		EntityArray*			mPendingDestroy;
 
-		RenderViewData	mViewData;
 
 		struct StaticMeshBounData
 		{
@@ -66,11 +49,10 @@ namespace UPO
 		TArray<EntityStaticMeshRS*>		mStaticMeshes;
 		TArray<EntityCameraRS*>			mCameras;
 		
-		EntityCameraRS*					mMainCamera;
-
 	public:
 		Renderer*		mRenderer = nullptr;
 		GameWindow*		mMainWindow = nullptr;
+		EntityCameraRS*	mFreeCamera = nullptr;
 		bool			mIsFetching = false;
 		/*
 		TArray<EntityCameraRS*>			mCameras;
@@ -93,7 +75,7 @@ namespace UPO
 		void RemoveRS(Entity* ent);
 		void AddRS(Entity* from);
 
-
+		void GetDesiredCameras(TArray<EntityCameraRS*>& out);
 
 	};
 

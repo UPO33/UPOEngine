@@ -426,10 +426,10 @@ namespace UPO
 				*this *= RSqrt(s);
 			}
 		}
-		Vec3 GetNormalizedSafe() const
+		Vec3 GetNormalizedSafe(const Vec3& errorValue = Vec3(0)) const
 		{
 			Vec3 ret = *this;
-			ret.GetNormalized();
+			ret.NormalizeSafe(errorValue);
 			return ret;
 		}
 		void ToString(char* outBuffer, unsigned bufferSize) const;
@@ -469,7 +469,7 @@ namespace UPO
 
 
 	//////////////////////////////////////////////////////////////////////////
-	struct UAPI Vec4
+	struct UAPI alignas(16) Vec4
 	{
 		UCLASS(Vec4, void)
 
@@ -645,7 +645,7 @@ namespace UPO
 		}
 		float Length() const
 		{
-			return Sqrt(Length());
+			return Sqrt(LengthSq());
 		}
 		float Length3Sq() const
 		{
@@ -655,7 +655,16 @@ namespace UPO
 		{
 			return Sqrt(Length3Sq());
 		}
-
+		void Normalize()
+		{
+			*this *= RSqrt(LengthSq());
+		}
+		Vec4 GetNormalized() const
+		{
+			Vec4 ret(*this);
+			ret.Normalize();
+			return ret;
+		}
 		void MetaSerialize(Stream&);
 		void ToString(char* outBuffer, unsigned bufferSize) const;
 		String ToString() const;
@@ -757,13 +766,7 @@ namespace UPO
 		{
 			mRGBA[0] = r;	mRGBA[1] = g;	mRGBA[2] = b;	mRGBA[3] = a;
 		}
-		Color32(const Color& color)
-		{
-			mRGBA[0] = (uint8)Clamp(color.mR * 255.0f, 0.0f, 1.0f);
-			mRGBA[1] = (uint8)Clamp(color.mG * 255.0f, 0.0f, 1.0f);
-			mRGBA[2] = (uint8)Clamp(color.mB * 255.0f, 0.0f, 1.0f);
-			mRGBA[3] = (uint8)Clamp(color.mA * 255.0f, 0.0f, 1.0f);
-		}
+		Color32(const Color& color);
 
 		unsigned GetR() const { return mRGBA[0]; }
 		unsigned GetG() const { return mRGBA[1]; }

@@ -158,6 +158,41 @@ namespace UPO
 
 
 	
+	class UAPI InputState
+	{
+		struct State
+		{
+			bool mkeys[256];
+			bool mMouseBtn[8];
+			Vec2 mMousePosition = Vec2::ZERO;
+			int mMouseWheelDelta = 0;
+		};
+
+		State mCurState;
+		State mPreState;
+	public:
+		InputState();
+		~InputState();
+
+		bool IsKeyDown(EKeyCode key);
+		bool IsKeyPressed(EKeyCode key);
+		bool IsKeyReleased(EKeyCode key);
+
+		Vec2 GetMousePosition();
+		Vec2 GetMouseVelocity();
+
+
+		//positive value indicates that the wheel was rotated forward, negative indicates backward
+		int  GetMouseWheelDelta();
+
+
+		void SetKeyState(EKeyCode key, bool down);
+		void SetMouseWheelDelta(int value);
+		void SetMousePos(int x, int y);
+		void Tick();
+
+		void Reset();
+	};
 
 	class UAPI Input
 	{

@@ -14,7 +14,7 @@ namespace UPO
 
 		OnCalcBound();
 
-		TagRenderDirty();
+		TagRenderMiscDirty();
 	}
 
 	void EntityStaticMesh::SetMaterial(AMaterial* material)
