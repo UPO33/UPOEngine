@@ -4,12 +4,16 @@
 #include "UAssetSys.h"
 #include "UTestAsset.h"
 
-//#include "UInput.h"
+#include "UInput.h"
 #include "UComponent.h"
 #include "UStaticMesh.h"
 #include "UTexture2D.h"
 #include "UWorld.h"
 #include "UGameWindow.h"
+
+#include "UEntity.h"
+#include "UEntityStaticMesh.h"
+#include "UEntityTest.h"
 
 
 namespace UPO

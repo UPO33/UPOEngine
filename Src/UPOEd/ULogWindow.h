@@ -11,7 +11,9 @@ namespace UPOEd
 		QLineEdit* mFiltter;
 		QAction* mActionClear;
 
-		QQueue<LogEntry> mLogsQueue;
+		QQueue<LogEntry>	mLogsQueue;
+		TinyLock			mLockRWQueue;
+
 		bool mIsLogDirty;
 	public:
 

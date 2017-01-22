@@ -21,10 +21,9 @@ namespace UPO
 	//////////////////////////////////////////////////////////////////////////
 	class UAPI EntityStaticMesh : public EntityPrimitive
 	{
-		UCLASS(EntityStaticMesh, Entity)
+		UCLASS(EntityStaticMesh, EntityPrimitive)
 
 		AStaticMesh*	mMesh;
-		AMaterial*		mMaterial;
 		
 	public:
 
@@ -32,13 +31,16 @@ namespace UPO
 		AStaticMesh* GetMesh() const { return mMesh; }
 
 		void SetMaterial(AMaterial*);
-		AMaterial* GetMaterial() const { return mMaterial; }
+// 		AMaterial* GetMaterial() const { return mMaterial; }
 		
 		
 		void OnCalcBound() override;
 
 		EntityStaticMesh();
 		~EntityStaticMesh();
+
+		void MetaBeforePropertyChange(const PropertyInfo* prp);
+		void MetaAfterPropertyChange(const PropertyInfo* prp);
 	};
 
 	//////////////////////////////////////////////////////////////////////////
@@ -46,7 +48,6 @@ namespace UPO
 	{
 	public:
 		AStaticMeshRS*	mMesh;
-		AMaterialRS*	mMaterial;
 		Matrix4			mWorldTransform;
 
 

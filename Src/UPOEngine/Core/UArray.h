@@ -4,6 +4,7 @@
 
 namespace UPO
 {
+	static const size_t InvalidIndex = 0xFFffFFff;
 
 	struct ArrayAlloctorDefault
 	{
@@ -438,18 +439,18 @@ namespace UPO
 		{
 			for (size_t i = 0; i < mLength; i++)
 				if (element == mElements[i]) return i;
-			return ~0;
+			return InvalidIndex;
 		}
 		//lambda must return true if element found
 		template<typename Lambda> size_t FindLambda(Lambda compareLambda) const
 		{
 			for (size_t i = 0; i < mLength; i++)
 				if (compareLambda(mElements[i])) return i;
-			return ~0;
+			return InvalidIndex;
 		}
 		size_t FindLast(const T& element) const
 		{
-			size_t find = ~0;
+			size_t find = InvalidIndex;
 			for (size_t i = 0; i < mLength; i++)
 				if (element == mElements[i])
 					find = i;
@@ -457,7 +458,7 @@ namespace UPO
 		}
 		template<typename Lambda> size_t FindLastLambda(Lambda compareLambda) const
 		{
-			size_t find = ~0;
+			size_t find = InvalidIndex;
 			for (size_t i = 0; i < mLength; i++)
 				if (compareLambda(mElements[i]))
 					find = i;
@@ -525,6 +526,8 @@ namespace UPO
 		byte*	mElements;
 		size_t	mLength;
 		size_t  mCapacity;
+		
+		//@note elementTypeInfo must not be null if elementType  is meta class
 
 		void CallDTor(size_t begin, size_t count, EPropertyType elementType, const TypeInfo* elementTypeInfo);
 		void CallDCTor(size_t begin, size_t count, EPropertyType elementType, const TypeInfo* elementTypeInfo);

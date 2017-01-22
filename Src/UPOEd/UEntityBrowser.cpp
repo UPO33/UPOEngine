@@ -54,6 +54,9 @@ namespace UPOEd
 		mTree->setAlternatingRowColors(true);
 		mTree->setSelectionMode(QAbstractItemView::SelectionMode::SingleSelection);
 		mTree->setContextMenuPolicy(Qt::ContextMenuPolicy::CustomContextMenu);
+		mTree->setDragEnabled(true);
+		mTree->setDragEnabled(true);
+		mTree->setDragDropMode(QAbstractItemView::DragDropMode::DragDrop);
 
 		setMinimumSize(QSize(300, 300));
 

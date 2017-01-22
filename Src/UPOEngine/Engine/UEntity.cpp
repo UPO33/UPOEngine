@@ -381,6 +381,22 @@ namespace UPO
 			ULOG_MESSAGE("Entity [%] Destroyed", mName);
 		}
 	}
+
+	void Entity::MetaBeforePropertyChange(const PropertyInfo* prp)
+	{
+
+	}
+
+	void Entity::MetaAfterPropertyChange(const PropertyInfo* prp)
+	{
+		ULOG_MESSAGE("");
+		if (UPROPERTY_NAME_EQUAL(prp, mLocalTransform))
+		{
+			SetLocalTransform(mLocalTransform);
+		}
+		TagRenderDirty();
+	}
+
 	//////////////////////////////////////////////////////////////////////////
 	void Entity::Destroy_Pass0()
 	{
@@ -446,7 +462,6 @@ namespace UPO
 	UCLASS_BEGIN_IMPL(Entity)
 		UPROPERTY(mName, UATTR_Hidden())
 		UPROPERTY(mEntityFlag, UATTR_Hidden())
-		UPROPERTY(mTestVec3)
 		UPROPERTY(mLocalTransform)
 	UCLASS_END_IMPL(Entity)
 

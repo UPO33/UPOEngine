@@ -14,6 +14,14 @@ namespace UPO
 		UPROPERTY(mQuadPos)
 		UPROPERTY(mQuadSize)
 		UPROPERTY(mColor)
+		UPROPERTY(mTexture2D)
+		UPROPERTY(mTex2DPtr)
+		UPROPERTY(mTextures)
+		UPROPERTY(mMesh)
+		UPROPERTY(mPhysMat)
+		UPROPERTY(mString)
+		UPROPERTY(mName)
+		UPROPERTY(mTestSampler)
 	UCLASS_END_IMPL(EntityTest)
 
 	EntityTest::EntityTest()
@@ -88,6 +96,16 @@ namespace UPO
 	{
 		ULOG_MESSAGE("");
 
+	}
+
+	void EntityTest::MetaAfterPropertyChange(const PropertyInfo* prp)
+	{
+		ULOG_WARN("");
+	}
+
+	void EntityTest::MetaBeforePropertyChange(const PropertyInfo* prp)
+	{
+		ULOG_WARN("");
 	}
 
 };

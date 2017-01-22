@@ -2,18 +2,65 @@
 
 #include "../Engine/UEntity.h"
 #include "../Engine/UAsset.h"
+#include "../Engine/UAssetSys.h"
 #include "../Meta/UMeta.h"
 
 namespace UPO
 {
+	
 	struct ObjectArchiveDefault
 	{
 
 		TArray<Object*>				mObjectsList;
 		TArray<const ClassInfo*>	mInvolvedClasses;
-		Stream*						mStream;
+		Stream*						mStream = nullptr;
 		TArray<Name>				mInvolvedClassesName;
+		
 
+		Object*				mCurLoadingObject = nullptr;	//current object that has been allocating and we r writing to
+
+		/*
+		after loading objects from Stream PointerPhase is executed to Initilize
+		*/
+		struct PointerPhaseItem
+		{
+			Object*			mOwner;	//the object that has this property. used as a reference for loading asset
+			Object**		mPPObject;
+			ObjectPtr*		mPObjectPtr;	//valid if mIsTObjectPtr
+			AssetID			mAssigningAssetID;	//valid if mAssigningIsAsset
+			uint32			mAssigningObjectIndex;
+			bool			mIsTObjectPtr;
+			bool			mAssigningIsAsset;
+		};
+
+		TArray<PointerPhaseItem> mPointerPhaseItems;
+
+		//is called after loading objects to initilize Object* properties
+		//////////////////////////////////////////////////////////////////////////
+		void PerformPointerPhase(Object* additionalRefForAssets)
+		{
+			for (PointerPhaseItem& item : mPointerPhaseItems)
+			{
+				Object* objToAssign = nullptr;
+				if (item.mAssigningIsAsset)
+				{
+					if (Asset* assetToAssign = GAssetSys()->LoadAsset(item.mAssigningAssetID, item.mOwner))
+					{
+						assetToAssign->AddRef(additionalRefForAssets);
+						objToAssign = assetToAssign;
+					}
+				}
+				else
+				{
+					objToAssign = mObjectsList[item.mAssigningObjectIndex];
+				}
+
+				if (item.mIsTObjectPtr)
+					*(item.mPObjectPtr) = objToAssign;
+				else
+					*(item.mPPObject) = objToAssign;
+			}
+		}
 
 		//////////////////////////////////////////////////////////////////////////
 		uint16 ClassToIndex(const ClassInfo* ci) const
@@ -52,6 +99,7 @@ namespace UPO
 					mInvolvedClasses.AddUnique(classes[iClass]);
 				}
 			}
+
 		}
 		//////////////////////////////////////////////////////////////////////////
 		/*
@@ -98,13 +146,14 @@ namespace UPO
 		*/
 		void WriteObjects()
 		{
-			ULOG_MESSAGE("");
+			
 			unsigned numObject = mObjectsList.Length();
 			mStream->RW(numObject);
 
 			for (size_t i = 0; i < mObjectsList.Length(); i++)
 			{
 				Object* obj = mObjectsList[i];
+				ULOG_MESSAGE("WriteObj %", obj->GetClassInfo()->GetName());
 				WriteClass(obj->GetClassInfo(), obj, *mStream);
 			}
 		}
@@ -119,8 +168,7 @@ namespace UPO
 			for (size_t i = 0; i < numObject; i++)
 			{
 				Object* newObj = ReadClass(nullptr, nullptr, *mStream);
-				if(newObj) 
-					mObjectsList.Add(newObj);
+				mObjectsList.Add(newObj);
 			}
 			ULOG_MESSAGE("% object was read", mObjectsList.Length());
 		}
@@ -175,9 +223,10 @@ namespace UPO
 
 			if (classInfo == nullptr)
 			{
-				if (foundClass && foundClass->IsObject())
+				if (foundClass && foundClass->IsBaseOf<Object>())
 				{
 					object = ret = NewObject(foundClass);
+					mCurLoadingObject = ret;
 					classInfo = foundClass;
 				}
 				else
@@ -226,7 +275,7 @@ namespace UPO
 					if (prp->GetAttributes().HasAttrib(EAT_Volatile)) continue;
 
 					//dbg
-					ULOG_MESSAGE("writing MetaSerialize %", prp->GetName());
+					ULOG_MESSAGE("writing  %", prp->GetName());
 
 					WriteClassProperty(prp, prp->Map(object), memStream);
 					numProperty++;
@@ -345,10 +394,20 @@ namespace UPO
 			case UPO::EPT_TArray:
 				break;
 			case UPO::EPT_TObjectPtr:
-				break;
 			case UPO::EPT_ObjectPoniter:
-				break;
+			{
+				uint8 identifier = 0;
+				AssetID assetID;
+				uint32 objIndex;
+				stream.RW(identifier);
+				if (identifier == 1)
+					assetID.MetaSerialize(stream);
+				else if(identifier == 2) 
+					stream.RW(objIndex);
+			}
+			break;
 			case UPO::EPT_MetaClass:
+			{
 				uint16 classIndex = 0;
 				uint16 numClass = 0;
 				uint32 readSize = 0;
@@ -356,7 +415,9 @@ namespace UPO
 				stream.RW(numClass);
 				stream.RW(readSize);
 				stream.Ignore(readSize);
-				break;
+			}
+			break;
+			
 			}
 		}
 		bool PrpCanConvert(EPropertyType from, EPropertyType to)
@@ -373,7 +434,7 @@ namespace UPO
 
 			ULOG_MESSAGE("reading property %", prpName);
 
-			auto prpFound = classInfo->FindPropertyByName(prpName, true);
+			const PropertyInfo* prpFound = classInfo->FindPropertyByName(prpName, true);
 
 			if (prpFound == nullptr) return IgnoreReadingPrp(prpType, stream);
 
@@ -400,14 +461,18 @@ namespace UPO
 				break;
 
 			case UPO::EPT_TArray:
+			{
 				if (prpFound->GetType() == EPropertyType::EPT_TArray)
 					ReadPrpTArray(prpFound, (SerArray*)prpFound->Map(obj), stream);
 				else
 					IgnoreReadingPrp(prpType, stream);
 				break;
+			}
 			case UPO::EPT_TObjectPtr:
+				ReadPrpObjectPointer(prpFound->Map(obj), true, stream);
 				break;
 			case UPO::EPT_ObjectPoniter:
+				ReadPrpObjectPointer(prpFound->Map(obj), false, stream);
 				break;
 			case UPO::EPT_MetaClass:
 				if (prpFound->GetTypeInfo() && prpFound->GetTypeInfo()->Cast<ClassInfo>()) //is property meta class?
@@ -531,6 +596,11 @@ namespace UPO
 			pArray->RemoveAll(prpTArray->TemplateArgType(), prpTArray->TemplateArgTypeInfo());
 			pArray->AddDefault(arrayLength, prpTArray->TemplateArgType(), prpTArray->TemplateArgTypeInfo());
 
+			auto IgnoreReading = [&]() {
+				for (uint32 i = 0; i < arrayLength; i++)
+					IgnoreReadingPrp(arrayElemType, stream);
+			};
+
 			switch (arrayElemType)
 			{
 			case UPO::EPT_Unknown:
@@ -557,16 +627,33 @@ namespace UPO
 				}
 				else
 				{
-					stream.Ignore(PropertyType_GetTypeSize(arrayElemType) * arrayLength);
+					IgnoreReading();
 				}
 				
 				break;
 
 			case UPO::EPT_TObjectPtr:
-				break;
 			case UPO::EPT_ObjectPoniter:
-				break;
+			{
+				EPropertyType prpArrayType = prpTArray->TemplateArgType();
+				if (prpArrayType == EPropertyType::EPT_ObjectPoniter || prpArrayType == EPropertyType::EPT_TObjectPtr)
+				{
+					for (uint32 i = 0; i < arrayLength; i++)
+					{
+						void* element = pArray->GetElement(i, prpArrayType, nullptr);
+						ReadPrpObjectPointer(element, prpArrayType == EPropertyType::EPT_TObjectPtr, stream);
+					}
+				}
+				else
+				{
+					IgnoreReading();
+				}
+			}
+			break;
+
+
 			case UPO::EPT_MetaClass:
+			{
 				if (prpTArray->TemplateArgType() == EPropertyType::EPT_MetaClass)
 				{
 					const ClassInfo* arrElemClassInfo = prpTArray->TemplateArgTypeInfo()->Cast<ClassInfo>();
@@ -578,39 +665,90 @@ namespace UPO
 						ReadClass(arrElemClassInfo, pElement, stream);
 					}
 				}
+				else
+				{
+					IgnoreReading();
+				}
+			}
+			break;
 			}
 
 		}
+		
+		/*
+		uint8 identifier	0 null, 1 asset, 2 entity
+		*/
 		void WritePrpObjectPointer(Object* pObject, Stream& stream)
 		{
+
+			uint8 identifier = 0;
+
 			if (pObject)
 			{
 				if (Asset* pAsset = pObject->Cast<Asset>()) //is asset?
 				{
-
+					identifier = 1;
+					stream.RW(identifier);
+					pAsset->GetID().MetaSerialize(stream);
 				}
 				else if (Entity* pEntity = pObject->Cast<Entity>()) // is entity?
 				{
-					if (this->HasObjectInList(pEntity))
+					auto index = mObjectsList.Find(pEntity);
+					if (index != InvalidIndex)	//exist in mObjectsList ?
 					{
-
+						uint32 index32 = index;
+						identifier = 2;
+						mStream->RW(identifier);
+						mStream->RW(index32);
 					}
 					else
 					{
-						///////////Write Null ID
+						//Write Null ID
+						stream.RW(identifier);
 					}
 				}
 				else
 				{
-					/////////////error
+					ULOG_FATAL("object is not asset || entity")
 				}
 			}
 			else
 			{
 				//Write Null ID
+				stream.RW(identifier);
 			}
 		}
+		void ReadPrpObjectPointer(void* ptrToVar /* Object** or TObjectPtr<>* */, bool isTObjectPtr, Stream& stream)
+		{
+			uint8 identifier = 0;
+			stream.RW(identifier);
+			
+			if(identifier)
+			{
+				mPointerPhaseItems.Add();
+				PointerPhaseItem& item = mPointerPhaseItems.LastElement();
+				item.mOwner = mCurLoadingObject;
+				item.mIsTObjectPtr = isTObjectPtr;
+				if (isTObjectPtr)
+					item.mPObjectPtr = (ObjectPtr*)ptrToVar;
+				else
+					item.mPPObject = (Object**)ptrToVar;
 
+				if (identifier == 1)	//asset
+				{
+					item.mAssigningIsAsset = true;
+					item.mAssigningAssetID.MetaSerialize(stream);
+				}
+				else if (identifier == 2) //entity
+				{
+
+					item.mAssigningIsAsset = false;
+					stream.RW(item.mAssigningObjectIndex);
+				}
+				else
+					UASSERT(false);
+			}
+		}
 
 
 		//////////////////////////////////////////////////////////////////////////
@@ -624,12 +762,14 @@ namespace UPO
 			WriteHeader();
 			WriteObjects();
 		}
-		void Load(TArray<Object*>& outObjects, Stream* stream)
+		void Load(TArray<Object*>& outObjects, Stream* stream, Object* additionalRefForAssets)
 		{
 			ULOG_MESSAGE("loading...");
+			mPointerPhaseItems.RemoveAll();
 			mStream = stream;
 			ReadHeader();
 			ReadObjects();
+			PerformPointerPhase(additionalRefForAssets);
 			outObjects = mObjectsList;
 		}
 	};
@@ -937,10 +1077,10 @@ namespace UPO
 		saver.Save(inObjects, stream);
 	}
 
-	void ObjectArchive::Load(TArray<Object*>& outObjects, Stream* stream)
+	void ObjectArchive::Load(TArray<Object*>& outObjects, Stream* stream, Object* additionalRefForAssets)
 	{
 		ObjectArchiveDefault loader;
-		loader.Load(outObjects, stream);
+		loader.Load(outObjects, stream, additionalRefForAssets);
 	}
 
 };

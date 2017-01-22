@@ -18,6 +18,8 @@ VSOut VSMain(uint id : SV_VertexID)
     return output;
 }
 
+
+
 Texture2D gColorMap : register(t0);
 Texture2D gIDMap : register(t1);
 SamplerState gPointSampler : register(s0);

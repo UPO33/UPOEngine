@@ -5,17 +5,28 @@
 #include "UPrimitiveBatch.h"
 #include "UDefferdRenderTargets.h"
 #include "USelectionBuffer.h"
-
 #include "UTestQuad.h"
 
 #include "../Engine/UInput.h"
 #include "../Engine/UEntityCamera.h"
+#include "../Engine/UStaticMesh.h"
+#include "../Engine/UEntityStaticMesh.h"
+
 #include "../GFXCore/UGFXDeviceDX.h"
 
 namespace UPO
 {
 	UGLOBAL_SHADER_DECLIMPL(gVSGrid, GFXVertexShader, "Grid.hlsl", "VSMain");
 	UGLOBAL_SHADER_DECLIMPL(gPSGrid, GFXPixelShader, "Grid.hlsl", "PSMain");
+
+// 	UGLOBAL_SHADER_DECLIMPL(gVSBasePassForward, GFXVertexShader, "BasePassForward.hlsl", "VSMain");
+// 	UGLOBAL_SHADER_DECLIMPL(gPSBasePassForward, GFXPixelShader, "BasePassForward.hlsl", "PSMain");
+
+	UGLOBAL_SHADER_DECLIMPL(gVSBasePassDefferd, GFXVertexShader, "BasePassDeferred.hlsl", "VSMain");
+	UGLOBAL_SHADER_DECLIMPL(gPSBasePassDefferd, GFXPixelShader, "BasePassDeferred.hlsl", "PSMain");
+
+	UGLOBAL_SHADER_DECLIMPL(gVSEndPassDeferred, GFXVertexShader, "EndPassDeferred.hlsl", "VSMain");
+	UGLOBAL_SHADER_DECLIMPL(gPSEndPassDeferred, GFXPixelShader, "EndPassDeferred.hlsl", "PSMain");
 
 	//////////////////////////////////////////////////////////////////////////typedef for hlsl support
 	typedef Vec4 float4;
@@ -25,14 +36,18 @@ namespace UPO
 	//////////////////////////////////////////////////////////////////////////
 	struct CBPerFrame
 	{
+		static const unsigned Index = 0;
+
 		float4 mSunDir;
 		float4 mSunColor;
 		float4 mRandomColor;
 	};
-
+	
 	//////////////////////////////////////////////////////////////////////////
 	struct CBPerCamera
 	{
+		static const unsigned Index = 1;
+
 		matrix mProjection;
 		matrix mInvProjection;
 		matrix mView;
@@ -41,6 +56,16 @@ namespace UPO
 		matrix mClipToWorld;
 		float4 mWorldPosition;
 	};
+
+	//////////////////////////////////////////////////////////////////////////
+	struct CBPerStaticMesh
+	{
+		static const unsigned Index = 2;
+
+		matrix		mLocalToWorld;
+	};
+
+
 
 
 	struct GridDraw
@@ -190,6 +215,7 @@ namespace UPO
 			gGFX->Unmap(mCBPerFrame);
 		}
 
+		
 		RenderWorld();
 
 		if (mCanvas && mGameWnd->mOptions.mRenderCanvas) //draw canvas?
@@ -230,6 +256,7 @@ namespace UPO
 			gGFX->SetConstentBuffer(mCBPerCamera, 1, EShaderType::EPixel);
 
 			GFXViewport viewport = UViewportFromCamera(camera, mViewportSize);
+// 			ULOG_MESSAGE("% %", viewport.mWidth, viewport.mHeight);
 			gGFX->SetViewport(viewport);
 
 			{
@@ -238,11 +265,24 @@ namespace UPO
 				RenderStaticMeshes();
 
 
+				gGFX->SetShaders(gVSEndPassDeferred, gPSEndPassDeferred);
+				GFXRenderTargetView* renderTargets[] = { mSwapChain->GetBackBufferView() };
+				gGFX->SetRenderTarget(renderTargets, nullptr);
+				gGFX->SetViewport(viewport);
+				gGFX->SetResourceView(mRenderTargets->mGBufferA, 0, EShaderType::EPixel);
+				gGFX->SetResourceView(mRenderTargets->mGBufferB, 1, EShaderType::EPixel);
+				gGFX->SetBlendState(nullptr);
+				gGFX->SetDepthStencilState(nullptr);
+				gGFX->SetRasterizerState(nullptr);
+				gGFX->SetIndexBuffer(nullptr);
+				gGFX->SetPrimitiveTopology(EPrimitiveTopology::ETriangleList);
+				gGFX->Draw(3);
+				
 			}
 			//bind swap chain and depth buffer
-			gGFX->ClearRenderTarget(mSwapChain->GetBackBufferView(), Color::WHITE);
-			GFXRenderTargetView* renderTargets[] = { mSwapChain->GetBackBufferView() };
-			gGFX->SetRenderTarget(renderTargets, mRenderTargets->mDepthStencil->GetDepthStencilView());
+// 			gGFX->ClearRenderTarget(mSwapChain->GetBackBufferView(), Color::WHITE);
+// 			GFXRenderTargetView* renderTargets[] = { mSwapChain->GetBackBufferView() };
+// 			gGFX->SetRenderTarget(renderTargets, mRenderTargets->mDepthStencil->GetDepthStencilView());
 
 			//draw primitives
 			if (mPrimitiveBatch && mGameWnd->mOptions.mRenderPrimitiveBatch) mPrimitiveBatch->Render();
@@ -283,7 +323,50 @@ namespace UPO
 	//////////////////////////////////////////////////////////////////////////
 	void Renderer::RenderStaticMeshes()
 	{
+		{
+			GFXRasterizerStateDesc desc;
+			desc.mCullMode = ECullMode::ENone;
+			desc.mWireframe = false;
+			auto rs = GlobalResources::GetRasterizerState(desc);
+			UASSERT(rs);
+			gGFX->SetRasterizerState(rs);
 
+		}
+		{
+			GFXDepthStencilStateDesc desc;
+			desc.mDepthEnable = true;
+			desc.mStencilEnable = false;
+			gGFX->SetDepthStencilState(GlobalResources::GetDepthStencilState(desc));
+		}
+		gGFX->SetBlendState(nullptr);
+
+
+		unsigned numSMesh = mWorldRS->mStaticMeshes.Length();
+		for (unsigned iMesh = 0; iMesh < numSMesh; iMesh++)
+		{
+			EntityStaticMeshRS* entityMeh = mWorldRS->mStaticMeshes[iMesh];
+			AStaticMeshRS* meshAsset = entityMeh->mMesh;
+			if (meshAsset)
+			{
+				auto mapped = gGFX->Map<CBPerStaticMesh>(mCBPerStaticMesh, EMapFlag::EWriteDiscard);
+				mapped->mLocalToWorld = entityMeh->mWorldTransform;
+				gGFX->Unmap(mCBPerStaticMesh);
+
+				gGFX->SetIndexBuffer(meshAsset->mIndexBuffer);
+				gGFX->SetVertexBuffer(meshAsset->mVertexBuffer, 0, sizeof(AStaticMesh::VertexTypeFull), 0);
+				gGFX->SetInputLayout(mILStaticMeshVertexTypeFull);
+				gGFX->SetShaders(gVSBasePassDefferd, gPSBasePassDefferd);
+				gGFX->SetConstentBuffer(mCBPerStaticMesh, CBPerStaticMesh::Index, EShaderType::EVertex);
+				gGFX->SetPrimitiveTopology(EPrimitiveTopology::ETriangleList);
+				gGFX->DrawIndexed(meshAsset->mIndexCount);
+			}
+
+		}
+	}
+
+	GFXDepthStencilState* Renderer::GetRasterizerForStaticMeshSolid()
+	{
+		return nullptr;
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -315,8 +398,24 @@ namespace UPO
 		UASSERT(mCBPerFrame);
 		mCBPerCamera = gGFX->CreateConstantBuffer(sizeof(CBPerCamera));
 		UASSERT(mCBPerCamera);
+		mCBPerStaticMesh = gGFX->CreateConstantBuffer(sizeof(CBPerStaticMesh));
+		UASSERT(mCBPerStaticMesh);
 
 		mGridDraw = new GridDraw();
+
+		{
+			GFXInputLayoutDesc  desc = 
+			{
+				gVSBasePassDefferd, 
+				{
+					{ "POSITION", EVertexFormat::EFloat3, -1, 0, false},
+					{ "NORMAL", EVertexFormat::EFloat3, -1, 0, false },
+					{ "UV", EVertexFormat::EFloat2, -1, 0, false}
+				}
+			};
+			mILStaticMeshVertexTypeFull = GlobalResources::GetInputLayout(desc);
+			UASSERT(mILStaticMeshVertexTypeFull);
+		}
 	}
 	//////////////////////////////////////////////////////////////////////////
 	Renderer::~Renderer()

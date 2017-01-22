@@ -25,7 +25,7 @@ namespace UPOEd
 			mWorld = GEngine()->CreateWorld(wip);
 
 			mViewport = new MainViewport(this);
-			mViewport->setMinimumSize(100, 100);
+			mViewport->setMinimumSize(400,400);
 			setCentralWidget(mViewport);
 
 			GameWindowCreationParam gwcp;

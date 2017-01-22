@@ -9,6 +9,21 @@
 
 namespace UPOEd
 {
+	void UGetSpawnableAssetsClass(TArray<ClassInfo*>& out)
+	{
+		GMetaSys()->GetAllTypes().ForEach([&out](TypeInfo* type)
+		{
+			if (type && type->IsClass())
+			{
+				ClassInfo* ci = (ClassInfo*)type;
+				if (ci->IsBaseOf<Asset>() && !ci->IsAbstract() && ci->HasAttrib(EAtrribID::EAT_Instanceable))
+				{
+					out.Add(ci);
+				}
+			}
+		});
+	}
+
 	//////////////////////////////////////////////////////////////////////////
 	AssetBrowserDW::AssetBrowserDW(QWidget* parent /*= nullptr*/) : QDockWidget(parent)
 	{
@@ -376,22 +391,19 @@ namespace UPOEd
 	{
 		mAssetCreationActions.clear();
 
-		auto& assetsClass = Asset::GetClassInfoStatic()->GetSubClasses();
+		TArray<ClassInfo*> assetsClass;
+		UGetSpawnableAssetsClass(assetsClass);
 		for (auto assetClass : assetsClass)
 		{
 			if(assetClass == nullptr) continue;
 
-			if (assetClass->HasAttrib(EAtrribID::EAT_Instanceable)) //is instanceable?
-			{
+			QAction* actCreate = new QAction(ToQString(assetClass->GetName()), this);
 
-				QAction* actCreate = new QAction(ToQString(assetClass->GetName()), this);
-				
-				if (QIcon* icon = GetIcon(assetClass))
-					actCreate->setIcon(*icon);
+			if (QIcon* icon = GetIcon(assetClass))
+				actCreate->setIcon(*icon);
 
-				connect(actCreate, &QAction::triggered, this, &Self::EVCreateAsset);
-				mAssetCreationActions << actCreate;
-			}
+			connect(actCreate, &QAction::triggered, this, &Self::EVCreateAsset);
+			mAssetCreationActions << actCreate;
 		}
 	}
 
@@ -686,9 +698,15 @@ namespace UPOEd
 		return false;
 	}
 
+	QTreeWidget* AssetBrowserWidget::GetAssetsTreeWidget()
+	{
+		return ui->assetsTree;
+	}
+
 	AssetBrowserItem::AssetBrowserItem(AssetEntry* entry, AssetBrowserItem* parent) : QTreeWidgetItem(parent)
 	{
 		mAssetEntry = entry;
+		setFlags(Qt::ItemIsDragEnabled | Qt::ItemIsEditable | Qt::ItemIsEnabled | Qt::ItemIsSelectable);
 		if (mAssetEntry)
 		{
 			setText(0, ToQString(mAssetEntry->GetFileName()));
@@ -696,9 +714,14 @@ namespace UPOEd
 			{
 				setToolTip(0, ToQString(ci->GetName()));
 			}
+			
+			if (entry->IsFolder())
+			{
+				setFlags(flags() | Qt::ItemIsDropEnabled);
+			}
+
 		}
 
-		setFlags(flags() | Qt::ItemFlag::ItemIsEditable);
 
 		InitIcon();
 	}

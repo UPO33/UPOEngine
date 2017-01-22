@@ -3,6 +3,7 @@
 #include "UAssetViewer.h"
 
 #include "../UPOEngine/Engine/UEntityStaticMesh.h"
+#include "../UPOEngine/GFX//UPrimitiveBatch.h"
 
 namespace UPOEd
 {
@@ -56,7 +57,7 @@ namespace UPOEd
 
 			if (auto pb = mWorld->GetPrimitiveBatch())
 			{
-
+				pb->DrawWireMesh(mAttachedAsset ? mAttachedAsset->Cast<AStaticMesh>() : nullptr, Transform::IDENTITY, Color32::RED, 0);
 			}
 		}
 		void InitWorld()
@@ -65,7 +66,7 @@ namespace UPOEd
 			wip.mWorldType = EWorldType::EEditor;
 			mWorld = GEngine()->CreateWorld(wip);
 			mEntityInWorld = mWorld->CreateEntity<EntityStaticMesh>(nullptr);
-			mEntityInWorld->SetMesh(mAttachedAsset->Cast<AStaticMesh>());
+			mEntityInWorld->SetMesh(mAttachedAsset ? mAttachedAsset->Cast<AStaticMesh>() : nullptr);
 
 		}
 	};

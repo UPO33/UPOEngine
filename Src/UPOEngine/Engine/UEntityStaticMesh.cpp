@@ -19,11 +19,11 @@ namespace UPO
 
 	void EntityStaticMesh::SetMaterial(AMaterial* material)
 	{
-		if (mMaterial == material || !IsAlive()) return;
-
-		mMaterial = material;
-
-		TagRenderMiscDirty();
+// 		if (mMaterial == material || !IsAlive()) return;
+// 
+// 		mMaterial = material;
+// 
+// 		TagRenderMiscDirty();
 	}
 
 	void EntityStaticMesh::OnCalcBound()
@@ -40,7 +40,7 @@ namespace UPO
 
 	EntityStaticMesh::EntityStaticMesh()
 	{
-
+		mMesh = nullptr;
 	}
 
 	EntityStaticMesh::~EntityStaticMesh()
@@ -48,6 +48,17 @@ namespace UPO
 
 	}
 
+
+	void EntityStaticMesh::MetaBeforePropertyChange(const PropertyInfo* prp)
+	{
+		
+	}
+
+	void EntityStaticMesh::MetaAfterPropertyChange(const PropertyInfo* prp)
+	{
+		ULOG_MESSAGE("");
+		this->TagRenderDirty();
+	}
 
 	//////////////////////////////////////////////////////////////////////////
 	EntityStaticMeshRS::EntityStaticMeshRS(EntityStaticMesh* gs, WorldRS* wrs)
@@ -59,7 +70,7 @@ namespace UPO
 		mOwner->mStaticMeshesCullingState.AddUnInit();
 		mPrivateIndex = mOwner->mStaticMeshes.Add(this);
 
-		OnFetch(mGS->mEntityFlag);
+		OnFetch(EEF_RenderDataTransformDirty | EEF_RenderDataMiscDirty);
 	}
 
 	EntityStaticMeshRS::~EntityStaticMeshRS()
@@ -76,12 +87,12 @@ namespace UPO
 			mWorldTransform = mGS->GetWorldTransform();
 			mOwner->mStaticMeshesBounds[mPrivateIndex] = mGS->GetBound();
 		}
-		else
+		if (flag & EEF_RenderDataMiscDirty)
 		{
 			mMesh = GS()->mMesh ? GS()->mMesh->GetRS() : nullptr;
-			mMaterial = GS()->mMaterial ? GS()->mMaterial->GetRS() : nullptr;
+// 			mMaterial = GS()->mMaterial ? GS()->mMaterial->GetRS() : nullptr;
 
-			if (mMesh && mMaterial)	mRSFlag.Set(EEF_RenderDataValid);
+			if (mMesh)	mRSFlag.Set(EEF_RenderDataValid);
 		}
 	}
 
@@ -93,5 +104,9 @@ namespace UPO
 
 
 	UCLASS_BEGIN_IMPL(EntityStaticMesh)
+		UPROPERTY(mMesh)
 	UCLASS_END_IMPL(EntityStaticMesh)
+
+
+
 };

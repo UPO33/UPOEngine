@@ -67,4 +67,16 @@ float2 Clip2UV(float4 v)
     return v.xy / v.ww * float2(0.5, -0.5) + 0.5;
 }
 
+void DrawRect(uint vertexID, out float4 outClipPos, out float2 outUV)
+{
+    outClipPos.x = (float) (vertexID / 2) * 4.0 - 1.0f;
+    outClipPos.y = (float) (vertexID % 2) * 4.0 - 1.0f;
+    outClipPos.z = 0;
+    outClipPos.w = 1;
+
+    outUV.x = (float) (vertexID / 2) * 2.0;
+    outUV.y = 1.0 - (float) (vertexID % 2) * 2;
+};
+
+
 #endif

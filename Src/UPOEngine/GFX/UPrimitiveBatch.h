@@ -10,7 +10,7 @@ namespace UPO
 {
 	//////////////////////////////////////////////////////////////////////////
 	class AStaticMesh;
-
+	class World;
 
 	//////////////////////////////////////////////////////////////////////////
 	class UAPI PrimitiveBatch 
@@ -35,6 +35,13 @@ namespace UPO
 			const AStaticMesh*	mMesh;
 			float				mLifeTime;
 		};
+		
+		typedef TArray<StaticMeshItem>	StaticMeshItemArray;
+
+
+		//////////////////////////////////////////////////////////////////////////memvars
+		World*						mOwner;
+		float						mDelta;
 
 		LineVertexArray				mLines[2];
 		volatile LineVertexArray*	mGTLines;
@@ -45,7 +52,7 @@ namespace UPO
 		GFXConstantBuffer*			mConstantBuffer;
 		TinyLock					mSwapLock;
 
-		typedef TArray<StaticMeshItem>	StaticMeshItemArray;
+		
 
 		StaticMeshItemArray		mMeshes[2];
 		StaticMeshItemArray*	mGTMeshes;
@@ -54,18 +61,21 @@ namespace UPO
 		StaticMeshItemArray* GetGTMeshes() { return mGTMeshes; }
 		StaticMeshItemArray* GetRTMeshes() { return mRTMeshes; }
 
-		PrimitiveBatch();
+		LineVertexArray* GetGTLines() { return (LineVertexArray*)mGTLines; }
+		LineVertexArray* GetRTLines() { return (LineVertexArray*)mRTLines; }
+
+	public:
+		PrimitiveBatch(World* owner);
 		~PrimitiveBatch();
 
-		LineVertexArray* GetGTLines() { return (LineVertexArray*) mGTLines; }
-		LineVertexArray* GetRTLines() { return (LineVertexArray*) mRTLines; }
+
 
 		void DrawLine(const Vec3& point0, const Color32& color0, const Vec3& point1, const Color32& color1);
 		void DrawWireBox(const Vec3& min, const Vec3& max, const Color32& color);
 		void DrawWireMesh(const AStaticMesh* mesh, const Transform& transform, const Color& color, float lifeTimeSeconds);
 		void CreateRenderResoures();
 
-		void Swap();
+		void Tick(float delta);
 		void Render();
 
 	};

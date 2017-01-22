@@ -200,15 +200,34 @@ namespace UPO
 	}
 
 	//////////////////////////////////////////////////////////////////////////
-	Asset* AssetSys::LoadAsset(Name nanme, Object* ref)
+	Asset* AssetSys::LoadAsset(Name name, Object* ref)
 	{
-		if (AssetEntry* assetItem = FindAsset(nanme))
+		if (AssetEntry* assetItem = FindAsset(name))
 		{
 			assetItem->LoadNow(ref);
 			return assetItem->GetInstance();
 		}
+		else
+		{
+			ULOG_ERROR("asset [%] not found", name);
+		}
 		return nullptr;
 	}
+	//////////////////////////////////////////////////////////////////////////
+	Asset* AssetSys::LoadAsset(AssetID id, Object* ref)
+	{
+		if (AssetEntry* assetItem = FindAsset(id))
+		{
+			assetItem->LoadNow(ref);
+			return assetItem->GetInstance();
+		}
+		else
+		{
+			ULOG_ERROR("asset not found");
+		}
+		return nullptr;
+	}
+
 	//////////////////////////////////////////////////////////////////////////
 	Asset* AssetSys::FindLoadedAsset(Name assetName)
 	{
@@ -466,6 +485,7 @@ namespace UPO
 					{
 						mTickSinceLastKill = 0;
 						mPendingKillAssets.Add(asset);
+						ULOG_MESSAGE("destroying asset [%]", asset->GetName());
 						asset->OnDestroy();
 					}
 				}

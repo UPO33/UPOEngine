@@ -7,7 +7,7 @@ namespace UPO
 {
 	  
 
-	UCLASS_BEGIN_IMPL(EntityCamera)
+	UCLASS_BEGIN_IMPL(EntityCamera, UATTR_Icon("EntityCamera.png"))
 		UPROPERTY(mRender)
 		UPROPERTY(mPerspective)
 		UPROPERTY(mFieldOfView, UATTR_Range(1, 180))

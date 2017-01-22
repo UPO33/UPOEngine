@@ -146,9 +146,11 @@ namespace UPOEd
 	}
 	void LogWidget::LogReceived(const LogEntry& entry)
 	{
-		if (mLogsQueue.count() > MAX_LOG)
+		USCOPE_LOCK(mLockRWQueue);
+		if (mLogsQueue.size() >= MAX_LOG)
 			mLogsQueue.dequeue();
 		mLogsQueue.enqueue(entry);
+
 		mIsLogDirty = true;
 	}
 	void LogWidget::Tick()
@@ -165,44 +167,29 @@ namespace UPOEd
 	}
 	void LogWidget::FillHTML()
 	{
-
+		USCOPE_LOCK(mLockRWQueue);
 		QString htmlResult;
 		
 		htmlResult.reserve(1024 * 10);
 
 		htmlResult += gLogHTMLBegin;
 
-
-
-
-		auto iter = mLogsQueue.cbegin();
-		while (iter != mLogsQueue.cend())
+		for (auto& iter : mLogsQueue)
 		{
-			char strThreadID[32];
-			sprintf_s(strThreadID, sizeof(strThreadID), "0x%x", iter->mThreadID);
-			const char* strThread = strThreadID;
-			if (iter->mThreadID == gGameThreadID) strThread = "GT";
-			if (iter->mThreadID == gRenderThreadID) strThread = "RT";
+			const char* strSyle = "color: red;";
+			if (iter.mType == ELogType::ELT_Message) strSyle = "color: white;";
+			else if (iter.mType == ELogType::ELT_Success) strSyle = "color: #66ff33;";
+			else if (iter.mType == ELogType::ELT_Warn) strSyle = "color: yellow";
 
-			const char* strFilename = StrFindRNChar(iter->mFileName, PATH_SEPARATOR_CHAR, 1);
-			if (strFilename == nullptr) strFilename = StrFindRNChar(iter->mFileName, PATH_SEPARATOR_CHAR, 0);
-			if (strFilename == nullptr) strFilename = iter->mFileName;
-
-			//QString line = QString::asprintf("<p  style=\"color: #ff00ff;\"> [%s] [%s] [%d] [%s]     %s</p>",
-			
-			char* strSyle = "color: red;";
-			if (iter->mType == ELogType::ELT_Message) strSyle = "color: white;";
-			else if (iter->mType == ELogType::ELT_Success) strSyle = "color: #66ff33;";
-			else if (iter->mType == ELogType::ELT_Warn) strSyle = "color: yellow";
-
+			char strThread[32];
+			ULogGetLegibleThreadName(iter.mThreadID, strThread);
 
 			QString line = QString::asprintf("<p  style=\"%s\"> [%s] [%s] [%d] [%s] \t\t    %s</p>",
-				 strSyle, strFilename, iter->mFunctionName, iter->mLineNumber, strThreadID, iter->mText);
-			
-			if(FilterCheck(mFiltter->text(), line))
+				strSyle, ULogGetLegibleFileName(iter.mFileName), iter.mFunctionName, iter.mLineNumber, strThread, iter.mText);
+
+			if (FilterCheck(mFiltter->text(), line))
 				htmlResult += line;
 
-			iter++;
 		}
 
 		htmlResult += gLogHTMLEnd;

@@ -61,7 +61,12 @@ public:
         assetsTree->setHeaderItem(__qtreewidgetitem);
         assetsTree->setObjectName(QStringLiteral("assetsTree"));
         assetsTree->setContextMenuPolicy(Qt::CustomContextMenu);
+        assetsTree->setAcceptDrops(true);
         assetsTree->setEditTriggers(QAbstractItemView::EditKeyPressed);
+        assetsTree->setDragEnabled(true);
+        assetsTree->setDragDropOverwriteMode(false);
+        assetsTree->setDragDropMode(QAbstractItemView::InternalMove);
+        assetsTree->setDefaultDropAction(Qt::MoveAction);
         assetsTree->setAlternatingRowColors(true);
         assetsTree->setIndentation(18);
         assetsTree->header()->setVisible(false);

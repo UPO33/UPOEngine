@@ -31,6 +31,7 @@ namespace UPO
 		Canvas* mCanvas;
 		PrimitiveBatch* mPrimitiveBatch;
 		DefferdRenderTargets* mRenderTargets = nullptr;
+		
 		Vec2 mViewportSize;
 		
 		GFXVertexBuffer* mTestTriVBuffer;
@@ -40,10 +41,13 @@ namespace UPO
 		TArray<EntityCameraRS*>	mCamerasToRender;
 		GFXConstantBuffer*		mCBPerFrame;
 		GFXConstantBuffer*		mCBPerCamera;
+		GFXConstantBuffer*		mCBPerStaticMesh;
 		int						mCurRenderingCameraIndex = -1;
 
 		GridDraw*		mGridDraw = nullptr;
 
+		GFXInputLayout*		mILStaticMeshVertexTypeFull;
+		
 		Renderer();
 		~Renderer();
 
@@ -55,6 +59,8 @@ namespace UPO
 		void CheckRenderTargetResizing();
 
 		void RenderStaticMeshes();
+
+		GFXDepthStencilState* GetRasterizerForStaticMeshSolid();
 
 		void UpdatePerFrameBuffer();
 		void UpdatePerCameraCBuffer(EntityCameraRS*);

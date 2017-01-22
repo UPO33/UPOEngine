@@ -1,7 +1,7 @@
 #include "UMainWindow.h"
 
 #include "../UPOEngine/UPOEngine.h"
-#include "../UPOEngine/Engine/UEntityTest.h"
+
 
 #include "UNewProjectDialog.h"
 
@@ -156,9 +156,39 @@ namespace UPOEd
 		// 			mMenuBar = new QMenuBar(this);
 		// 			setMenuBar(mMenuBar);
 	}
+	void MainWindow::InitWorld()
+	{
+		//////////////////////////////////////////////////////////////////////////TEST World
+		{
+			WorldInitParam wip;
+			wip.mStartPlaying = true;
+			mActiveWorld = IEngineInterface::Get()->CreateWorld(wip);
+			mMainViewport->SetWorld(mActiveWorld);
+			mActiveWorld->CreateEntity<Entity>(nullptr);
+			Entity* parent = mActiveWorld->CreateEntity<Entity>(nullptr);
+			for (size_t i = 0; i < 4; i++)
+			{
+				mActiveWorld->CreateEntity<Entity>(parent);
+			}
+			mActiveWorld->CreateEntity<EntityTest>(nullptr);
 
+			auto smesh = mActiveWorld->CreateEntity<EntityStaticMesh>(nullptr);
+			auto buildingAsset = GAssetSys()->LoadAsset("Engine/meshes/building1", smesh);
+			ULOG_MESSAGE("%", buildingAsset);
+			smesh->SetMesh(buildingAsset ? buildingAsset->Cast<AStaticMesh>() : nullptr);
+			auto smesh2 = mActiveWorld->CreateEntity<EntityStaticMesh>(smesh);
+			smesh2->SetWorldTransform(Vec3(100), Vec3::ZERO, Vec3(0.5f));
+			smesh2->SetMesh(buildingAsset ? buildingAsset->Cast<AStaticMesh>() : nullptr);
+
+			mEntityBrowser->AttachWorld(mActiveWorld);
+		};
+
+	}
 	QString GetTempalteProjectPath()
 	{
+
+
+
 		QDir dir = QDir::current();
 		dir.cdUp();
 		return dir.absoluteFilePath("TemplateProject");
@@ -245,6 +275,7 @@ namespace UPOEd
 
 		mTestObject = NewObject<TestObject>();
 		
+		
 		/////////////////property browser
 		mPropertyBrowser = new PropertyBrowserDW(this);
 		this->addDockWidget(Qt::DockWidgetArea::LeftDockWidgetArea, mPropertyBrowser);
@@ -253,34 +284,24 @@ namespace UPOEd
 		/////////////log window
 		mLog = new LogDW(this);
 		this->addDockWidget(Qt::DockWidgetArea::BottomDockWidgetArea, mLog);
+		//////////entity browser
+		mEntityBrowser = new EntityBrowserDW(this);
+		this->addDockWidget(Qt::DockWidgetArea::RightDockWidgetArea, mEntityBrowser);
 
 		//////////////asset browser
 		mAssetBrowser = new AssetBrowserDW(this);
 		this->addDockWidget(Qt::DockWidgetArea::RightDockWidgetArea, mAssetBrowser);
 		
-		//////////entity browser
-		mEntityBrowser = new EntityBrowserDW(this);
-		this->addDockWidget(Qt::DockWidgetArea::RightDockWidgetArea, mEntityBrowser);
-
-		this->tabifyDockWidget(mAssetBrowser, mEntityBrowser);
+		//bottom space belong to left and right doc
 		this->setCorner(Qt::Corner::BottomLeftCorner, Qt::LeftDockWidgetArea);
-		InitActions();
+		this->setCorner(Qt::Corner::BottomRightCorner, Qt::RightDockWidgetArea);
 
-		//////////////////////////////////////////////////////////////////////////TEST World
-		{
-			WorldInitParam wip;
-			wip.mStartPlaying = true;
-			mActiveWorld = IEngineInterface::Get()->CreateWorld(wip);
-			mMainViewport->SetWorld(mActiveWorld);
-			mActiveWorld->CreateEntity<Entity>(nullptr);
-// 			mActiveWorld->CreateEntity<EntityTest>(nullptr);
-			Entity* parent = mActiveWorld->CreateEntity<Entity>(nullptr);
-			for (size_t i = 0; i < 4; i++)
-			{
-				mActiveWorld->CreateEntity<Entity>(parent);
-			}
-			mEntityBrowser->AttachWorld(mActiveWorld);
-		};
+		//this->tabifyDockWidget(mAssetBrowser, mEntityBrowser);
+
+
+
+		InitActions();
+		InitWorld();
 
 		QToolBar* toolbar=  this->addToolBar("tiilbar");
 		toolbar->addAction("Play");

@@ -29,7 +29,7 @@ namespace UPO
 
 	void AStaticMesh::UpdateBound()
 	{
-		mBound = AABB::MakeFromPoints(mVertices.Elements(), mVertices.Length(), sizeof(VertexType));
+		mBound = AABB::MakeFromPoints(mVertices.Elements(), mVertices.Length(), sizeof(VertexTypeFull));
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -51,7 +51,7 @@ namespace UPO
 
 		ULOG_MESSAGE("numMesh % numVertex % numIndex %", scene->mNumMeshes, numVertex, numIndex);
 
-		VertexType* meshVertices = new VertexType[numVertex];
+		VertexTypeFull* meshVertices = new VertexTypeFull[numVertex];
 		IndexType* meshIndices = new IndexType[numIndex];
 
 		//copy vertices
@@ -121,7 +121,7 @@ namespace UPO
 			GFXVertexBufferDesc desc;
 			desc.mInitialData = sm->mVertices.Elements();
 			desc.mImmutable = true;
-			desc.mSize = sizeof(AStaticMesh::VertexType) * sm->mVertices.Length();
+			desc.mSize = sizeof(AStaticMesh::VertexTypeFull) * sm->mVertices.Length();
 			mVertexBuffer = gGFX->CreateVertexBuffer(desc);
 			UASSERT(mVertexBuffer);
 		}

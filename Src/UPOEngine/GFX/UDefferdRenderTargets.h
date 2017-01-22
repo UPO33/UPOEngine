@@ -20,4 +20,17 @@ namespace UPO
 		DefferdRenderTargets(Vec2I size);
 		~DefferdRenderTargets();
 	};
+
+
+
+	class UAPI ForwardRenderTargets
+	{
+	public:
+		Vec2I			mSize;
+		GFXTexture2D*	mDepthStencil;
+		GFXTexture2D*	mColor;
+
+		ForwardRenderTargets(Vec2I size);
+		~ForwardRenderTargets();
+	};
 };

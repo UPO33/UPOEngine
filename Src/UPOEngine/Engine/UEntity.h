@@ -99,7 +99,6 @@ namespace UPO
 
 	public:
 
-		Vec3	mTestVec3;
 
 		Entity();
 
@@ -116,6 +115,7 @@ namespace UPO
 		bool IsSubsetOf(Entity* parent) const;
 
 		World* GetWorld() const { return mWorld; }
+		Name GetName() const { return mName; }
 
 		//return pointer to render state if any
 		template< typename TRSClass = EntityRS> TRSClass* GetRS() const { return (TRSClass*)mRS; }
@@ -183,6 +183,9 @@ namespace UPO
 		}
 		void SetTickEnable(bool enable);
 		void Destroy();
+
+		void MetaBeforePropertyChange(const PropertyInfo* prp);
+		void MetaAfterPropertyChange(const PropertyInfo* prp);
 
 	private:
 		void Destroy_Pass0();

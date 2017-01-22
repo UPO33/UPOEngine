@@ -1,5 +1,7 @@
 #include "UPropertyBrowserWidgets.h"
 #include "UPropertyBrowser.h"
+#include "UAssetBrowser.h"
+#include "UMainWindow.h"
 
 #include "ui_TransformProperty.h"
 
@@ -206,6 +208,29 @@ namespace UPOEd
 
 	}
 
+	void PBBaseProp::ResetToDefault()
+	{
+		//can't reset a TArray elements
+		if (mParam.mArrayIndex != -1)return;
+
+		if (Object* obj = mParam.mRootObject)
+		{
+			Object* defaulObj = NewObject(obj->GetClassInfo());
+			ULOG_MESSAGE("%", defaulObj->GetClassInfo()->GetName());
+			auto offset = ((size_t)mParam.mInstance) - ((size_t)(mParam.mRootObject.Get()));
+			auto origInstance = mParam.mInstance;
+			mParam.mInstance = (void*)(((size_t)defaulObj) + offset);
+			mParam.mRootObject = defaulObj;
+			UpdateWidgetValue();
+			mWidgetValueChanged = true;
+			mParam.mInstance = origInstance;
+			mParam.mRootObject = obj;
+			DeleteObject(defaulObj);
+			
+			
+		}
+	}
+
 	PBTransformProp::PBTransformProp(const PBBaseProp::Param& param, QWidget* parent) : PBBaseProp(param, parent)
 	{
 		delete layout();
@@ -267,5 +292,177 @@ namespace UPOEd
 		ui->mSY->setValue(scale.mY);
 		ui->mSZ->setValue(scale.mZ);
 	}
+
+	PBObjectProp::PBObjectProp(const PBBaseProp::Param& param, QWidget* parent) : PBBaseProp(param, parent)
+	{
+		setAcceptDrops(true);
+
+		mBtn = new QCommandLinkButton(this);
+		mBtn->setIcon(QIcon());
+		if (auto icon = GetIcon(this->GetObjectClass())) mBtn->setIcon(*icon);
+
+
+		UpdateWidgetValue();
+
+		connect(mBtn, &QCommandLinkButton::clicked, this, [this](bool) {
+			ULOG_MESSAGE("click");
+			if (auto obj = GetValueObject())
+			{
+				if (auto asset = obj->Cast<Asset>()) //is asset?
+				{
+				}
+				else if (auto entity = obj->Cast<Entity>()) // is entity?
+				{
+
+				}
+			}
+		});
+
+		layout()->addWidget(mBtn);
+	}
+
+	void PBObjectProp::UpdatePropertyValue()
+	{
+		SetValueObject(mObject);
+	}
+
+	void PBObjectProp::UpdateWidgetValue()
+	{
+		if (Object* obj = GetValueObject())
+		{
+			mObject = obj;
+			if(obj->GetClassInfo()->IsBaseOf(GetObjectClass()))
+			{
+				if (auto asset = obj->Cast<Asset>())
+				{
+					mBtn->setText(ToQString(asset->GetName()));
+				}
+				else if (auto entity = obj->Cast<Entity>())
+				{
+					mBtn->setText(ToQString(entity->GetName()));
+				}
+			}
+		}
+		else
+		{
+			mBtn->setText("null");
+			mObject = nullptr;
+		}
+	}
+
+	void PBObjectProp::dragEnterEvent(QDragEnterEvent *event)
+	{
+		ULOG_WARN("%", event->source()->parent()->metaObject()->className());
+		
+		mObjectToAssign = nullptr;
+		if (auto assetBrowser = qobject_cast<AssetBrowserWidget*>(event->source()->parent()))
+		{
+			if (auto curItem = (AssetBrowserItem*)assetBrowser->GetAssetsTreeWidget()->currentItem())
+			{
+				if (auto droppedCLass = curItem->mAssetEntry->GetClassInfo())
+				{
+					if (droppedCLass->IsBaseOf(GetObjectClass()))
+					{
+						curItem->mAssetEntry->LoadNow(this->mParam.mRootObject);
+						mObjectToAssign = curItem->mAssetEntry->GetInstance();
+						event->setDropAction(Qt::DropAction::IgnoreAction);
+						event->accept();
+						return;
+					}
+
+				}
+
+			}
+		}
+		event->ignore();
+	}
+
+	void PBObjectProp::dropEvent(QDropEvent *event)
+	{
+		ULOG_WARN("");
+		if (mObjectToAssign)
+		{
+			mObject = mObjectToAssign;
+			WidgetValueChanged();
+			mObjectToAssign = nullptr;
+		}
+		event->ignore();
+		
+	}
+
+	void PBObjectProp::dragMoveEvent(QDragMoveEvent *event)
+	{
+		//ULOG_MESSAGE("");
+		event->accept();
+	}
+
+	const ClassInfo* PBObjectProp::GetObjectClass()
+	{
+		//is not array element ?
+		if (mParam.mArrayIndex == -1)
+		{
+			if (mParam.mPropertyInfo->GetType() == EPropertyType::EPT_ObjectPoniter)
+			{
+				if (auto ti = mParam.mPropertyInfo->GetTypeInfo())
+					return ti->Cast<ClassInfo>();
+			}
+			else if (mParam.mPropertyInfo->GetType() == EPropertyType::EPT_TObjectPtr)
+			{
+				if (auto ti = mParam.mPropertyInfo->TemplateArgTypeInfo())
+					return ti->Cast<ClassInfo>();
+			}
+			else
+				ULOG_FATAL("");
+		}
+		else
+		{
+			return mParam.mPropertyInfo->TemplateArgTypeInfo()->Cast<ClassInfo>();
+		}
+		return nullptr;
+// 		return GetTypeInfo()->Cast<ClassInfo>();
+// 
+// 		bool isTObjectPtr = GetType() == EPropertyType::EPT_TObjectPtr;
+// 		if (isTObjectPtr)
+// 			return GetTypeInfo()->Cast<ClassInfo>()->TemplateArgTypeInfo()->Cast<ClassInfo>();
+// 		else
+// 			return GetTypeInfo()->GetTypeInfo()->Cast<ClassInfo>();
+	}
+
+	Object* PBObjectProp::GetValueObject()
+	{
+		if (GetType() == EPropertyType::EPT_TObjectPtr)
+			return ValueAs<ObjectPtr>().Get();
+		else if (GetType() == EPropertyType::EPT_ObjectPoniter)
+			return ValueAs<Object*>();
+		else
+			UASSERT(false);
+	}
+
+	void PBObjectProp::SetValueObject(Object* obj)
+	{
+		if (GetType() == EPropertyType::EPT_TObjectPtr)
+			ValueAs<ObjectPtr>() = obj;
+		else if (GetType() == EPropertyType::EPT_ObjectPoniter)
+			ValueAs<Object*>() = obj;
+		else
+			UASSERT(false);
+
+// 		if (obj)
+// 		{
+// 			if (auto asset = obj->Cast<Asset>())
+// 			{
+// 				mBtn->setText(ToQString(asset->GetName()));
+// 			}
+// 			else if (auto entity = obj->Cast<Entity>())
+// 			{
+// 				mBtn->setText(ToQString(entity->GetName()));
+// 			}
+// 		}
+// 		else
+// 		{
+// 			mBtn->setText("null");
+// 		}
+	}
+
 
 };

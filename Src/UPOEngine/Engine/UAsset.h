@@ -4,6 +4,7 @@
 #include "../Object/UObject.h"
 #include "../Core/UCommandQueue.h"
 #include "../Core/UBound.h"
+#include "../Meta/UClassInfo.h"
 
 #include "UEngineBase.h"
 

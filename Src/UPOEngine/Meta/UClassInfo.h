@@ -151,8 +151,6 @@ namespace UPO
 		bool NeedBake() const;
 
 	public:
-		bool IsObject() const;
-		bool IsAsset() const;
 		bool IsBaseOf(const ClassInfo* base) const;
 		template<typename T> bool IsBaseOf() const
 		{

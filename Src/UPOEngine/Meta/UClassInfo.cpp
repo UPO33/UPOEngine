@@ -92,16 +92,7 @@ namespace UPO
 		}
 		return false;
 	}
-	//////////////////////////////////////////////////////////////////////////
-	bool ClassInfo::IsObject() const
-	{
-		return IsBaseOf(Object::GetClassInfoStatic());
-	}
 
-	bool ClassInfo::IsAsset() const
-	{
-		return IsBaseOf(Asset::GetClassInfoStatic());
-	}
 
 	//////////////////////////////////////////////////////////////////////////
 	bool ClassInfo::IsBaseOf(const ClassInfo* base) const

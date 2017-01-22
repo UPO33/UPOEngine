@@ -208,6 +208,7 @@ namespace UPO
 			
 			mTimer.Tick(mDeltaTime);
 			mTicking.Tick(mDeltaTime);
+			mPrimitiveBatch->Tick(mDeltaTime);
 
 			mSecondsSincePlay += mDeltaTime;
 			mSecondsSincePlayUnscaled += mDeltaTimeUnscaled;
@@ -430,7 +431,7 @@ namespace UPO
 		mRootEntity->mIndexInWorld = 0;
 		mRootEntity->mName = "Root";
 
-		mPrimitiveBatch = new PrimitiveBatch();
+		mPrimitiveBatch = new PrimitiveBatch(this);
 
 		if (param.mStartPlaying) SetPlaying();
 	}

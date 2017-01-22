@@ -90,6 +90,7 @@ namespace UPO
 		bool ReadFileFull(const String& filename, Buffer& outFileContent);
 
 		Asset* LoadAsset(Name nanme, Object* ref);
+		Asset* LoadAsset(AssetID id, Object* ref);
 		Asset* FindLoadedAsset(Name assetName);
 		Asset* FindLoadedAsset(AssetID id);
 		AssetEntry* FindAsset(Name name);

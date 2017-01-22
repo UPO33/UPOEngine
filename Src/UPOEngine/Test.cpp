@@ -209,55 +209,10 @@ namespace UPO
 			((int)(v.mZ * decimal)) / decimal
 			);
 	}
+
 	void DebugTest()
 	{
-		{
-			Quat q0 = Quat::MakeEuler(Vec3(45, 0, 0)) * Quat::MakeEuler(Vec3(0,90,0));
-			Matrix4 mat;
-			mat.MakeRotationQuat(q0);
-			
-			Vec3 point = Vec3(0, 0, 1);
-			ULOG_MESSAGE("rotated %  %", TruncateDecimal(q0.Rotate(point), 100), TruncateDecimal(mat.GetInverse().TransformVec3W1(point), 100));
 
-		}
-
-		{
-			Vec4 vPos = Vec4(10, 0, 0, 1);
-			Matrix4 matProj, matWorld, matView, matLocalToClip;
-			
-
-
-			matWorld.MakeTransform(Vec3(100,0,0), Vec3(0,0,0), Vec3(1));
-			matProj.MakePerspective(60, 1, 1, 100);
-			matLocalToClip = matWorld * matProj;
-			Vec4 projectedPoint = matLocalToClip.TransformVec4(vPos);
-			
-			ULOG_MESSAGE("projPoint %", projectedPoint);
-			float ww = projectedPoint.mW;
-			projectedPoint /= ww;
-			ULOG_MESSAGE("projPoint %", projectedPoint);
-
-
-		}
-
-		{
-// 			using namespace DirectX;
-// 			DirectX::XMFLOAT4 vPos(0, 0, 1, 1);
-// 			Vec4 projectedPoint(0, 0, 0, 0);
-// 			DirectX::XMMATRIX dxProjMatrix = DirectX::XMMatrixPerspectiveFovRH(60 * DEG2RAD, 1, 1, 11);
-// 			DirectX::XMVECTOR dxProjectedPoint = DirectX::XMVector4Transform(DirectX::XMLoadFloat4(&vPos), dxProjMatrix);
-// 			DirectX::XMStoreFloat4((XMFLOAT4*)&projectedPoint, dxProjectedPoint);
-// 			
-// 
-// 			projectedPoint /= projectedPoint.mW;
-// 
-// 			ULOG_MESSAGE("projPoint %", projectedPoint);
-		}
-
-
-
-
-// 		system("pause");
 	}
 
 

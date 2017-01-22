@@ -2,6 +2,39 @@
 
 namespace UPOEd
 {
+	//////////////////////////////////////////////////////////////////////////
+	class TreeWidgetPropertyBrowser : public QTreeWidget
+	{
+	public:
+		TreeWidgetPropertyBrowser(QWidget* parent = nullptr) : QTreeWidget(parent)
+		{
+
+		}
+		virtual void mousePressEvent(QMouseEvent *event) override
+		{
+			ULOG_WARN("");
+			QTreeWidget::mousePressEvent(event);
+
+		}
+		virtual void mouseReleaseEvent(QMouseEvent *event) override
+		{
+			ULOG_WARN("");
+			if (event->button() == Qt::MouseButton::MiddleButton)
+			{
+				if (QTreeWidgetItem* treeItem = this->itemAt(event->pos()))
+				{
+					if (PBBaseProp* widgetPrp = (PBBaseProp*)(this->itemWidget(treeItem, 1)))
+					{
+						widgetPrp->ResetToDefault();
+						ULOG_WARN("asdasd");
+					}
+				}
+			}
+			QTreeWidget::mouseReleaseEvent(event);
+		}
+
+	};
+
 
 
 	PropertyBrowserWidget::PropertyBrowserWidget(QWidget* parent /*= nullptr*/) : QWidget(parent)
@@ -17,13 +50,13 @@ namespace UPOEd
 			ReFillTree();
 		});
 
-		mTree = new QTreeWidget(this);
+		mTree = new TreeWidgetPropertyBrowser(this);
 		layout()->addWidget(mTree);
 		mTree->setColumnCount(2);
 		mTree->setAlternatingRowColors(true);
 		//mTree->header()->setSectionResizeMode(QHeaderView::ResizeMode::ResizeToContents);
 // 			mTree->setHeaderHidden(true);
-
+		
 		QStringList columnsName;
 		columnsName << "Property" << "Value";
 		mTree->setHeaderLabels(columnsName);
@@ -56,10 +89,11 @@ namespace UPOEd
 			return new PBEnumProp(param, mTree);
 		case UPO::EPT_TArray:
 			return new PBTArrayProp(param, mTree);
+
 		case UPO::EPT_TObjectPtr:
-			break;
 		case UPO::EPT_ObjectPoniter:
-			break;
+			return new PBObjectProp(param, mTree);
+
 		case UPO::EPT_MetaClass:
 		{
 			UASSERT(typeinfo);
@@ -116,6 +150,7 @@ namespace UPOEd
 		QTreeWidgetItem* newItem = new QTreeWidgetItem(parentItem);
 		if (arrayIndex == -1)
 		{
+			//set property name
 			newItem->setText(0, prp->GetLegibleName().CStr());
 			/////comment
 			Attrib attrComment;
@@ -206,52 +241,6 @@ namespace UPOEd
 		return (PBBaseProp*)widget;
 	}
 
-	PBBaseProp* PropertyBrowserWidget::CreateProperty(PBBaseProp* parent)
-	{
-		auto& parParam = parent->mParam;
-
-		switch (parParam.mPropertyInfo->GetType())
-		{
-		case UPO::EPT_Unknown:
-			break;
-		case UPO::EPT_bool:
-			break;
-		case UPO::EPT_int8:
-		case UPO::EPT_uint8:
-		case UPO::EPT_int16:
-		case UPO::EPT_uint16:
-		case UPO::EPT_int32:
-		case UPO::EPT_uint32:
-		case UPO::EPT_int64:
-		case UPO::EPT_uint64:
-		case UPO::EPT_float:
-		case UPO::EPT_double:
-		case UPO::EPT_enum:
-			break;
-		case UPO::EPT_TArray:
-		{
-
-		}
-		break;
-		case UPO::EPT_TObjectPtr:
-			break;
-		case UPO::EPT_ObjectPoniter:
-			break;
-		case UPO::EPT_MetaClass:
-		{
-			ClassInfo* ci = parParam.mPropertyInfo->GetTypeInfo()->Cast<ClassInfo>();
-			UASSERT(ci);
-			if (MetaClassNeedSubProperties(ci))
-			{
-
-			}
-		}
-		break;
-		default:
-			break;
-		}
-		return parent;
-	}
 
 	void PropertyBrowserWidget::AttachObject(Object* object)
 	{
@@ -313,6 +302,20 @@ namespace UPOEd
 		}
 		mTree->expandAll();
 	}
+
+// 	void PropertyBrowserWidget::mousePressEvent(QMouseEvent *event)
+// 	{
+// 		ULOG_WARN("");
+// 		event->accept();
+// 		QWidget::mousePressEvent(event);
+// 	}
+// 
+// 	void PropertyBrowserWidget::mouseReleaseEvent(QMouseEvent *event)
+// 	{
+// 		ULOG_WARN("");
+// 		event->accept();
+// 		QWidget::mouseReleaseEvent(event);
+// 	}
 
 	PropertyBrowserDW::PropertyBrowserDW(QWidget* parent /*= nullptr*/) : QDockWidget(parent)
 	{

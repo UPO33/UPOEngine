@@ -76,6 +76,7 @@ namespace UPOEd
 
 		void InitWidgets();
 		void InitActions();
+		void InitWorld();
 
 		//create a default project in 'path' with specified 'projectName' and return the absolute path of the project file
 		QString CreateDefaultProjectIn(const QString& path, const QString& projectName);

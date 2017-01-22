@@ -41,15 +41,4 @@ namespace UPO
 	{
 		return mClassInfo->IsBaseOf(baseClass);
 	}
-
-	bool Object::IsAsset() const
-	{
-		return Cast<Asset>();
-	}
-
-	bool Object::IsEntity() const
-	{
-		return Cast<Entity>();
-	}
-
 };

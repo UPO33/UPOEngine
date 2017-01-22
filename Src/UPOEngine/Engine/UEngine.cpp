@@ -265,10 +265,12 @@ namespace UPO
 				{
 					if (auto canvas = gw->mCanvas) canvas->Swap();
 				}
-				for (World* world : mWorlds)
-				{
-					if (auto pb = world->GetPrimitiveBatch()) pb->Swap();
-				}
+
+				//world do it
+// 				for (World* world : mWorlds)
+// 				{
+// 					if (auto pb = world->GetPrimitiveBatch()) pb->Swap();
+// 				}
 
 				//after this we can change the WorldRS and update it, maybe renderer is doing postProcess or swamping buffer
 				WaitForFetch();

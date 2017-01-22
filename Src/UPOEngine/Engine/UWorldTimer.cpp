@@ -1,4 +1,5 @@
 #include "UWorldTimer.h"
+#include "../Core/UFreeListAllocator.h"
 
 namespace UPO
 {

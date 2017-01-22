@@ -80,7 +80,7 @@ namespace UPO
 		"</body></html>";
 
 	//////////////////////////////////////////////////////////////////////////
-	void UGetLegibleThreadName(unsigned threadID, char outThreadName[32])
+	UAPI void ULogGetLegibleThreadName(unsigned threadID, char outThreadName[32])
 	{
 		if (threadID == gGameThreadID)
 			StrCopy(outThreadName, "GT", 32);
@@ -90,7 +90,7 @@ namespace UPO
 			sprintf_s(outThreadName, 32, "0x%x", threadID);
 	}
 	//////////////////////////////////////////////////////////////////////////
-	const char* UGetLegibleFileName(const char* fullfilename)
+	UAPI const char* ULogGetLegibleFileName(const char* fullfilename)
 	{
 		const char* strFilename = StrFindRNChar(fullfilename, PATH_SEPARATOR_CHAR, 1);
 		if (strFilename == nullptr) strFilename = StrFindRNChar(fullfilename, PATH_SEPARATOR_CHAR, 0);
@@ -108,14 +108,18 @@ namespace UPO
 	{
 	public:
 		static const unsigned MAX_LISTENERS = 32;
+		static const unsigned MAX_LOG = 256;
 
 		CriticalSection							mLock;
 		TFP<void, const LogEntry&>				mListeners[MAX_LISTENERS];
 		unsigned								mNumListeners = 0;
 		bool									mWriteToSTDConsole = true;
 		bool									mWroteToFile = false;
-		TCircularQueue<LogEntry, 1024>			mLogs;
-
+		unsigned								mLogWriteIndex = 0;
+		bool									mLogsWasFilled = false;
+		LogEntry								mLogs[MAX_LOG];
+		
+		unsigned GetNumLog() { return (mLogsWasFilled ? MAX_LOG : mLogWriteIndex); }
 
 		LogImpl()
 		{
@@ -134,16 +138,18 @@ namespace UPO
 			if (outFile == nullptr) return;	//failed to create log file
 			
 			//writing logs...
-			while (LogEntry* log = mLogs.BeginPop())
+			for (unsigned iLog = 0; iLog < GetNumLog(); iLog++)
 			{
+				LogEntry* log = mLogs + iLog;
 				char strThread[32];
-				UGetLegibleThreadName(log->mThreadID, strThread);
+				ULogGetLegibleThreadName(log->mThreadID, strThread);
 
 				fprintf(outFile, "<p class=%s> [%s] [%s] [%d] [%s] &nbsp&nbsp&nbsp&nbsp&nbsp %s</p>",
-					UEnumToStr(log->mType), UGetLegibleFileName(log->mFileName), log->mFunctionName, log->mLineNumber, strThread, log->mText);
+					UEnumToStr(log->mType), ULogGetLegibleFileName(log->mFileName), log->mFunctionName, log->mLineNumber, strThread, log->mText);
 
-				mLogs.EndPop();
+				
 			}
+
 
 			fwrite(gLogHTMLEnd, 1, StrLen(gLogHTMLEnd), outFile);
 			fclose(outFile);
@@ -157,9 +163,9 @@ namespace UPO
 				Console::MatchColor(log.mType);
 
 				char strThread[32];
-				UGetLegibleThreadName(log.mThreadID, strThread);
+				ULogGetLegibleThreadName(log.mThreadID, strThread);
 
-				printf("[%s] [%s] [%d] [%s]  %s\n", UGetLegibleFileName(log.mFileName), log.mFunctionName, log.mLineNumber, strThread, log.mText);
+				printf("[%s] [%s] [%d] [%s]  %s\n", ULogGetLegibleFileName(log.mFileName), log.mFunctionName, log.mLineNumber, strThread, log.mText);
 
 			}
 		}
@@ -187,9 +193,11 @@ namespace UPO
 		{
 			mLock.Enter();
 			
-			if (mLogs.IsFull()) mLogs.Pop(LogEntry());
 
-			LogEntry* newEntry = mLogs.Push();
+			LogEntry* newEntry = mLogs + mLogWriteIndex;
+
+			if (mLogWriteIndex >= MAX_LOG) mLogsWasFilled = true;
+			mLogWriteIndex = (mLogWriteIndex + 1) % MAX_LOG;
 
 			newEntry->mType = type;
 			newEntry->mLineNumber = line;
@@ -203,7 +211,7 @@ namespace UPO
 			if (type == ELT_Fatal || type == ELT_Assert)
 			{				
 				WriteLogsToHTMLFile();
-				AppCrash();
+// 				AppCrash();
 			}
 			mLock.Leave();
 		}
@@ -240,5 +248,20 @@ namespace UPO
 	{
 		 return ((LogImpl*)this)->AddListener(function);
 	}
-
+	unsigned Log::GetNumLog()
+	{
+		return ((LogImpl*)this)->GetNumLog();
+	}
+	LogEntry* Log::GetLogs()
+	{
+		return ((LogImpl*)this)->mLogs;
+	}
+	void Log::BeginReadLogs()
+	{
+		((LogImpl*)this)->mLock.Enter();
+	}
+	void Log::EndReadLogs()
+	{
+		((LogImpl*)this)->mLock.Leave();
+	}
 };

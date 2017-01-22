@@ -3,6 +3,7 @@
 
 #include <string>
 #include <sstream>
+#include <stdarg.h>
 
 namespace UPO
 {

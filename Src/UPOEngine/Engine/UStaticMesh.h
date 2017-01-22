@@ -8,6 +8,7 @@ namespace UPO
 	//////////////////////////////////////////////////////////////////////////
 	class EntityStaticMesh;
 	class AStaticMesh;
+	class AMaterial;
 
 	//////////////////////////////////////////////////////////////////////////
 	class UAPI AStaticMeshRS
@@ -15,6 +16,7 @@ namespace UPO
 	public:
 		class GFXVertexBuffer*	mVertexBuffer;
 		class GFXIndexBuffer*	mIndexBuffer;
+		class GFXInputLayout*	mLayout;
 		unsigned				mVertexCount;
 		unsigned				mIndexCount;
 		AABB					mBound;
@@ -34,23 +36,28 @@ namespace UPO
 		friend UPOEd::AssetConverter;
 
 	public:
-		struct VertexType
+		struct VertexTypeFull
 		{
 			Vec3 mPosition;
 			Vec3 mNormal;
 			Vec2 mUV;
 		};
+		struct VertexTypePositionOnly
+		{
+			Vec3	mPosition;
+		};
 
 		typedef unsigned short IndexType;
 
 	private:
-		Buffer				mContent;
-		AStaticMeshRS*		mRS = nullptr;
-		AABB				mBound;
-		bool				mFlipUV = false;
-		bool				mGenerateSmoothNormal = false;
-		TArray<VertexType>	mVertices;
-		TArray<IndexType>	mIndices;
+		Buffer						mContent;
+		AStaticMeshRS*				mRS = nullptr;
+		AABB						mBound;
+		bool						mFlipUV = false;
+		bool						mGenerateSmoothNormal = false;
+		TArray<VertexTypeFull>		mVertices;
+		TArray<IndexType>			mIndices;
+		AMaterial*					mDefaultMaterial = nullptr;
 
 		/*
 		Material*	mMaterial;

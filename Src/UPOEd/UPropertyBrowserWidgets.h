@@ -75,6 +75,8 @@ namespace UPOEd
 		//update widget value from property, called every tick, its better to check whether property value have changed or not instead of 
 		//setting the widget's value every tick
 		virtual void UpdateWidgetValue();
+
+		virtual void ResetToDefault();
 	};
 
 	//////////////////////////////////////////////////////////////////////////
@@ -525,5 +527,29 @@ namespace UPOEd
 
 	private:
 		void SetWidgetsValue(const Transform& trs);
+	};
+
+
+	//////////////////////////////////////////////////////////////////////////
+	class PBObjectProp : public PBBaseProp
+	{
+		QCommandLinkButton* mBtn;
+		bool				mIsTObjectPtr;
+		ObjectPtr			mObjectToAssign;
+		ObjectPtr			mObject;
+	public:
+		
+		PBObjectProp(const PBBaseProp::Param& param, QWidget* parent);
+
+		virtual void UpdatePropertyValue() override;
+		virtual void UpdateWidgetValue() override;
+		
+		virtual void dragEnterEvent(QDragEnterEvent *event) override;
+		virtual void dropEvent(QDropEvent *event) override;
+		virtual void dragMoveEvent(QDragMoveEvent *event) override;
+
+		const ClassInfo* GetObjectClass();
+		Object* GetValueObject();
+		void SetValueObject(Object* obj);
 	};
 };

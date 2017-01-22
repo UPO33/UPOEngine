@@ -91,7 +91,7 @@ namespace UPO
 		class GFXVertexBuffer*		mVertexBuffer;	//vertex buffer to store quad textures
 		class GFXInputLayout*		mLayout;	
 		class GameWindow*			mViewport;
-		TinyLock					mSwapLock;	//lock for doing swap of render and game data
+		CriticalSection				mSwapLock;	//lock for doing swap of render and game data
 		Vec2						mViewportSize;
 
 		GFXInputLayout*				mInputLayoutQuadTexture;

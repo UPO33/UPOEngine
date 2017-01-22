@@ -1,19 +1,16 @@
 #pragma once
 
-#include "../Core/UCore.h"
+#include "../Core/UBasic.h"
+#include "../Core/UArray.h"
 
 namespace UPO
 {
 	//////////////////////////////////////////////////////////////////////////
 	class Object;
-	class Asset;
-	class Entity;
-	class ClassInfo;
-	class PropertyInfo;
-	
+
 
 	//////////////////////////////////////////////////////////////////////////
-	class ObjectArchive
+	class UAPI ObjectArchive
 	{
 	public:
 		static void Save(Object* inObject, Stream* stream)
@@ -22,10 +19,10 @@ namespace UPO
 			objs.Add(inObject);
 			Save(objs, stream);
 		}
-		static Object* Load(Stream* stream)
+		static Object* Load(Stream* stream, Object* additionalRefForAssets = nullptr)
 		{
 			TArray<Object*> objs;
-			Load(objs, stream);
+			Load(objs, stream, additionalRefForAssets);
 			UASSERT(objs.Length() <= 1);
 			if (objs.Length())
 				return objs[0];
@@ -33,6 +30,6 @@ namespace UPO
 				return nullptr;
 		}
 		static void Save(TArray<Object*>& inObjects, Stream* stream);
-		static void Load(TArray<Object*>& outObjects, Stream* stream);
+		static void Load(TArray<Object*>& outObjects, Stream* stream, Object* additionalRefForAssets = nullptr);
 	};
 };

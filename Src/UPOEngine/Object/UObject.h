@@ -4,6 +4,8 @@
 #include "UObjectSys.h"
 #include "UObjectArchive.h"
 
+
+
 #ifdef GetClassInfo
 #undef  GetClassInfo
 #endif
@@ -50,7 +52,5 @@ namespace UPO
 			return nullptr;
 		}
 		bool IsBaseOf(const ClassInfo* baseClass) const;
-		bool IsAsset() const;
-		bool IsEntity() const;
 	};
 };

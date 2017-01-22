@@ -230,15 +230,16 @@ namespace UPO
 
 	void Canvas::Render()
 	{
+		USCOPE_LOCK(mSwapLock);
 		gGFX->SetBlendState(mAlphaBlend);
 		gGFX->SetRasterizerState(mRasterState);
 		gGFX->SetDepthStencilState(mDepthState);
 
-		mSwapLock.Enter();
+		//mSwapLock.Enter();
 		auto textureQuads = GetRTTextureQuads();
 		auto textItems = GetRTTextItems();
 		auto debugTextItems = mRTDebugTextItems;
-		mSwapLock.Leave();
+		//mSwapLock.Leave();
 
 		///////////////////////////draw Texture Quads
 		if (unsigned numQuad = textureQuads->Length())
@@ -287,7 +288,7 @@ namespace UPO
 
 				gGFX->DrawIndexed(6);
 			}
-			textureQuads->RemoveAll();
+			//textureQuads->RemoveAll();
 		}
 
 
@@ -333,6 +334,7 @@ namespace UPO
 	void Canvas::Swap()
 	{
 		USCOPE_LOCK(mSwapLock);
+		mRTTextItems->RemoveAll();
 		UPO::Swap(mGTTextItems, mRTTextItems);
 		UPO::Swap(mGTTextureQuads, mRTTextureQuads);
 

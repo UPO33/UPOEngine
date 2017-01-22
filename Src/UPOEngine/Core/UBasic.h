@@ -383,6 +383,10 @@ namespace UPO
 			AddRaw(type, file, funcName, line, str.c_str());
 		}
 		bool AddListener(TFP<void, const LogEntry&> function);
+		unsigned GetNumLog();
+		LogEntry* GetLogs();
+		void BeginReadLogs();
+		void EndReadLogs();
 	};
 	inline Log* GLog() { return Log::Get(); }
 

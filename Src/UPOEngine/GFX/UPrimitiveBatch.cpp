@@ -1,5 +1,6 @@
 #include "UPrimitiveBatch.h"
 #include "../Engine/UEngineBase.h"
+#include "../Engine/UWorld.h"
 
 namespace UPO
 {
@@ -11,10 +12,16 @@ namespace UPO
 
 	static const unsigned MaxLineInVertexBuffer = 8000;
 
-	PrimitiveBatch::PrimitiveBatch()
+	PrimitiveBatch::PrimitiveBatch(World* owner)
 	{
+		mOwner = owner;
+		mDelta = 0;
+
 		mGTLines = mLines + 0;
 		mRTLines = mLines + 1;
+
+		mRTMeshes = mMeshes + 0;
+		mGTMeshes = mMeshes + 1;
 
 		EnqueueRenderCommandAndWait([this]() {
 			CreateRenderResoures();
@@ -93,24 +100,28 @@ namespace UPO
 
 
 
-	void PrimitiveBatch::Swap()
+	void PrimitiveBatch::Tick(float delta)
 	{
 		USCOPE_LOCK(mSwapLock);
+
+		mDelta = delta;
 
 		UPO::Swap(mGTLines, mRTLines);
 
 		{
-				*mRTMeshes += *mGTMeshes;
-				mGTMeshes->RemoveAll();
+			*mRTMeshes += *mGTMeshes;
+			mGTMeshes->RemoveAll();
 		}
 	}
+
 
 	void PrimitiveBatch::Render()
 	{
 		UASSERT(IsRenderThread());
 		
+
 		LineVertexArray* vertices = GetRTLines();
-		StaticMeshItemArray* meshes = GetRTMeshes();
+		
 
 		unsigned numVertex = vertices->Length();
 		if (numVertex == 0) return;
@@ -156,19 +167,24 @@ namespace UPO
 		gGFX->Draw(numVertex);
 
 
-		///////////////////////// meshes
-		if(meshes->Length())
 		{
-			for (auto& mesh : *meshes)
-			{
-				//draw...
-			}
+			USCOPE_LOCK(mSwapLock);
 
-			float delta = 0;
-			mMeshes->RemoveIf([delta](StaticMeshItem& item) {
-				item.mLifeTime -= delta;
-				return (item.mLifeTime <= 0);
-			});
+			StaticMeshItemArray* meshes = GetRTMeshes();
+			///////////////////////// meshes
+			if (meshes->Length())
+			{
+				for (auto& mesh : *meshes)
+				{
+					//draw...
+				}
+
+				float delta = mDelta;
+				mMeshes->RemoveIf([delta](StaticMeshItem& item) {
+					item.mLifeTime -= delta;
+					return (item.mLifeTime <= 0);
+				});
+			}
 		}
 	}
 

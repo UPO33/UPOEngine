@@ -1,4 +1,4 @@
-#include "DefferdCommon.hlsl"
+#include "DeferredCommon.hlsl"
 
 /*
 cbuffer CBGlobal : register(b0)

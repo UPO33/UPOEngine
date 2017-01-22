@@ -68,4 +68,14 @@ namespace UPO
 		SafeDelete(mGBufferB);
 	}
 
+	ForwardRenderTargets::ForwardRenderTargets(Vec2I size)
+	{
+
+	}
+
+	ForwardRenderTargets::~ForwardRenderTargets()
+	{
+
+	}
+
 };

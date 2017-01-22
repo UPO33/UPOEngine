@@ -8,6 +8,8 @@ namespace UPOEd
 	//////////////////////////////////////////////////////////////////////////
 	class PropertyBrowserWidget : public QWidget
 	{
+		Q_OBJECT
+
 		TObjectPtr<Object> mObject = nullptr;
 
 		QLineEdit*		mFilter;
@@ -21,7 +23,6 @@ namespace UPOEd
 		QTreeWidget* GetTree() const { return mTree; }
 		//////////////////////////////////////////////////////////////////////////
 		PBBaseProp* AddTreeItem(const PropertyInfo* prp, void* instance, QTreeWidgetItem* parentItem, int arrayIndex = -1);
-		PBBaseProp* CreateProperty(PBBaseProp* parent);
 		//////////////////////////////////////////////////////////////////////////
 		void AttachObject(Object* object);
 		//////////////////////////////////////////////////////////////////////////
@@ -32,12 +33,19 @@ namespace UPOEd
 		void TickTreeItem(QTreeWidgetItem* item);
 		//////////////////////////////////////////////////////////////////////////
 		void ReFillTree();
+
+// 		virtual void mousePressEvent(QMouseEvent *event) override;
+// 
+// 		virtual void mouseReleaseEvent(QMouseEvent *event) override;
+
 	};
 
 
 	//////////////////////////////////////////////////////////////////////////
 	class PropertyBrowserDW : public QDockWidget
 	{
+		
+
 		PropertyBrowserWidget* mWidget;
 
 	public:

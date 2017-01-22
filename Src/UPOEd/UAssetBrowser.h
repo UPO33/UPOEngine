@@ -20,6 +20,7 @@ namespace UPOEd
 	//////////////////////////////////////////////////////////////////////////
 	class AssetBrowserItem : public QTreeWidgetItem
 	{
+		
 	public:
 // 		Name mAssetName;	//myassets/myAsset.asset
 // 		bool mIsFolder;
@@ -52,6 +53,8 @@ namespace UPOEd
 	//////////////////////////////////////////////////////////////////////////
 	class AssetBrowserWidget : public QWidget
 	{
+		Q_OBJECT
+
 		Ui_AssetBrowser* ui;
 		QList<QAction*> mAssetCreationActions;
 		QAction* mActionSaveAll = nullptr;
@@ -91,6 +94,7 @@ namespace UPOEd
 		bool CreateDefaulAssetFile(ClassInfo* assetClass, AssetBrowserItem* folder);
 		bool RenameAsset(AssetBrowserItem* item);
 
+		QTreeWidget* GetAssetsTreeWidget();
 	};
 
 	//////////////////////////////////////////////////////////////////////////
@@ -131,6 +135,7 @@ namespace UPOEd
 	//////////////////////////////////////////////////////////////////////////
 	class AssetBrowserDW : public QDockWidget
 	{
+		
 	public:
 		
 
