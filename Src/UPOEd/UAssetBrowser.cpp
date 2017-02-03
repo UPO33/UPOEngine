@@ -16,7 +16,7 @@ namespace UPOEd
 			if (type && type->IsClass())
 			{
 				ClassInfo* ci = (ClassInfo*)type;
-				if (ci->IsBaseOf<Asset>() && !ci->IsAbstract() && ci->HasAttrib(EAtrribID::EAT_Instanceable))
+				if (ci->IsBaseOf<Asset>() && !ci->IsAbstract() && ci->HasAttrib(EAttribID::EAT_Instanceable))
 				{
 					out.Add(ci);
 				}

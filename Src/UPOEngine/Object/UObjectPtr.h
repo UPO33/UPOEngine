@@ -18,25 +18,12 @@ namespace UPO
 				size_t	mRefCount;
 				Object*	mObject;
 			};
-			ObjectRefData* mNextFree;
 		};
 		void Inc()
 		{
 			mRefCount++;
 		}
-		void Dec()
-		{
-			mRefCount--;
-			if (mRefCount == 0)
-			{
-				if (this == &NullRef) return;
-
-				if (mObject == nullptr)
-				{
-					Free(this);
-				}
-			}
-		}
+		void Dec();
 
 		static ObjectRefData NullRef;
 		static ObjectRefData* GetNew();
@@ -122,8 +109,14 @@ namespace UPO
 		bool operator == (const Object* obj) const { return ((Object*)mRefData->mObject) == obj; }
 		bool operator != (const Object* obj) const { return ((Object*)mRefData->mObject) != obj; }
 
-		bool operator == (const TObjectPtr& objptr) const { return mRefData == objptr->mRefData; }
-		bool operator != (const TObjectPtr& objptr) const { return mRefData != objptr->mRefData; }
+		bool operator == (const TObjectPtr& objptr) const
+		{
+			return mRefData == objptr.mRefData;
+		}
+		bool operator != (const TObjectPtr& objptr) const
+		{
+			return mRefData != objptr.mRefData;
+		}
 	};
 
 	typedef TObjectPtr<Object> ObjectPtr;

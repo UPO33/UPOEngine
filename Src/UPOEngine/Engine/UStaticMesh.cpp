@@ -13,6 +13,7 @@ namespace UPO
 		UPROPERTY(mContent, UATTR_Hidden())
 		UPROPERTY(mFlipUV)
 		UPROPERTY(mGenerateSmoothNormal)
+		UPROPERTY(mDefaultMaterial)
 	UCLASS_END_IMPL(AStaticMesh)
 
 
@@ -49,7 +50,8 @@ namespace UPO
 		unsigned numVertex = mesh->mNumVertices;
 		unsigned numIndex = mesh->mNumFaces * 3;
 
-		ULOG_MESSAGE("numMesh % numVertex % numIndex %", scene->mNumMeshes, numVertex, numIndex);
+		ULOG_WARN("numMesh % numVertex % numIndex %", scene->mNumMeshes, numVertex, numIndex);
+		ULOG_WARN("%", scene->mNumMaterials);
 
 		VertexTypeFull* meshVertices = new VertexTypeFull[numVertex];
 		IndexType* meshIndices = new IndexType[numIndex];

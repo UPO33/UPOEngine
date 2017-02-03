@@ -22,8 +22,10 @@ namespace UPO
 
 		const TArray<ShaderMacroDefinition>& GetGlobalDefinitions() { return mGlobalDefinitions; }
 
+		//DEPRECATED
 		virtual bool GetShaderCode(const ShaderUniqueParam& param, Buffer& outShaderCode) = 0;
 
+		virtual bool GetShaderCode(Name filename, Name entrypoint, EShaderType type, const TArray<ShaderMacroDefinition>&, Buffer& outShaderCode) = 0;
 		
 	};
 };

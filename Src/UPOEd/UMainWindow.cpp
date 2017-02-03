@@ -19,6 +19,8 @@ namespace UPOEd
 		UPROPERTY(mIntNoEdit, UATTR_Uneditable(), UATTR_Comment("this cant be edited"))
 		UPROPERTY(mFloat01, UATTR_Range(0,1))
 		UPROPERTY(mTArrayMS)
+		UPROPERTY(mTestObj, UATTR_ShowProperties())
+		UPROPERTY(mMetaClass.mVec2)
 	UCLASS_END_IMPL(TestObject)
 
 	UCLASS_BEGIN_IMPL(StructStr)
@@ -31,6 +33,13 @@ namespace UPOEd
 		mTArrayMS.AddDefault();
 // 		mTArrayMS[0].mStr = 10;
 // 		mTArrayMS[1].mStr = 20;
+		static bool Initilized = false;
+		mTestObj = nullptr;
+		if (!Initilized)
+		{
+			Initilized = true;
+			mTestObj = NewObject<TestObject>();
+		}
 	}
 
 	TestObject::~TestObject()
@@ -38,9 +47,9 @@ namespace UPOEd
 
 	}
 	
-	void TestObject::MetaPropertyChanged(const PropertyInfo* prp)
+	void TestObject::MetaAfterPropertyChange(const PropertyInfo* prp)
 	{
-		ULOG_MESSAGE("%", prp->GetName());
+		ULOG_MESSAGE("% prp changed", prp->GetName());
 	}
 
 	void TestObject::Tick()
@@ -270,8 +279,7 @@ namespace UPOEd
 		setCentralWidget(mMainViewport);
 		GameWindowCreationParam gwcp;
 		gwcp.mVSyncEnable = false;
-		mMainViewport->InitAndReg(gwcp);
-		mMainViewport->mOptions.mRenderGrid = true;
+		mMainViewport->GetViewport()->InitAndReg(gwcp);
 
 		mTestObject = NewObject<TestObject>();
 		
@@ -331,7 +339,7 @@ namespace UPOEd
 	{
 		if (mMainViewport)
 		{
-			mMainViewport->ReleaseAndUnreg();
+			mMainViewport->GetViewport()->ReleaseAndUnreg();
 			delete mMainViewport;
 			mMainViewport = nullptr;
 		}

@@ -24,9 +24,18 @@ namespace UPO
 		if (owner->mFreeCamera)
 		{
 			mFreeCamera = new (MemNew<EntityCameraRS>()) EntityCameraRS();
+			owner->mFreeCamera->mRS = mFreeCamera;
 			mFreeCamera->mGS = owner->mFreeCamera;
 			mFreeCamera->mOwner = this;
 			mFreeCamera->Fetch();
+		}
+
+		//fetching times
+		{
+			mDeltaTime = mGS->mDeltaTime;
+			mDeltaTimeReal = mGS->mDeltaTimeReal;
+			mSecondsSincePlay = mGS->mSecondsSincePlay;
+			mSecondsSincePlayReal = mGS->mSecondsSincePlayReal;
 		}
 	}
 
@@ -184,6 +193,14 @@ namespace UPO
 		{
 			mIsFetching = true;
 
+			//fetching times
+			{
+				mDeltaTime = mGS->mDeltaTime;
+				mDeltaTimeReal = mGS->mDeltaTimeReal;
+				mSecondsSincePlay = mGS->mSecondsSincePlay;
+				mSecondsSincePlayReal = mGS->mSecondsSincePlayReal;
+			}
+
 			//swaping
 			{
 				auto tmp0 = mGS->mEntitiesPendingAddToRS;
@@ -238,7 +255,10 @@ namespace UPO
 
 		void WorldRS::RemoveRS(Entity* ent)
 		{
+			ULOG_MESSAGE("removing RS %", ent->GetName());
+
 			ent->GetRS()->~EntityRS();
+			
 		}
 
 		void WorldRS::AddRS(Entity* from)

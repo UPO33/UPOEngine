@@ -81,8 +81,8 @@ namespace UPO
 		const Name& GetTypeName() const { return mTypeName; }
 		unsigned GetOffset() const { return mOffset; }
 		const AttribPack& GetAttributes() const { return mAttributes; }
-		bool HasAttrib(EAtrribID id) const { return mAttributes.HasAttrib(id); }
-		bool GetAttrib(EAtrribID id, Attrib& out) const { return mAttributes.GetAttrib(id, out); }
+		bool HasAttrib(EAttribID id) const { return mAttributes.HasAttrib(id); }
+		bool GetAttrib(EAttribID id, Attrib& out) const { return mAttributes.GetAttrib(id, out); }
 		ClassInfo* GetOwner() const { return mOwner; }
 
 		size_t GetTypeSize() const;
@@ -191,12 +191,12 @@ namespace UPO
 		ClassInfo* GetRoot() const;
 		//Get all inherited classes from root
 		//e.g Object -> Entity -> Component -> 
-		void GetInheritedClasses(TArray<ClassInfo*>& outClasses) const;
+		void GetInheritedClasses(TArray<ClassInfo*>& outClasses, bool includingThis = false) const;
 
 		//Get all inherited classes from/toward root
 		//e.g Object -> Entity -> Component -> ... 
-		//@includingThis : add this class to list too
-		void GetClassChain(SClassChain& out, bool reverse = false, bool includingThis = true) const;
+		//@includingThis : add this class to list too 
+		void GetClassChain(SClassChain& out, bool towardRoot = false, bool includingThis = true) const;
 
 		void GetInvolvedClasses(TArray<ClassInfo*>& outClasses, bool subProperties, bool inheritedProperties, bool removeArrayFirst = true) const;
 

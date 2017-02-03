@@ -33,9 +33,14 @@ shading quality by invoking the pixel shader more frequently.
 
 struct PerFrameData
 {
-    float4 mSunDir;
-    float4 mSunColor;
-    float4 mRandomColor;
+    float4  mSunDir;
+    float4  mSunColor;
+    float4  mRandomColor;
+    uint2   mGBufferTextureSize;
+    float   mDeltaTime;
+    float   mDeltaTimeReal;
+    float   mSecondsSincePlay;
+    float   mSecondsSincePlayReal;
 };
 
 struct PerCameraData
@@ -46,10 +51,29 @@ struct PerCameraData
     matrix mInvView;
     matrix mWorldToCilp;
     matrix mClipToWorld;
-    float3 mWorldPosition;
-    float padding0;
+    float2 mViewportSize;
+    float2 mInvViewportSize;
+    float2 mNearFarClip;
 };
 
+struct PerObjectData
+{
+    matrix mWorldMatrix;
+};
+
+float3 GetCameraWorldPos(in PerCameraData data)
+{
+    return data.mInvView[3].xyz;
+}
+
+float GetLinearDepth(in float depth, in matrix projection)
+{
+#ifdef COLUMN_MAJOR_MATRIX
+    return projection._43 / (depth - projection._33);
+#else
+    return projection._34 / (depth - projection._33);
+#endif
+}
 
 
 float4 UV2NDC(float2 uv)

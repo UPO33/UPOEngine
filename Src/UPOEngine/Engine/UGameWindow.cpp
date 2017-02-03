@@ -6,10 +6,11 @@
 #include "UInput.h"
 
 #include "../GFX/UPrimitiveBatch.h"
-#include "../GFX/USelectionBuffer.h"
+#include "../Engine/UHitSelection.h"
 
 #include "../GFXCore/UGFXCore.h"
 
+#include "../Meta/UMeta.h"
 
 #ifdef UPLATFORM_WIN
 #include "UGameWindow_Win.h"
@@ -19,6 +20,19 @@
 
 namespace UPO
 {
+	UCLASS_BEGIN_IMPL(GameWindowOptions)
+		UPROPERTY(mRealTime)
+		UPROPERTY(mRenderStaticMeshes)
+		UPROPERTY(mRenderPrimitiveBatch)
+		UPROPERTY(mRenderCanvas)
+		UPROPERTY(mShowFPS)
+		UPROPERTY(mRenderGrid)
+		UPROPERTY(mShowBounds)
+		UPROPERTY(mVisualizeGBuffer)
+		UPROPERTY(mEditorCameraSpeed, UATTR_Range(1, EditorCameraMaxSpeed))
+		UPROPERTY(mEditorCameraFOV, UATTR_Range(EditorCameraMinFOV, EditorCameraMaxFOV))
+	UCLASS_END_IMPL(GameWindowOptions)
+
 
 	TArray<GameWindow*> GameWindow::Instances;
 
@@ -42,7 +56,7 @@ namespace UPO
 		CreateSwapChain();
 		if (mCreationParam.mCreateCanvas) CreateCanvas();
 
-		mSelectionBuffer = new SelectionBuffer(GetWinSize());
+		mHitSelection = new HitSelectionCanvas(GetWinSize());
 		mInputState = new InputState;
 
 		EnqueueRenderCommandAndWait([this]() {
@@ -59,7 +73,7 @@ namespace UPO
 		ULOG_MESSAGE("");
 		if (!mRegistered) return true;
 
-		SafeDelete(mSelectionBuffer);
+		SafeDelete(mHitSelection);
 		SafeDelete(mInputState);
 
 		if (mCanvas) DestroyCanvas();

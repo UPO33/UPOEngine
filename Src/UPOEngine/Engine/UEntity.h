@@ -30,28 +30,17 @@ namespace UPO
 		EEF_RenderDataMiscDirty = 1 << 9,
 
 
-		EEF_CastShadow = 1 << 10,
-		EEF_RecieveShadow = 1 << 11,
-		EEF_Visible = 1 << 12,
-		EEF_MainPassEnable = 1 << 13,
-		EEF_CustomDepthEnable = 1 << 14,
-		EEF_Static = 1 << 15,
-		EEF_RenderDataValid = 1 << 16,
-
 // 		EEF_Tick0Enable,
 // 		EEF_Tick1Enable,
 // 		EEF_Tick2Enable,
-		EEF_Default = EEF_Alive | EEF_Initilized | EEF_Visible | EEF_MainPassEnable | EEF_CastShadow | EEF_RecieveShadow
+		EEF_Default = EEF_Alive | EEF_Initilized
 	};
 	enum EEndPlayReason
 	{
 		EPR_EndPlay,
 		EPR_Destroy,
 	};
-	enum ERendeDirty
-	{
-		ERD_Transform,
-	};
+
 	//////////////////////////////////////////////////////////////////////////
 	class UAPI alignas(16) Entity : public Object
 	{
@@ -79,13 +68,12 @@ namespace UPO
 
 		Name		mName;
 		
-		unsigned	mIndexInWorld;
-		unsigned	mTickRegistered : 1;
-		unsigned	mTickPendingAdd : 1;
-		unsigned	mIsWorldTransformInvDirty : 1;
+		size_t		mIndexInWorld;
+		size_t		mTickRegistered : 1;
+		size_t		mTickPendingAdd : 1;
+		size_t		mIsWorldTransformInvDirty : 1;
+		size_t		mIsSelected : 1;
 
-		unsigned	mRenderDirtyFlag;
-		bool		mStatic;
 
 		Matrix4		mLocalTransform;
 		Matrix4		mWorldTransform;
@@ -126,6 +114,13 @@ namespace UPO
 		const Matrix4& GetWorldTransform() const { return mWorldTransform; }
 		const Matrix4& GetLocalTransform() const { return mLocalTransform; }
 		const Matrix4& GetInvWorldTransform();
+
+		Vec3 GetWorldPosition() const;
+		Vec3 GetLocalPosition() const;
+		Vec3 GetForward() const;
+		Vec3 GetRight() const;
+		Vec3 GetUp() const;
+
 		const AABB& GetBound() const;
 
 		void SetLocalTransform(const Transform&);
@@ -142,7 +137,7 @@ namespace UPO
 		bool IsReadyToDie() const
 		{
 			UASSERT(!FlagTest(EEF_Alive));
-			return (!mTickPendingAdd && !mTickRegistered);
+			return (!mTickPendingAdd && !mTickRegistered && mRS == nullptr);
 		}
 
 		void FlagSet(unsigned flag)
@@ -169,6 +164,9 @@ namespace UPO
 		virtual void OnDestroy() {};
 
 		
+		//////////////////////////////////////////////////////////////////////////
+		virtual void SetSelected(bool selectet);
+
 		virtual void OnRegisterToWorld() {};
 
 		virtual void RegisterToWorld(World* world);
@@ -224,7 +222,20 @@ namespace UPO
 		}
 	};
 
+	//////////////////////////////////////////////////////////////////////////
+	enum EEntityRSFlag
+	{
+		ERS_Default = 0,
 
+		ERS_CastShadow = 1,
+		ERS_RecieveShadow = 1 << 1,
+		ERS_Visible = 1 << 2,
+		ERS_MainPassEnable = 1 << 3,
+		ERS_CustomDepthEnable = 1 << 4,
+		ERS_Static = 1 << 5,
+		ERS_RenderDataValid = 1 << 6,
+		ERS_Selected = 1 << 7,
+	};
 	//////////////////////////////////////////////////////////////////////////
 	class UAPI EntityRS
 	{
@@ -233,9 +244,17 @@ namespace UPO
 		WorldRS*	mOwner;
 		Flag		mRSFlag;
 		unsigned	mPrivateIndex;
-
-
-
+		
+		EntityRS()
+		{}
+		EntityRS(InitZero) : mGS(nullptr), mOwner(nullptr), mRSFlag(0), mPrivateIndex(0)
+		{}
+		EntityRS(Entity* gs, WorldRS* wrs, EEntityRSFlag flag = ERS_Default) : mGS(gs), mOwner(wrs), mRSFlag(ERS_Default), mPrivateIndex(0)
+		{}
+		virtual ~EntityRS()
+		{
+			mGS->mRS = nullptr;
+		}
 		virtual void OnFetch(unsigned flag){}
 	};
 };

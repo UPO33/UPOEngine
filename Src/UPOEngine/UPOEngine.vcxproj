@@ -34,6 +34,7 @@
     <ClInclude Include="Core\UHash.h" />
     <ClInclude Include="Core\UConfig.h" />
     <ClInclude Include="Core\UInstruction.h" />
+    <ClInclude Include="Core\ULargeInteger.h" />
     <ClInclude Include="Core\ULambtion.h" />
     <ClInclude Include="Core\ULog.h" />
     <ClInclude Include="Core\UMap.h" />
@@ -64,6 +65,7 @@
     <ClInclude Include="Engine\UEngineBase.h" />
     <ClInclude Include="Engine\UEntity.h" />
     <ClInclude Include="Engine\UEntityCamera.h" />
+    <ClInclude Include="Engine\UEntityFreeCamera.h" />
     <ClInclude Include="Engine\UEntityGFX.h" />
     <ClInclude Include="Engine\UEntityPrimitive.h" />
     <ClInclude Include="Engine\UEntityStaticMesh.h" />
@@ -72,6 +74,7 @@
     <ClInclude Include="Engine\UGameInstance.h" />
     <ClInclude Include="Engine\UGameWindow.h" />
     <ClInclude Include="Engine\UGameWindow_Win.h" />
+    <ClInclude Include="Engine\UHitSelection.h" />
     <ClInclude Include="Engine\UMaterial.h" />
     <ClInclude Include="Engine\UPhysMaterial.h" />
     <ClInclude Include="Engine\UStaticMesh.h" />
@@ -128,6 +131,7 @@
     <ClCompile Include="Core\UBound.cpp" />
     <ClCompile Include="Core\UCommandQueue.cpp" />
     <ClCompile Include="Core\UFrustum.cpp" />
+    <ClCompile Include="Core\ULargeInteger.cpp" />
     <ClCompile Include="Core\UPlane.cpp" />
     <ClCompile Include="Core\UArray.cpp" />
     <ClCompile Include="Core\UBasic.cpp" />
@@ -158,6 +162,7 @@
     <ClCompile Include="Engine\UEngineBase.cpp" />
     <ClCompile Include="Engine\UEntity.cpp" />
     <ClCompile Include="Engine\UEntityCamera.cpp" />
+    <ClCompile Include="Engine\UEntityFreeCamera.cpp" />
     <ClCompile Include="Engine\UEntityGFX.cpp" />
     <ClCompile Include="Engine\UEntityPrimitive.cpp" />
     <ClCompile Include="Engine\UEntityStaticMesh.cpp" />
@@ -166,6 +171,7 @@
     <ClCompile Include="Engine\UGameInstance.cpp" />
     <ClCompile Include="Engine\UGameWindow.cpp" />
     <ClCompile Include="Engine\UGameWindow_Win.cpp" />
+    <ClCompile Include="Engine\UHitSelection.cpp" />
     <ClCompile Include="Engine\UMaterial.cpp" />
     <ClCompile Include="Engine\UPhysMaterial.cpp" />
     <ClCompile Include="Engine\UStaticMesh.cpp" />

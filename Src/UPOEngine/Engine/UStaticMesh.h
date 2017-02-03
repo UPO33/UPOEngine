@@ -1,6 +1,7 @@
 #pragma once
 
 #include "UAsset.h"
+#include "UMaterial.h"
 #include "../Core/UBound.h"
 
 namespace UPO
@@ -69,7 +70,8 @@ namespace UPO
 
 	public:
 		AStaticMeshRS* GetRS() const { return mRS; }
-
+		AMaterial* GetDefaultMaterial() const { return mDefaultMaterial; }
+		const AABB& GetBound() { return mBound; }
 
 		void MetaBeforePropertyChange(const PropertyInfo* prp);
 		void MetaAfterPropertyChange(const PropertyInfo* prp);

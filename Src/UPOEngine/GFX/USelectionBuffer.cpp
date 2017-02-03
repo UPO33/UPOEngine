@@ -39,12 +39,12 @@ namespace UPO
 
 	void SelectionBuffer::Catch()
 	{
-		gGFX->CopySubresourceRegion(mIDOut, 0, 0, 0, mIDBuffer, 0, mCursorPosition.mX, 1, mCursorPosition.mY, 1);
-		unsigned bytesPerRow = 0;
-		void* data = gGFX->Map(mIDOut, EMapFlag::ERead, 0, bytesPerRow);
-		gGFX->Unmap(mIDOut, 0);
-		unsigned theID = *((unsigned*)data);
-		ULOG_MESSAGE("%  %", bytesPerRow, theID);
+// 		gGFX->CopySubresourceRegion(mIDOut, 0, 0, 0, mIDBuffer, 0, mCursorPosition.mX, 1, mCursorPosition.mY, 1);
+// 		unsigned bytesPerRow = 0;
+// 		void* data = gGFX->Map(mIDOut, EMapFlag::ERead, 0, bytesPerRow);
+// 		gGFX->Unmap(mIDOut, 0);
+// 		unsigned theID = *((unsigned*)data);
+// 		ULOG_MESSAGE("%  %", bytesPerRow, theID);
 	}
 
 	void SelectionBuffer::SetCurdorPosition(Vec2I position)

@@ -551,17 +551,17 @@ namespace UPO
 
 		switch (whichShder)
 		{
-		case UPO::EShaderType::EVertex: mImmediateContext->VSGetShaderResources(startSlot, numViews, dxViews);
+		case UPO::EShaderType::EVertex: mImmediateContext->VSSetShaderResources(startSlot, numViews, dxViews);
 			break;
-		case UPO::EShaderType::EHull: mImmediateContext->HSGetShaderResources(startSlot, numViews, dxViews);
+		case UPO::EShaderType::EHull: mImmediateContext->HSSetShaderResources(startSlot, numViews, dxViews);
 			break;
-		case UPO::EShaderType::EDomain: mImmediateContext->DSGetShaderResources(startSlot, numViews, dxViews);
+		case UPO::EShaderType::EDomain: mImmediateContext->DSSetShaderResources(startSlot, numViews, dxViews);
 			break;
-		case UPO::EShaderType::EGeometry: mImmediateContext->GSGetShaderResources(startSlot, numViews, dxViews);
+		case UPO::EShaderType::EGeometry: mImmediateContext->GSSetShaderResources(startSlot, numViews, dxViews);
 			break;
-		case UPO::EShaderType::EPixel: mImmediateContext->PSGetShaderResources(startSlot, numViews, dxViews);
+		case UPO::EShaderType::EPixel: mImmediateContext->PSSetShaderResources(startSlot, numViews, dxViews);
 			break;
-		case UPO::EShaderType::ECompute: mImmediateContext->CSGetShaderResources(startSlot, numViews, dxViews);
+		case UPO::EShaderType::ECompute: mImmediateContext->CSSetShaderResources(startSlot, numViews, dxViews);
 			break;
 		}
 	}
@@ -1376,7 +1376,7 @@ namespace UPO
 		mImmediateContext->CopyResource(dstDX, srcDX);
 	}
 	//////////////////////////////////////////////////////////////////////////
-	void GFXDeviceDX::CopySubresourceRegion(GFXTexture2D* dst, unsigned dstMipIndex, unsigned dstX, unsigned dstY, GFXTexture2D* src, unsigned srcMipIndex, unsigned srcX, unsigned srcW, unsigned srcY, unsigned srcH)
+	void GFXDeviceDX::CopySubresourceRegion(GFXTexture2D* dst, unsigned dstMipIndex, Vec2I dstXY, GFXTexture2D* src, unsigned srcMipIndex, Vec2I srcLeftTop, Vec2I srcRightBottom)
 	{
 		UASSERT(dst && src && dst != src);
 
@@ -1385,9 +1385,9 @@ namespace UPO
 
 		UASSERT(dstDX && srcDX && dstDX != srcDX);
 
-		D3D11_BOX dxBox = { srcX, srcY, 0, srcX + srcW, srcY + srcH, 1 };
+		D3D11_BOX dxBox = { srcLeftTop.mX, srcLeftTop.mY, 0, srcRightBottom.mX, srcRightBottom.mY, 1 };
 
-		mImmediateContext->CopySubresourceRegion(dstDX, dstMipIndex, dstX, dstY, 0, srcDX, srcMipIndex, &dxBox);
+		mImmediateContext->CopySubresourceRegion(dstDX, dstMipIndex, dstXY.mX, dstXY.mY, 0, srcDX, srcMipIndex, &dxBox);
 	}
 	//////////////////////////////////////////////////////////////////////////
 	bool GFXSwapChainDX::Resize(const Vec2I& newSize)

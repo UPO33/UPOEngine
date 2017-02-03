@@ -63,6 +63,7 @@ namespace UPO
 			else
 			{
 				mHasError = true;
+				UASSERT(!mHasError);
 			}
 		}
 		
@@ -91,6 +92,7 @@ namespace UPO
 			size_t nRead = mFile.ReadBytes(bytes, length);
 			mPos += nRead;
 			mHasError = nRead != length;
+			UASSERT(!mHasError);
 		}
 		
 		return *this;
@@ -115,6 +117,7 @@ namespace UPO
 			size_t nWrite = mFile.WriteBytes(bytes, length);
 			mPos += nWrite;
 			mHasError = nWrite != length;
+			UASSERT(!mHasError);
 		}
 		return *this;
 	}

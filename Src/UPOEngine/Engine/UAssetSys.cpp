@@ -471,7 +471,7 @@ namespace UPO
 	{
 		///////////////////cheeking release
 		{
-			static const unsigned NUM_RELEASECHECK = 32;
+			static const unsigned NUM_RELEASECHECK = 8;
 
 			unsigned i = mReleaseCheckIndex;
 			unsigned num = mReleaseCheckIndex + NUM_RELEASECHECK;
@@ -481,11 +481,12 @@ namespace UPO
 				if (mLoadedAssets.IsIndexValid(i))
 				{
 					Asset* asset = mLoadedAssets[i];
-					if (asset->FlagTestAndClear(EAF_Alive) && asset->NeedsRelease())
+					if (asset->IsAlive() && asset->NeedsRelease())
 					{
 						mTickSinceLastKill = 0;
 						mPendingKillAssets.Add(asset);
 						ULOG_MESSAGE("destroying asset [%]", asset->GetName());
+						asset->FlagClear(EAF_Alive);
 						asset->OnDestroy();
 					}
 				}
@@ -595,22 +596,34 @@ namespace UPO
 		{
 			ULOG_MESSAGE("start loading asset [%] ...", mAssetName);
 
-			Object* assetObject = ObjectArchive::Load(OpenStreamForLoading());
-			CloseStream();
-			if (assetObject)
-			{
-				Asset* asset = assetObject->Cast<Asset>();
-				UASSERT(asset);
-				
-				asset->AddRef(ref);
-				asset->mEntry = this;
-				asset->mPrivateIndex = GAssetSys()->mLoadedAssets.Add(asset);
+			TArray<Object*> loadedObjects;
+			ObjectArchive::Load(loadedObjects, OpenStreamForLoading());
 
-				mInstance = asset;
+			CloseStream();
+
+			Asset* loadedAsset = nullptr;
+			for (Object* obj : loadedObjects)
+			{
+				if (obj && obj->Cast<Asset>())
+				{
+					
+
+					UASSERT(loadedAsset == nullptr);
+					loadedAsset = obj->Cast<Asset>();
+				}
+			}
+
+			if (loadedAsset)
+			{
+				loadedAsset->AddRef(ref);
+				loadedAsset->mEntry = this;
+				loadedAsset->mPrivateIndex = GAssetSys()->mLoadedAssets.Add(loadedAsset);
+
+				mInstance = loadedAsset;
 			
 				ULOG_SUCCESS("asset [%] loaded", GetName());
 
-				asset->OnCreate();
+				loadedAsset->OnCreate();
 
 				
 				return true;

@@ -7,6 +7,7 @@
 #include "../Engine/UWorldRS.h"
 #include "../Engine/UWorld.h"
 #include "../Engine/UCanvas.h"
+#include "../Engine/UMaterial.h"
 
 #include "UDefferdRenderTargets.h"
 
@@ -17,7 +18,6 @@ namespace UPO
 	class WorldRS;
 
 
-
 	//////////////////////////////////////////////////////////////////////////
 	class GridDraw;
 
@@ -25,12 +25,13 @@ namespace UPO
 	class UAPI Renderer
 	{
 	public:
-		GameWindow* mGameWnd;
-		GFXSwapChain* mSwapChain;
-		WorldRS*	mWorldRS;
-		Canvas* mCanvas;
-		PrimitiveBatch* mPrimitiveBatch;
-		DefferdRenderTargets* mRenderTargets = nullptr;
+		GameWindow*				mGameWnd;
+		GFXSwapChain*			mSwapChain;
+		WorldRS*				mWorldRS;
+		Canvas*					mCanvas;
+		PrimitiveBatch*			mPrimitiveBatch;
+		HitSelectionCanvas*		mHitSelection;
+		DefferdRenderTargets*	mRenderTargets;
 		
 		Vec2 mViewportSize;
 		
@@ -42,12 +43,22 @@ namespace UPO
 		GFXConstantBuffer*		mCBPerFrame;
 		GFXConstantBuffer*		mCBPerCamera;
 		GFXConstantBuffer*		mCBPerStaticMesh;
+		GFXConstantBuffer*		mCBHitSelection;
+
 		int						mCurRenderingCameraIndex = -1;
 
 		GridDraw*		mGridDraw = nullptr;
 
-		GFXInputLayout*		mILStaticMeshVertexTypeFull;
-		
+		GFXInputLayout*				mILStaticMeshVertexTypeFull;
+		GFXDepthStencilState*		mMainPassDepthEnableState;
+		GFXRasterizerState*			mMainPassRasterState;
+		GFXRasterizerState*			mMainPassRasterStateWire;
+		GFXRasterizerState*			mMainPassRasterStateTwoSide;
+		GFXRasterizerState*			mMainPassRasterStateWireTwoSide;
+
+		GFXRasterizerState*			mLUTMaterialMainPassRSState[EMaterialFlag::EMF_Max];
+		ShaderConstantsCombined		mSCStaticMeshMainPass;
+
 		Renderer();
 		~Renderer();
 
@@ -59,12 +70,27 @@ namespace UPO
 		void CheckRenderTargetResizing();
 
 		void RenderStaticMeshes();
+		void RenderStaticMesh(EntityStaticMeshRS*);
 
 		GFXDepthStencilState* GetRasterizerForStaticMeshSolid();
 
-		void UpdatePerFrameBuffer();
+		void UpdatePerFrameCBuffer();
 		void UpdatePerCameraCBuffer(EntityCameraRS*);
 	};
+
+	namespace ShaderConstants
+	{
+		extern UAPI ShaderConstant	PIXEL_SHADER;
+		extern UAPI ShaderConstant	VERTEX_SHADER;
+		extern UAPI ShaderConstant	HULL_SHADER;
+		extern UAPI ShaderConstant	DOMAIN_SHADER;
+		extern UAPI ShaderConstant	GEOMERTY_SHADER;
+		extern UAPI ShaderConstant	COMPUTE_SHADER;
+		extern UAPI ShaderConstant	STATIC_MESH;
+		extern UAPI ShaderConstant	USE_HITSELECTION;
+		extern UAPI ShaderConstant	VISALIZE_GBUFFER;
+	};
+
 
 
 	//////////////////////////////////////////////////////////////////////////

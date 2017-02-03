@@ -14,6 +14,63 @@ namespace UPO
 	struct Color;
 	struct Color32;
 
+	template <typename T> struct TVec2
+	{
+		typedef T Type;
+
+		T mX, mY;
+
+		inline TVec2() {}
+		explicit inline TVec2(T xy) { mX = mY = xy; }
+		inline TVec2(T x, T y) { mX = x; mY = y; }
+		inline TVec2(const TVec2& v) { mX = v.mX; mY = v.mY; }
+
+		inline T& operator [] (size_t i) { return ((T*)this)[i]; }
+		inline const T& operator [] (size_t i) const { return ((T*)this)[i]; }
+
+		inline TVec2& operator = (T xy) { mX = mY = xy;  return *this; }
+		inline TVec2& operator = (const T& c) { mX = c.mX;	mY = c.mY;   return *this; }
+
+		inline TVec2 operator + (const TVec2& v) const { return TVec2(mX + v.mX, mY + v.mY); }
+		inline TVec2 operator - (const TVec2& v) const { return TVec2(mX - v.mX, mY - v.mY); }
+		inline TVec2 operator * (const TVec2& v) const { return TVec2(mX * v.mX, mY * v.mY); }
+		inline TVec2 operator / (const TVec2& v) const { return TVec2(mX / v.mX, mY / v.mY); }
+
+		inline TVec2 operator + (T n) const { return TVec2(mX + n, mY + n); }
+		inline TVec2 operator - (T n) const { return TVec2(mX - n, mY - n); }
+		inline TVec2 operator * (T n) const { return TVec2(mX * n, mY * n); }
+		inline TVec2 operator / (T n) const { return TVec2(mX / n, mY / n); }
+
+
+		inline TVec2& operator += (const TVec2& v) { mX += v.mX;	mY += v.mY;		return *this; }
+		inline TVec2& operator -= (const TVec2& v) { mX -= v.mX;	mY -= v.mY;		return *this; }
+		inline TVec2& operator *= (const TVec2& v) { mX *= v.mX;	mY *= v.mY;		return *this; }
+		inline TVec2& operator /= (const TVec2& v) { mX /= v.mX;	mY /= v.mY;		return *this; }
+
+		inline TVec2& operator += (T n) { mX += n;	mY += n;	return *this; }
+		inline TVec2& operator -= (T n) { mX -= n;	mY -= n;	return *this; }
+		inline TVec2& operator *= (T n) { mX *= n;	mY *= n;	return *this; }
+		inline TVec2& operator /= (T n) { mX /= n;	mY /= n;	return *this; }
+
+
+		bool operator > (T n) const { return mX > n && mY > n; }
+		bool operator >= (T n) const { return mX >= n && mY >= n; }
+		bool operator < (T n) const { return mX < n && mY < n; }
+		bool operator <= (T n) const { return mX <= n && mY <= n; }
+
+		bool operator > (const TVec2& v) const { return mX > v.mX && mY > v.mY; }
+		bool operator >= (const TVec2& v) const { return mX >= v.mX && mY >= v.mY; }
+		bool operator < (const TVec2& v) const { return mX < v.mX && mY < v.mY; }
+		bool operator <= (const TVec2& v) const { return mX <= v.mX && mY <= v.mY; }
+
+		bool operator == (const TVec2& v) const { return mX == v.mX && mY == v.mY; }
+		bool operator != (const TVec2& v) const { return !this->operator==(v); }
+
+		TVec2 operator - () const { return TVec2(-mX, -mY); }
+	};
+
+	typedef TVec2<int> Vec2I;
+
 
 	//////////////////////////////////////////////////////////////////////////
 	struct UAPI Vec2
@@ -30,7 +87,8 @@ namespace UPO
 		inline Vec2(float x, float y) { mX = x; mY = y; }
 		inline Vec2(const Vec2& xy) { mX = xy.mX;	mY = xy.mY; }
 		inline Vec2(const Vec3&);
-		
+		inline Vec2(const Vec2I& v) : mX(v.mX), mY(v.mY) {}
+
 		inline float& operator [] (size_t i) { return ((float*)this)[i]; }
 		inline const float& operator [] (size_t i) const { return ((float*)this)[i]; }
 
@@ -64,6 +122,10 @@ namespace UPO
 			return v * f;
 		}
 		
+		explicit inline operator Vec2I() const
+		{
+			return Vec2I(mX, mY);
+		}
 
 		bool operator > (float s) const { return mX > s && mY > s; }
 		bool operator >= (float s) const { return mX >= s && mY >= s; }
@@ -813,61 +875,7 @@ namespace UPO
 
 
 
-	template <typename T> struct TVec2
-	{
-		T mX, mY;
 
-		inline TVec2() {}
-		explicit inline TVec2(T xy) { mX = mY = xy; }
-		inline TVec2(T x, T y) { mX = x; mY = y; }
-		inline TVec2(const TVec2& v) { mX = v.mX; mY = v.mY; }
-
-		inline T& operator [] (size_t i) { return ((T*)this)[i]; }
-		inline const T& operator [] (size_t i) const { return ((T*)this)[i]; }
-
-		inline TVec2& operator = (T xy) { mX = mY = xy;  return *this; }
-		inline TVec2& operator = (const T& c) { mX = c.mX;	mY = c.mY;   return *this; }
-
-		inline TVec2 operator + (const TVec2& v) const { return TVec2(mX + v.mX, mY + v.mY); }
-		inline TVec2 operator - (const TVec2& v) const { return TVec2(mX - v.mX, mY - v.mY); }
-		inline TVec2 operator * (const TVec2& v) const { return TVec2(mX * v.mX, mY * v.mY); }
-		inline TVec2 operator / (const TVec2& v) const { return TVec2(mX / v.mX, mY / v.mY); }
-
-		inline TVec2 operator + (T n) const { return TVec2(mX + n, mY + n); }
-		inline TVec2 operator - (T n) const { return TVec2(mX - n, mY - n); }
-		inline TVec2 operator * (T n) const { return TVec2(mX * n, mY * n); }
-		inline TVec2 operator / (T n) const { return TVec2(mX / n, mY / n); }
-
-
-		inline TVec2& operator += (const TVec2& v) { mX += v.mX;	mY += v.mY;		return *this; }
-		inline TVec2& operator -= (const TVec2& v) { mX -= v.mX;	mY -= v.mY;		return *this; }
-		inline TVec2& operator *= (const TVec2& v) { mX *= v.mX;	mY *= v.mY;		return *this; }
-		inline TVec2& operator /= (const TVec2& v) { mX /= v.mX;	mY /= v.mY;		return *this; }
-
-		inline TVec2& operator += (T n) { mX += n;	mY += n;	return *this; }
-		inline TVec2& operator -= (T n) { mX -= n;	mY -= n;	return *this; }
-		inline TVec2& operator *= (T n) { mX *= n;	mY *= n;	return *this; }
-		inline TVec2& operator /= (T n) { mX /= n;	mY /= n;	return *this; }
-
-
-		bool operator > (T n) const { return mX > n && mY > n; }
-		bool operator >= (T n) const { return mX >= n && mY >= n; }
-		bool operator < (T n) const { return mX < n && mY < n; }
-		bool operator <= (T n) const { return mX <= n && mY <= n; }
-
-		bool operator > (const TVec2& v) const { return mX > v.mX && mY > v.mY; }
-		bool operator >= (const TVec2& v) const { return mX >= v.mX && mY >= v.mY; }
-		bool operator < (const TVec2& v) const { return mX < v.mX && mY < v.mY; }
-		bool operator <= (const TVec2& v) const { return mX <= v.mX && mY <= v.mY; }
-
-		bool operator == (const TVec2& v) const { return mX == v.mX && mY == v.mY; }
-		bool operator != (const TVec2& v) const { return !this->operator==(v); }
-
-		TVec2 operator - () const { return TVec2(-mX, -mY); }
-	};
-
-	typedef TVec2<int> Vec2I;
-	
 	UAPI StringStreamOut& operator << (StringStreamOut&, const Vec2&);
 	UAPI StringStreamOut& operator << (StringStreamOut&, const Vec3&);
 	UAPI StringStreamOut& operator << (StringStreamOut&, const Vec4&);

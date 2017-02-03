@@ -2,8 +2,10 @@
 #include "UPropertyBrowser.h"
 #include "UMainWindow.h"
 
+#include "ui_MainViewport.h"
 #include "../UPOEngine/Engine/UInput.h"
 
+#include "UPropertyBrowser.h"
 
 namespace UPOEd
 {
@@ -20,7 +22,7 @@ namespace UPOEd
 	}
 
 
-	MainViewport::MainViewport(QWidget* parent /*= nullptr*/) : D3DRenderWidget(parent)
+	RenderViewportWidget::RenderViewportWidget(QWidget* parent /*= nullptr*/) : D3DRenderWidget(parent)
 	{
 		this->setFocusPolicy(Qt::FocusPolicy::ClickFocus);
 		this->setMouseTracking(true);
@@ -41,22 +43,28 @@ namespace UPOEd
 		// 		});
 	}
 
-	void MainViewport::mousePressEvent(QMouseEvent *event)
+	void RenderViewportWidget::mousePressEvent(QMouseEvent *event)
 	{
 		if (GetInputState()) GetInputState()->SetKeyState(ToEKeyCode(event->button()), true);
+
+		mOnMousePress.InvokeAll(event);
 	}
 
-	void MainViewport::mouseReleaseEvent(QMouseEvent *event)
+	void RenderViewportWidget::mouseReleaseEvent(QMouseEvent *event)
 	{
 		if (GetInputState()) GetInputState()->SetKeyState(ToEKeyCode(event->button()), false);
+
+		mOnMouseRelease.InvokeAll(event);
 	}
 
-	void MainViewport::mouseMoveEvent(QMouseEvent *event)
+	void RenderViewportWidget::mouseMoveEvent(QMouseEvent *event)
 	{
 		if (GetInputState()) GetInputState()->SetMousePos(event->x(), event->y());
+
+		mOnMouseMove.InvokeAll(event);
 	}
 
-	void MainViewport::wheelEvent(QWheelEvent *event)
+	void RenderViewportWidget::wheelEvent(QWheelEvent *event)
 	{
 		if (GetInputState()) GetInputState()->SetMouseWheelDelta(event->delta());
 	}
@@ -94,47 +102,123 @@ namespace UPOEd
 #error
 #endif // UPLATFORM_WIN
 
-	void MainViewport::keyPressEvent(QKeyEvent *event)
+	void RenderViewportWidget::keyPressEvent(QKeyEvent *event)
 	{
 		EKeyCode key = UGetEKeyCodeFromQKeyEvent(event);
-		ULOG_MESSAGE("key %", EnumToStr(key));
 		if (GetInputState()) GetInputState()->SetKeyState(key, true);
 
 	}
 
-	void MainViewport::keyReleaseEvent(QKeyEvent *event)
+	void RenderViewportWidget::keyReleaseEvent(QKeyEvent *event)
 	{
 		EKeyCode key = UGetEKeyCodeFromQKeyEvent(event);
-		ULOG_MESSAGE("key %", EnumToStr(key));
 		if (GetInputState()) GetInputState()->SetKeyState(key, false);
 	}
 
-	void MainViewport::focusInEvent(QFocusEvent *event)
+	void RenderViewportWidget::focusInEvent(QFocusEvent *event)
 	{
 		ULOG_MESSAGE("The method or operation is not implemented.");
 		event->accept();
 	}
 
-	void MainViewport::focusOutEvent(QFocusEvent *event)
+	void RenderViewportWidget::focusOutEvent(QFocusEvent *event)
 	{
 		ULOG_MESSAGE("The method or operation is not implemented.");
 		event->accept();
 	}
 
-	void MainViewport::enterEvent(QEvent *event)
+	void RenderViewportWidget::enterEvent(QEvent *event)
 	{
 		ULOG_MESSAGE("The method or operation is not implemented.");
 	}
 
-	void MainViewport::leaveEvent(QEvent *event)
+	void RenderViewportWidget::leaveEvent(QEvent *event)
 	{
 		ULOG_MESSAGE("The method or operation is not implemented.");
+	}
+
+	void RenderViewportWidget::Tick()
+	{
+		this->GetInputState()->Tick();
+		this->GetInputState()->SetMouseWheelDelta(0);
+	}
+
+
+	class ObjOptionsWidget : public Object
+	{
+		UCLASS(ObjOptionsWidget, Object)
+
+	public:
+		GameWindowOptions mOptions;
+
+		void MetaAfterPropertyChange(const PropertyInfo*)
+		{
+
+		}
+		void MetaBeforePropertyChange(const PropertyInfo*)
+		{
+
+		}
+	};
+
+	UCLASS_BEGIN_IMPL(ObjOptionsWidget)
+	UPROPERTY(mOptions)
+	UCLASS_END_IMPL(ObjOptionsWidget)
+
+
+	//////////////////////////////////////////////////////////////////////////
+	MainViewport::MainViewport(QWidget* parent /*= nullptr*/) : QWidget(parent)
+	{
+		ui = new Ui_MainViewport;
+		ui->setupUi(this);
+		ui->mOptionsWidget->setVisible(false);
+		
+		QToolBar* toolbar = new QToolBar;
+		ui->mToolsWidget->layout()->addWidget(toolbar);
+
+		//toggle options widget
+		{
+			QAction* actionToggle = toolbar->addAction(">>");
+			connect(actionToggle, &QAction::triggered, this, [this, actionToggle](bool) {
+				ui->mOptionsWidget->setVisible(!ui->mOptionsWidget->isVisible());
+				actionToggle->setText(ui->mOptionsWidget->isVisible() ? "<<" : ">>");
+			});
+		}
+
+
+
+		mOptionsWidgetObject = NewObject<ObjOptionsWidget>();
+		ui->mOptionsWidget->AttachObject(mOptionsWidgetObject);
+		ui->mOptionsWidget->mOnMetaAfterPropertyChange.BindLambda([this](const PropertyInfo* prp){
+			this->GetViewport()->mOptions = mOptionsWidgetObject->Cast<ObjOptionsWidget>()->mOptions;
+		});
+	}
+
+	MainViewport::~MainViewport()
+	{
+		SafeDeleteObject(mOptionsWidgetObject);
+	}
+
+	RenderViewportWidget* MainViewport::GetViewport() const
+	{
+		return ui->mViewport; 
+	};
+
+
+	void MainViewport::SetWorld(World* world)
+	{
+		GetViewport()->SetWorld(world);
 	}
 
 	void MainViewport::Tick()
 	{
-		this->GetInputState()->Tick();
-		this->GetInputState()->SetMouseWheelDelta(0);
+		ui->mViewport->Tick();
+		ui->mOptionsWidget->Tick();
+	}
+
+	void MainViewport::ToggleOptionsWidgetVisibility()
+	{
+		
 	}
 
 }

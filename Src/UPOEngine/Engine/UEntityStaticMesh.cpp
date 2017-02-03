@@ -11,6 +11,7 @@ namespace UPO
 		if (mMesh == mesh || !IsAlive()) return;
 
 		mMesh = mesh;
+		SetMaterial(mesh ? mesh->GetDefaultMaterial() : nullptr);
 
 		OnCalcBound();
 
@@ -19,11 +20,11 @@ namespace UPO
 
 	void EntityStaticMesh::SetMaterial(AMaterial* material)
 	{
-// 		if (mMaterial == material || !IsAlive()) return;
-// 
-// 		mMaterial = material;
-// 
-// 		TagRenderMiscDirty();
+		if (mMaterial == material || !IsAlive()) return;
+
+		mMaterial = material;
+
+		TagRenderMiscDirty();
 	}
 
 	void EntityStaticMesh::OnCalcBound()
@@ -41,6 +42,7 @@ namespace UPO
 	EntityStaticMesh::EntityStaticMesh()
 	{
 		mMesh = nullptr;
+		mMaterial = nullptr;
 	}
 
 	EntityStaticMesh::~EntityStaticMesh()
@@ -75,6 +77,8 @@ namespace UPO
 
 	EntityStaticMeshRS::~EntityStaticMeshRS()
 	{
+		mOwner->mStaticMeshes.LastElement()->mPrivateIndex = mPrivateIndex;
+
 		mOwner->mStaticMeshes.RemoveAtSwap(mPrivateIndex);
 		mOwner->mStaticMeshesBounds.RemoveAtSwap(mPrivateIndex);
 		mOwner->mStaticMeshesCullingState.RemoveAtSwap(mPrivateIndex);
@@ -89,10 +93,13 @@ namespace UPO
 		}
 		if (flag & EEF_RenderDataMiscDirty)
 		{
-			mMesh = GS()->mMesh ? GS()->mMesh->GetRS() : nullptr;
-// 			mMaterial = GS()->mMaterial ? GS()->mMaterial->GetRS() : nullptr;
+			mMesh = GS()->GetMesh() ? GS()->GetMesh()->GetRS() : nullptr;
+			mMaterial = GS()->GetMaterial() ? GS()->GetMaterial()->GetRS() : nullptr;
 
-			if (mMesh)	mRSFlag.Set(EEF_RenderDataValid);
+			mRSFlag.Clear(ERS_RenderDataValid);
+			if (mMesh && mMaterial) mRSFlag.Set(ERS_RenderDataValid);
+
+			this->EntityPrimitiveRS::Fetch();
 		}
 	}
 
@@ -103,8 +110,9 @@ namespace UPO
 
 
 
-	UCLASS_BEGIN_IMPL(EntityStaticMesh)
+	UCLASS_BEGIN_IMPL(EntityStaticMesh, UATTR_Icon("EntityStaticMesh.png"), UATTR_Instanceable())
 		UPROPERTY(mMesh)
+		UPROPERTY(mMaterial)
 	UCLASS_END_IMPL(EntityStaticMesh)
 
 

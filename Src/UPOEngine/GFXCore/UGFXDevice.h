@@ -567,6 +567,12 @@ namespace UPO
 		String mName;
 		String mDefinition;
 
+		template<typename HasherClass = HasherCRC32> auto GetHash(HasherClass& hasher) const
+		{
+			hasher << mName;
+			hasher << mDefinition;
+			return hasher.GetHash();
+		}
 	};
 	//////////////////////////////////////////////////////////////////////////
 	struct UAPI ShaderUniqueParam
@@ -893,7 +899,7 @@ namespace UPO
 
 		TGFXResourceHandle& operator = (const TGFXResource* resource)
 		{
-			mNativeHandle = resource->mNativeHandle;
+			mNativeHandle = resource ? resource->mNativeHandle : nullptr;
 			return *this;
 		}
 		template<typename T> T& HandleAs() { return *(reinterpret_cast<T*>(&mNativeHandle)); }
@@ -1028,7 +1034,10 @@ namespace UPO
 
 		virtual GFXShader* CreateShader(const Buffer& bytesCode, EShaderType type, Name debugName = nullptr) = 0;
 		virtual GFXShader* CreateShader(const ShaderUniqueParam& param) = 0;
-
+		template<typename TShaderClass> TShaderClass* CreateShader(const Buffer& bytesCode, Name debugName = nullptr)
+		{
+			return (TShaderClass*)CreateShader(bytesCode, TShaderClass::EnumType, debugName);
+		}
 		// 		template<typename ShaderClass> ShaderClass* CreateShader(const char* filename, const char* entryPoint, const ShaderMacroDefinition* customDefinitionsNullTerminated = nullptr)
 		// 		{
 		// 			static_assert(std::is_base_of<GFXShader, ShaderClass>::value, "invalid shader class");
@@ -1117,8 +1126,7 @@ namespace UPO
 		template<typename T> T* Map(GFXBuffer* buffer, EMapFlag flag) { return (T*)Map(buffer, flag); }
 
 		virtual void CopyResource(GFXResource* dst, GFXResource* src) = 0;
-		virtual void CopySubresourceRegion(GFXTexture2D* dst, unsigned dstMipIndex, unsigned dstX, unsigned dstY, GFXTexture2D* src, unsigned srcMipIndex,
-			unsigned srcX, unsigned srcW, unsigned srcY, unsigned srcH) = 0;
+		virtual void CopySubresourceRegion(GFXTexture2D* dst, unsigned dstMipIndex, Vec2I dstXY, GFXTexture2D* src, unsigned srcMipIndex, Vec2I srcLeftTop, Vec2I srcRightBottom) = 0;
 
 
 		virtual void* Map(GFXTexture2D*, EMapFlag, unsigned mipIndex, unsigned& outRowPitch) = 0;

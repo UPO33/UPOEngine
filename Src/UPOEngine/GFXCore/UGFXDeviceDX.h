@@ -658,8 +658,8 @@ namespace UPO
 
 		void CopyResource(GFXResource* dst, GFXResource* src) override;
 
-		void CopySubresourceRegion(GFXTexture2D* dst, unsigned dstMipIndex, unsigned dstX, unsigned dstY, GFXTexture2D* src, unsigned srcMipIndex,
-			unsigned srcX, unsigned srcW, unsigned srcY, unsigned srcH) override;
+		void CopySubresourceRegion(GFXTexture2D* dst, unsigned dstMipIndex, Vec2I dstXY, GFXTexture2D* src, unsigned srcMipIndex,
+			Vec2I srcLeftTop, Vec2I srcRightBottom) override;
 
 
 		void* Map(GFXTexture2D* texture, EMapFlag flag, unsigned mipIndex, unsigned& outRowPitch) override;

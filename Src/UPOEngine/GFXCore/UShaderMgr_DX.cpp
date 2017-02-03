@@ -147,7 +147,13 @@ namespace UPO
 
 			return MacroBuffersDX;
 		}
-
+		//////////////////////////////////////////////////////////////////////////
+		D3D_SHADER_MACRO* GetFinalDefinitionsDX(const TArray<ShaderMacroDefinition>& customDefinitions)
+		{
+			TArray<ShaderMacroDefinition> defs = customDefinitions;
+			defs.Add(ShaderMacroDefinition());
+			return GetFinalDefinitionsDX(defs.Elements());
+		}
 		//////////////////////////////////////////////////////////////////////////
 		bool GetShaderCode(const ShaderUniqueParam& param, Buffer& outShaderCode) override
 		{
@@ -181,6 +187,40 @@ namespace UPO
 					ULOG_ERROR("failed to compile shader [%] [%] [%]    %", param.mFileName, param.mEntryPoint, EnumToStr(param.mType), ((char*)shaderError->GetBufferPointer()));
 				else
 					ULOG_ERROR("Mising Shader File [%]", param.mFileName);
+				return false;
+			}
+		}
+
+		//////////////////////////////////////////////////////////////////////////
+		bool GetShaderCode(Name filename, Name entrypoint, EShaderType type, const TArray<ShaderMacroDefinition>& definitions, Buffer& outShaderCode) override
+		{
+			outShaderCode = Buffer();
+
+			char fullFileName[FILENAME_MAX];
+			ShaderFileToRelativePath(filename, fullFileName);
+
+			Buffer fileContent;
+			if (!File::OpenReadFull(fullFileName, fileContent))
+			{
+				return false;
+			}
+
+			ShaderIncludeer inc;
+			ID3D10Blob* shaderByteCode = nullptr;
+			ID3D10Blob* shaderError = nullptr;
+			if (SUCCEEDED(D3DCompile(fileContent.Data(), fileContent.Size(), fullFileName, GetFinalDefinitionsDX(definitions)
+				, /*D3D_COMPILE_STANDARD_FILE_INCLUDE*/ &inc, entrypoint, ShaderTypeToDXProfile(type),
+				D3D10_SHADER_ENABLE_STRICTNESS, 0, &shaderByteCode, &shaderError)))
+			{
+				outShaderCode = Buffer(shaderByteCode->GetBufferSize(), shaderByteCode->GetBufferPointer());
+				return true;
+			}
+			else
+			{
+				if (shaderError)
+					ULOG_ERROR("failed to compile shader [%] [%] [%]    %", filename, entrypoint, EnumToStr(type), ((char*)shaderError->GetBufferPointer()));
+				else
+					ULOG_ERROR("Mising Shader File [%]", filename);
 				return false;
 			}
 		}

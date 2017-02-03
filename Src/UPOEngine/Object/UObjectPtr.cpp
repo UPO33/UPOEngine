@@ -84,10 +84,25 @@ namespace UPO
 	ObjectPtrContext gObjectPtrContext;
 #endif
 
+
 	//////////////////////////////////////////////////////////////////////////
 	ObjectRefData ObjectRefData::NullRef = { ~0U, nullptr };
 
-	FreeListAllocator gObjPtrAllocator { sizeof(ObjectRefData)+8, 256 };
+	FreeListAllocator gObjPtrAllocator{ sizeof(ObjectRefData) + 8, 256 };
+
+
+	void ObjectRefData::Dec()
+	{
+		mRefCount--;
+		if (mRefCount == 0)
+		{
+			if (this == &NullRef) return;
+
+			gObjPtrAllocator.Free(this);
+		}
+	}
+
+
 
 	//////////////////////////////////////////////////////////////////////////
 	ObjectRefData* ObjectRefData::GetNew()

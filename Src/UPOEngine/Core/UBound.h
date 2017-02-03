@@ -27,9 +27,9 @@ namespace UPO
 		{
 			return point > mMin && point < mMax;
 		}
-		int Intersect(const Plane&);
+		int Intersect(const Plane&) const;
 
-		Vec3 GetCorner(bool positiveX, bool positiveY, bool positiveZ)
+		Vec3 GetCorner(bool positiveX, bool positiveY, bool positiveZ) const
 		{
 			Vec3 ret;
 			ret.mX = positiveX ? mMax.mX : mMin.mX;

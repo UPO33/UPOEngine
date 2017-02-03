@@ -17,7 +17,7 @@
 
 /Libs
 /Bin
-
+/Assets
 
 *.dds
 *.fbx

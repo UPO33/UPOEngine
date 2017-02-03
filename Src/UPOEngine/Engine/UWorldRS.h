@@ -34,6 +34,10 @@ namespace UPO
 		EntityArray*			mPendingAdd;
 		EntityArray*			mPendingDestroy;
 
+		float   mDeltaTime;
+		float   mDeltaTimeReal;
+		float   mSecondsSincePlay;
+		float   mSecondsSincePlayReal;
 
 		struct StaticMeshBounData
 		{
@@ -54,6 +58,7 @@ namespace UPO
 		GameWindow*		mMainWindow = nullptr;
 		EntityCameraRS*	mFreeCamera = nullptr;
 		bool			mIsFetching = false;
+
 		/*
 		TArray<EntityCameraRS*>			mCameras;
 		TArray<EntityLishtRS*>			mLights;

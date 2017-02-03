@@ -34,13 +34,13 @@ namespace UPO
 		for (unsigned i = 2; i < numPoints; i++)
 		{
 			vMin = Min(vMin, ElemAtStride<Vec3>(points, i, stride));
-			vMax = Max(vMax, ElemAtStride<Vec3>(points, 1, stride));
+			vMax = Max(vMax, ElemAtStride<Vec3>(points, i, stride));
 		}
 
 		return AABB(vMin, vMax);
 	}
 
-	int AABB::Intersect(const Plane& plane)
+	int AABB::Intersect(const Plane& plane) const
 	{
 		Vec3 vec1, vec2;
 

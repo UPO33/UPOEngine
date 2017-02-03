@@ -7,7 +7,7 @@ namespace UPO
 {
 	  
 
-	UCLASS_BEGIN_IMPL(EntityCamera, UATTR_Icon("EntityCamera.png"))
+	UCLASS_BEGIN_IMPL(EntityCamera, UATTR_Icon("EntityCamera.png"), UATTR_Instanceable())
 		UPROPERTY(mRender)
 		UPROPERTY(mPerspective)
 		UPROPERTY(mFieldOfView, UATTR_Range(1, 180))
@@ -45,15 +45,13 @@ namespace UPO
 	EntityCameraRS::EntityCameraRS()
 	{
 		mGS = nullptr;
-		mPrivateIndex = ~0U;
+		mPrivateIndex = InvalidIndex;
 		mRSFlag = 0;
 
 	}
 	//initialize and add to WorldRS
 	EntityCameraRS::EntityCameraRS(EntityCamera* from, WorldRS* wrs)
 	{
-		ZeroType(*this);
-
 		mGS = from;
 		mOwner = wrs;
 
@@ -64,8 +62,11 @@ namespace UPO
 	//remove from WorldRS
 	EntityCameraRS::~EntityCameraRS()
 	{
-		if(mPrivateIndex != ~0U)
+		if(mPrivateIndex != InvalidIndex)
+		{
+			mOwner->mCameras.LastElement()->mPrivateIndex = mPrivateIndex;
 			mOwner->mCameras.RemoveAtSwap(mPrivateIndex);
+		}
 	}
 
 	bool EntityCameraRS::ShouldBeReanderd() const
@@ -127,5 +128,9 @@ namespace UPO
 	}
 
 
+
+	void EntityCameraRS::OnFetch(unsigned flag)
+	{
+	}
 
 };

@@ -68,7 +68,7 @@ namespace UPOEd
 
 		for (int i = 0; i < mLength; i++)
 		{
-			mChildren[i] = GetOwner()->AddTreeItem(mParam.mPropertyInfo, mParam.mInstance, mParam.mTreeItem, i);
+			mChildren[i] = GetOwner()->AddTreeItem(mParam.mRootObject, mParam.mPropertyInfo, mParam.mInstance, mParam.mTreeItem, i);
 		}
 	}
 
@@ -113,7 +113,7 @@ namespace UPOEd
 		layout()->setSpacing(DEFAUL_WIDGETS_SPACE);
 
 		//set disabled if has EAT_Uneditable attribute
-		if (param.mPropertyInfo->GetAttributes().HasAttrib(EAtrribID::EAT_Uneditable))
+		if (param.mPropertyInfo->GetAttributes().HasAttrib(EAttribID::EAT_Uneditable))
 			this->setDisabled(true);
 		//set tooltip to name of property's type
 		if (param.mArrayIndex != -1)
@@ -167,16 +167,35 @@ namespace UPOEd
 
 	void PBBaseProp::BeforePropertyChange()
 	{
-		if (mParam.mPropertyInfo->GetOwner()->Has_MetaBeforePropertyChange())
-			mParam.mPropertyInfo->GetOwner()->Call_MetaBeforePropertyChange(mParam.mInstance, mParam.mPropertyInfo);
+		TArray<ClassInfo*> classes;
+		mParam.mRootObject->GetClassInfo()->GetInheritedClasses(classes, true);
+		//mParam.mPropertyInfo->GetOwner()->GetInheritedClasses(classes, true);
+		for (ClassInfo* item : classes)
+		{
+			if (item->Has_MetaBeforePropertyChange())
+				item->Call_MetaBeforePropertyChange(mParam.mInstance, mParam.mPropertyInfo);
+		}
+		
+		mParam.mOwner->mOnMetaBeforePropertyChange.InvokeAll(mParam.mPropertyInfo);
+
 		if (mParam.mParentProperty)
 			mParam.mParentProperty->BeforePropertyChange();
 	}
 
 	void PBBaseProp::AfterPropertyChange()
 	{
-		if (mParam.mPropertyInfo->GetOwner()->Has_MetaAfterPropertyChange())
-			mParam.mPropertyInfo->GetOwner()->Call_MetaAfterPropertyChange(mParam.mInstance, mParam.mPropertyInfo);
+		TArray<ClassInfo*> classes;
+		mParam.mRootObject->GetClassInfo()->GetInheritedClasses(classes, true);
+		//mParam.mPropertyInfo->GetOwner()->GetInheritedClasses(classes, true);
+
+		for (ClassInfo* item : classes)
+		{
+			if (item->Has_MetaAfterPropertyChange())
+				item->Call_MetaAfterPropertyChange(mParam.mInstance, mParam.mPropertyInfo);
+		}
+
+		mParam.mOwner->mOnMetaAfterPropertyChange.InvokeAll(mParam.mPropertyInfo);
+
 		if (mParam.mParentProperty)
 			mParam.mParentProperty->AfterPropertyChange();
 	}
@@ -216,7 +235,7 @@ namespace UPOEd
 		if (Object* obj = mParam.mRootObject)
 		{
 			Object* defaulObj = NewObject(obj->GetClassInfo());
-			ULOG_MESSAGE("%", defaulObj->GetClassInfo()->GetName());
+			ULOG_MESSAGE("obj %", defaulObj->GetClassInfo()->GetName());
 			auto offset = ((size_t)mParam.mInstance) - ((size_t)(mParam.mRootObject.Get()));
 			auto origInstance = mParam.mInstance;
 			mParam.mInstance = (void*)(((size_t)defaulObj) + offset);

@@ -50,7 +50,7 @@ namespace UPO
 		EAF_ReceiveTick = 1 << 2,
 		EAF_RecieveFrame = 1 << 3,
 
-		EAF_Defaul = EAF_Alive,
+		EAF_Default = EAF_Alive,
 	};
 	//////////////////////////////////////////////////////////////////////////
 	class UAPI Asset : public Object
@@ -61,7 +61,7 @@ namespace UPO
 		friend AssetEntry;
 		friend UPOEd::AssetConverter;
 
-		Flag				mAssetFlag = EAssetFlag::EAF_Defaul;
+		Flag				mAssetFlag = EAssetFlag::EAF_Default;
 		AssetEntry*			mEntry = nullptr;
 		TArray<ObjectPtr>	mRefs;
 		Name				mTag;

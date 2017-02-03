@@ -3,6 +3,9 @@
 #include "UAssetViewer.h"
 
 #include "../UPOEngine/Engine/UEntityStaticMesh.h"
+#include "../UPOEngine/Engine/UEntityCamera.h"
+#include "../UPOEngine/Engine/UEntityFreeCamera.h"
+
 #include "../UPOEngine/GFX//UPrimitiveBatch.h"
 
 namespace UPOEd
@@ -11,17 +14,20 @@ namespace UPOEd
 	{
 		World*					mWorld = nullptr;
 		EntityStaticMesh*		mEntityInWorld = nullptr;
-		MainViewport*			mViewport = nullptr;
+		RenderViewportWidget*			mViewport = nullptr;
 		PropertyBrowserDW*		mPropertyBrowser = nullptr;
 
 	public:
 
-		
+		void Test()
+		{
+
+		}
 		AssetViewer_StaticMesh(QWidget* parent) : AssetWindowBase(parent)
 		{
 			InitWorld();
 
-			mViewport = new MainViewport(this);
+			mViewport = new RenderViewportWidget(this);
 			mViewport->setMinimumSize(300, 300);
 			setCentralWidget(mViewport);
 
@@ -32,7 +38,15 @@ namespace UPOEd
 			mViewport->InitAndReg(gwcp);
 			mViewport->SetWorld(mWorld);
 
+
 			mPropertyBrowser = new PropertyBrowserDW(this);
+
+			mPropertyBrowser->GetWidget()->mOnMetaAfterPropertyChange.BindLambda([this](const PropertyInfo* prp)
+			{
+				mEntityInWorld->SetMaterial(mAttachedAsset->Cast<AStaticMesh>()->GetDefaultMaterial());
+				mEntityInWorld->MetaAfterPropertyChange(prp);
+			});
+
 			this->addDockWidget(Qt::DockWidgetArea::LeftDockWidgetArea, mPropertyBrowser);
 		}
 		~AssetViewer_StaticMesh()
@@ -48,7 +62,13 @@ namespace UPOEd
 				mPropertyBrowser->AttachObject(asset);
 
 			if (mEntityInWorld)
-				mEntityInWorld->SetMesh(asset ? asset->Cast<AStaticMesh>() : nullptr);
+			{
+				AStaticMesh* attachedAsset = asset ? asset->Cast<AStaticMesh>() : nullptr;
+
+				mEntityInWorld->SetMesh(attachedAsset);
+				FocusOnEntity();
+			}
+
 		}
 		void Tick() override
 		{
@@ -60,14 +80,27 @@ namespace UPOEd
 				pb->DrawWireMesh(mAttachedAsset ? mAttachedAsset->Cast<AStaticMesh>() : nullptr, Transform::IDENTITY, Color32::RED, 0);
 			}
 		}
+		
 		void InitWorld()
 		{
 			WorldInitParam wip;
 			wip.mWorldType = EWorldType::EEditor;
 			mWorld = GEngine()->CreateWorld(wip);
 			mEntityInWorld = mWorld->CreateEntity<EntityStaticMesh>(nullptr);
-			mEntityInWorld->SetMesh(mAttachedAsset ? mAttachedAsset->Cast<AStaticMesh>() : nullptr);
+			mEntityInWorld->SetMesh(nullptr);
+		}
+		void FocusOnEntity()
+		{
+			AStaticMesh* attachedMesh = mEntityInWorld->GetMesh();
 
+			if (attachedMesh)
+			{
+				mWorld->GetFreeCamera()->Cast<EntityFreeCamera>()->FocusAt(attachedMesh->GetBound());
+			}
+		}
+		void OnAfterPropertyChanged( PropertyInfo* prp)
+		{
+			mEntityInWorld->MetaAfterPropertyChange(nullptr);
 		}
 	};
 

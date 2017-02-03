@@ -114,14 +114,14 @@ namespace UPO
 		mNumAttributes = 0;
 	}
 
-	bool AttribPack::HasAttrib(EAtrribID id) const
+	bool AttribPack::HasAttrib(EAttribID id) const
 	{
 		for (unsigned i = 0; i < mNumAttributes; i++)
 			if (mAttributes[i].GetID() == id) return true;
 		return false;
 	}
 
-	bool AttribPack::GetAttrib(EAtrribID id, Attrib& out) const
+	bool AttribPack::GetAttrib(EAttribID id, Attrib& out) const
 	{
 		for (unsigned i = 0; i < mNumAttributes; i++)
 		{

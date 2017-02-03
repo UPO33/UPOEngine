@@ -29,10 +29,11 @@ namespace UPOEd
 		int mIntNoEdit = 99;
 		float mFloat01 = 0.5;
 		TArray<StructStr> mTArrayMS;
+		TestObject*	mTestObj;
 
 		TestObject();
 		~TestObject();
-		void MetaPropertyChanged(const PropertyInfo* prp);
+		void MetaAfterPropertyChange(const PropertyInfo* prp);
 
 		void Tick();
 	};

@@ -9,15 +9,18 @@ namespace UPO
 	public:
 		Vec2I					mSize;
 		GFXTexture2D*			mIDBuffer = nullptr;
+		GFXTexture2D*			mIDBufferCPURead = nullptr;
 		GFXTexture2D*			mDepthStencil = nullptr;
-		
+		GFXDepthStencilView*	mDepthStencilView;
+		GFXShaderResourceView*	mDepthReadView;
 		GFXTexture2D*			mGBufferA;
 		GFXTexture2D*			mGBufferB;
+		GFXTexture2D*			mGBufferC;
 
 		void BinGBuffers(bool clear);
 		
 
-		DefferdRenderTargets(Vec2I size);
+		DefferdRenderTargets(Vec2I size, bool createIDBuffer);
 		~DefferdRenderTargets();
 	};
 

@@ -16,10 +16,19 @@ namespace UPO
 	inline void* MemAlloc(size_t size) { return ::malloc(size); }
 	inline void* MemRealloc(void* memory, size_t newSize) { return ::realloc(memory, newSize); }
 	inline void  MemFree(void* memory) { ::free(memory); }
-
+	template<typename T> void SafeMemFree(T*& memory)
+	{
+		if (memory) MemFree(memory);
+		memory = nullptr;
+	}
 	inline void* MemAllocAligned(size_t size, size_t align) { return ::_aligned_malloc(size, align); }
 	inline void* MemReallocAligned(void* memory, size_t newSize, size_t newAlignment) { return ::_aligned_realloc(memory, newSize, newAlignment); }
 	inline void  MemFreeAligned(void* memory) { ::_aligned_free(memory); }
+	template<typename T> void  SafeMemFreeAligned(T*& memory) 
+	{ 
+		if (memory) MemFreeAligned(memory);
+		memory = nullptr;
+	}
 
 	//MemNew and MemDelete should be paired
 	//allocate memory sizeof(T) and alifnof(T), doesn't call constructor
@@ -35,7 +44,10 @@ namespace UPO
 	{
 		MemFreeAligned(ptr);
 	}
-
+	template< typename T> void SafeMemDelete(T*& ptr)
+	{
+		SafeMemFreeAligned(ptr);
+	}
 
 
 

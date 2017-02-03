@@ -21,6 +21,7 @@ namespace UPO
 	class ObjectRefData;
 	class ObjectSys;
 	class MetaSys;
+	class PropertyInfo;
 
 	//////////////////////////////////////////////////////////////////////////
 	class UAPI Object
@@ -52,5 +53,14 @@ namespace UPO
 			return nullptr;
 		}
 		bool IsBaseOf(const ClassInfo* baseClass) const;
+
+		void MetaBeforePropertyChange(const PropertyInfo*) {}
+		void MetaAfterPropertyChange(const PropertyInfo*) {}
 	};
+
+	template<typename T> T* UCast(Object* object)
+	{
+		if (object) return object->Cast<T>();
+		return nullptr;
+	}
 };

@@ -9,22 +9,30 @@
 
 //by default the properties, classes and enums has no attributes
 
-#define UATTR_Comment(Comment) Attrib(EAtrribID::EAT_Comment, (const char*)Comment)
+//override the default name of property
+#define UATTR_Name(name) Attrib(EAttribID::EAT_Name, (const char*)name)
+
+#define UATTR_Comment(Comment) Attrib(EAttribID::EAT_Comment, (const char*)Comment)
 //expose the property in the specified category
-#define UATTR_Category(Category) Attrib(EAtrribID::EAT_Category, (const char*)Category)
+#define UATTR_Category(Category) Attrib(EAttribID::EAT_Category, (const char*)Category)
 //specify the minimum and maximum value for the numeric properties
-#define UATTR_Range(Min, Max) Attrib(EAtrribID::EAT_Range, (float)Min, (float)Max)
+#define UATTR_Range(Min, Max) Attrib(EAttribID::EAT_Range, (float)Min, (float)Max)
 //abstract class cant be instanced
-#define UATTR_Abstract() Attrib(EAtrribID::EAT_Abstract)
+#define UATTR_Abstract() Attrib(EAttribID::EAT_Abstract)
 //the property can not be edited in editor
-#define UATTR_Uneditable() Attrib(EAtrribID::EAT_Uneditable)
+#define UATTR_Uneditable() Attrib(EAttribID::EAT_Uneditable)
 //the property is hidden in editor
-#define UATTR_Hidden() Attrib(EAtrribID::EAT_Hidden)
+#define UATTR_Hidden() Attrib(EAttribID::EAT_Hidden)
 //volatile property or class will no be serialized/deserialized
-#define UATTR_Volatile() Attrib(EAtrribID::EAT_Volatile)
+#define UATTR_Volatile() Attrib(EAttribID::EAT_Volatile)
 //a class that has this attribute can be instantiated through editor
-#define UATTR_Instanceable() Attrib(EAtrribID::EAT_Instanceable)
-#define UATTR_Icon(Name) Attrib(EAtrribID::EAT_Icon, (const char*)Name)
+#define UATTR_Instanceable() Attrib(EAttribID::EAT_Instanceable)
+#define UATTR_Icon(Name) Attrib(EAttribID::EAT_Icon, (const char*)Name)
+//show properties of an Object* or TObjectPtr<> instead of being selectable
+#define UATTR_ShowProperties() Attrib(EAttribID::EAT_ShowProperties)
+#define UATTR_MaterialConstant(constantName) Attrib(EAttribID::EAT_MaterialConstant, (const char*)constantName)
+
+
 
 //new attributes here ^^^^^^^^^^^^^
 
@@ -35,9 +43,10 @@ namespace UPO
 	class Module;
 
 
-	enum EAtrribID
+	enum EAttribID
 	{
 		EAT_None,
+		EAT_Name,
 		EAT_Comment,
 		EAT_Category,
 		EAT_Range,
@@ -47,29 +56,30 @@ namespace UPO
 		EAT_Volatile,
 		EAT_Instanceable,
 		EAT_Icon,
-
+		EAT_ShowProperties,
+		EAT_MaterialConstant,
 		////new attributes here ^^
 	};
 	//////////////////////////////////////////////////////////////////////////
 	class UAPI Attrib
 	{
-		EAtrribID		mID;
+		EAttribID		mID;
 		String			mString;
 		float			mValue0;
 		float			mValue1;
 	public:
-		Attrib(EAtrribID type = EAtrribID::EAT_None) 
+		Attrib(EAttribID type = EAttribID::EAT_None) 
 			: mID(type)
 		{
 			mValue0 = mValue1 = 0;
 		}
-		Attrib(EAtrribID type, float f0, float f1 = 0)
+		Attrib(EAttribID type, float f0, float f1 = 0)
 			: mID(type)
 		{
 			mValue0 = f0;
 			mValue1 = f1;
 		}
-		Attrib(EAtrribID type, const char* str)
+		Attrib(EAttribID type, const char* str)
 			: mID(type)
 		{
 			mString = str;
@@ -77,7 +87,7 @@ namespace UPO
 		float GetValue0() const { return mValue0; }
 		float GetValue1() const { return mValue1; }
 		const String& GetString() const { return mString; }
-		EAtrribID GetID() const { return mID; }
+		EAttribID GetID() const { return mID; }
 
 
 	};
@@ -104,8 +114,8 @@ namespace UPO
 		AttribPack(Attrib a0, Attrib a1, Attrib a2, Attrib a3, Attrib a4, Attrib a5, Attrib a6);
 		AttribPack(Attrib a0, Attrib a1, Attrib a2, Attrib a3, Attrib a4, Attrib a5, Attrib a6, Attrib a7);
 
-		bool HasAttrib(EAtrribID id) const;
-		bool GetAttrib(EAtrribID id, Attrib& out) const;
+		bool HasAttrib(EAttribID id) const;
+		bool GetAttrib(EAttribID id, Attrib& out) const;
 		unsigned NumAttributes() const;
 	};
 
@@ -138,8 +148,8 @@ namespace UPO
 		unsigned GetDefinitionLineNumber() { return mDefinitionLineNumber; }
 		Module* GetModule() const { return mOwner; }
 		const AttribPack& GetAttributes() const { return mAttributes; }
-		bool HasAttrib(EAtrribID id) const { return mAttributes.HasAttrib(id); }
-		bool GetAttrib(EAtrribID id, Attrib& out) const { return mAttributes.GetAttrib(id, out); }
+		bool HasAttrib(EAttribID id) const { return mAttributes.HasAttrib(id); }
+		bool GetAttrib(EAttribID id, Attrib& out) const { return mAttributes.GetAttrib(id, out); }
 		bool IsClass() const { return mIsClass; }
 		bool IsEnum() const { return mIsEnum; }
 		bool IsArithmetic() const { return mIsArithmetic; }

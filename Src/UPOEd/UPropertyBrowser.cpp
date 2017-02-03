@@ -2,39 +2,7 @@
 
 namespace UPOEd
 {
-	//////////////////////////////////////////////////////////////////////////
-	class TreeWidgetPropertyBrowser : public QTreeWidget
-	{
-	public:
-		TreeWidgetPropertyBrowser(QWidget* parent = nullptr) : QTreeWidget(parent)
-		{
-
-		}
-		virtual void mousePressEvent(QMouseEvent *event) override
-		{
-			ULOG_WARN("");
-			QTreeWidget::mousePressEvent(event);
-
-		}
-		virtual void mouseReleaseEvent(QMouseEvent *event) override
-		{
-			ULOG_WARN("");
-			if (event->button() == Qt::MouseButton::MiddleButton)
-			{
-				if (QTreeWidgetItem* treeItem = this->itemAt(event->pos()))
-				{
-					if (PBBaseProp* widgetPrp = (PBBaseProp*)(this->itemWidget(treeItem, 1)))
-					{
-						widgetPrp->ResetToDefault();
-						ULOG_WARN("asdasd");
-					}
-				}
-			}
-			QTreeWidget::mouseReleaseEvent(event);
-		}
-
-	};
-
+	
 
 
 	PropertyBrowserWidget::PropertyBrowserWidget(QWidget* parent /*= nullptr*/) : QWidget(parent)
@@ -50,16 +18,19 @@ namespace UPOEd
 			ReFillTree();
 		});
 
-		mTree = new TreeWidgetPropertyBrowser(this);
+		mTree = new PropertyBrowserTreeWidget(this);
 		layout()->addWidget(mTree);
 		mTree->setColumnCount(2);
 		mTree->setAlternatingRowColors(true);
+		mTree->setIndentation(10);
 		//mTree->header()->setSectionResizeMode(QHeaderView::ResizeMode::ResizeToContents);
 // 			mTree->setHeaderHidden(true);
 		
 		QStringList columnsName;
 		columnsName << "Property" << "Value";
 		mTree->setHeaderLabels(columnsName);
+		
+// 		mTree->header()->resizeSection(0, 150);
 	}
 	//////////////////////////////////////////////////////////////////////////
 	QWidget* PropertyBrowserWidget::GetWidgetForProp(const PBBaseProp::Param& param)
@@ -92,7 +63,12 @@ namespace UPOEd
 
 		case UPO::EPT_TObjectPtr:
 		case UPO::EPT_ObjectPoniter:
-			return new PBObjectProp(param, mTree);
+		{
+			if (param.mPropertyInfo->HasAttrib(EAttribID::EAT_ShowProperties))
+				return new PBBaseProp(param, mTree);
+			else
+				return new PBObjectProp(param, mTree);
+		}
 
 		case UPO::EPT_MetaClass:
 		{
@@ -110,6 +86,8 @@ namespace UPOEd
 			if (ci == Name::GetClassInfoStatic())	return new PBNameProp(param, mTree);
 
 			if (ci == Transform::GetClassInfoStatic()) return new PBTransformProp(param, mTree);
+
+			//^^^^^^^^^^^^^^^ new propertywidgets here ^^^^^^^
 		}
 		}
 		return new PBBaseProp(param, mTree);
@@ -145,7 +123,7 @@ namespace UPOEd
 		if(!b)
 			return UPOEd::FilterCheck(filter, ToQString(prp->GetName()));
 	}
-	PBBaseProp* PropertyBrowserWidget::AddTreeItem(const PropertyInfo* prp, void* instance, QTreeWidgetItem* parentItem, int arrayIndex /*= -1*/)
+	PBBaseProp* PropertyBrowserWidget::AddTreeItem(Object* root, const PropertyInfo* prp, void* instance, QTreeWidgetItem* parentItem, int arrayIndex /*= -1*/)
 	{
 		QTreeWidgetItem* newItem = new QTreeWidgetItem(parentItem);
 		if (arrayIndex == -1)
@@ -154,7 +132,7 @@ namespace UPOEd
 			newItem->setText(0, prp->GetLegibleName().CStr());
 			/////comment
 			Attrib attrComment;
-			if (prp->GetAttributes().GetAttrib(EAtrribID::EAT_Comment, attrComment))
+			if (prp->GetAttributes().GetAttrib(EAttribID::EAT_Comment, attrComment))
 			{
 				newItem->setToolTip(0, QString(attrComment.GetString().CStr()));
 			}
@@ -176,8 +154,10 @@ namespace UPOEd
 			//UASSERT(parentItemWidget);
 		}
 
+
+
 		PBBaseProp::Param param;
-		param.mRootObject = mObject;
+		param.mRootObject = root;
 		param.mInstance = instance;
 		param.mParentProperty = parentItemWidget;
 		param.mPropertyInfo = (PropertyInfo*)prp;
@@ -193,12 +173,20 @@ namespace UPOEd
 		if (arrayIndex != -1)
 			prpTypeInfo = prp->TemplateArgTypeInfo();
 
-		QWidget* widget = GetWidgetForProp(param);
-		mTree->setItemWidget(newItem, 1, widget);
-
 		void* pValue = prp->Map(instance);
 		if (arrayIndex != -1)
 			pValue = ((SerArray*)pValue)->GetElement(arrayIndex, prpType, prpTypeInfo);
+
+
+
+		QWidget* widget = GetWidgetForProp(param);
+		mTree->setItemWidget(newItem, 1, widget);
+
+
+
+
+
+
 
 		switch (prpType)
 		{
@@ -221,9 +209,20 @@ namespace UPOEd
 		case UPO::EPT_TArray:
 			break;
 		case UPO::EPT_TObjectPtr:
-			break;
 		case UPO::EPT_ObjectPoniter:
-			break;
+		{
+			Object* obj = nullptr;
+			if (prpType == EPT_ObjectPoniter)
+				obj = *((Object**)pValue);
+			else
+				obj = ((ObjectPtr*)pValue)->Get();
+
+			if (prp->HasAttrib(EAttribID::EAT_ShowProperties) && obj)
+			{
+				AddPropertiesOfClass(obj, obj->GetClassInfo(), obj, newItem);
+			}
+		}
+		break;
 		case UPO::EPT_MetaClass:
 		{
 			ClassInfo* ci = prpTypeInfo->Cast<ClassInfo>();
@@ -231,7 +230,7 @@ namespace UPOEd
 			// 				ULOG_WARN("CI %s", ci->GetName().CStr());
 			// 				if(MetaClassNeedSubProperties(ci))
 			{
-				AddPropertiesOfClass(ci, pValue, newItem);
+				AddPropertiesOfClass(root, ci, pValue, newItem);
 			}
 		}
 		break;
@@ -248,7 +247,7 @@ namespace UPOEd
 		ReFillTree();
 	}
 	//////////////////////////////////////////////////////////////////////////
-	void PropertyBrowserWidget::AddPropertiesOfClass(ClassInfo* theClass, void* instance, QTreeWidgetItem* parentItem)
+	void PropertyBrowserWidget::AddPropertiesOfClass(Object* root, ClassInfo* theClass, void* instance, QTreeWidgetItem* parentItem)
 	{
 		SClassChain classChain;
 		theClass->GetClassChain(classChain, false, true);
@@ -256,16 +255,16 @@ namespace UPOEd
 		{
 			auto cls = classChain.mClasses[iClass];
 			
-			if(cls->HasAttrib(EAtrribID::EAT_Hidden)) continue;
+			if(cls->HasAttrib(EAttribID::EAT_Hidden)) continue;
 
 			for (unsigned iProperty = 0; iProperty < cls->NumProperty(); iProperty++)
 			{
 				auto prp = cls->GetProperty(iProperty);
 
-				if (prp->HasAttrib(EAtrribID::EAT_Hidden)) continue;
+				if (prp->HasAttrib(EAttribID::EAT_Hidden)) continue;
 
 				if(PrpFilterCheck(prp, mFilter->text()))
-					AddTreeItem(prp, instance, parentItem);
+					AddTreeItem(root, prp, instance, parentItem);
 			}
 		}
 	}
@@ -298,7 +297,7 @@ namespace UPOEd
 
 		if (Object* obj = mObject)
 		{
-			AddPropertiesOfClass(obj->GetClassInfo(), obj, nullptr);
+			AddPropertiesOfClass(obj, obj->GetClassInfo(), obj, nullptr);
 		}
 		mTree->expandAll();
 	}
@@ -332,6 +331,34 @@ namespace UPOEd
 	void PropertyBrowserDW::AttachObject(Object* object)
 	{
 		mWidget->AttachObject(object);
+	}
+
+	PropertyBrowserTreeWidget::PropertyBrowserTreeWidget(QWidget* parent /*= nullptr*/) : QTreeWidget(parent)
+	{
+
+	}
+
+	void PropertyBrowserTreeWidget::mousePressEvent(QMouseEvent *event)
+	{
+		ULOG_WARN("");
+		QTreeWidget::mousePressEvent(event);
+	}
+
+	void PropertyBrowserTreeWidget::mouseReleaseEvent(QMouseEvent *event)
+	{
+		ULOG_WARN("");
+		if (event->button() == Qt::MouseButton::MiddleButton)
+		{
+			if (QTreeWidgetItem* treeItem = this->itemAt(event->pos()))
+			{
+				if (PBBaseProp* widgetPrp = (PBBaseProp*)(this->itemWidget(treeItem, 1)))
+				{
+					widgetPrp->ResetToDefault();
+					ULOG_WARN("asdasd");
+				}
+			}
+		}
+		QTreeWidget::mouseReleaseEvent(event);
 	}
 
 };

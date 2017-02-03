@@ -11,7 +11,7 @@ namespace UPOEd
 	class AssetViewer_Texture2D : public AssetWindowBase
 	{
 		World*	mWorld = nullptr;
-		MainViewport*	mViewport = nullptr;
+		RenderViewportWidget*	mViewport = nullptr;
 		PropertyBrowserDW* mPropertyBrowser = nullptr;
 
 	public:
@@ -24,7 +24,7 @@ namespace UPOEd
 			wip.mWorldType = EWorldType::EEditor;
 			mWorld = GEngine()->CreateWorld(wip);
 
-			mViewport = new MainViewport(this);
+			mViewport = new RenderViewportWidget(this);
 			mViewport->setMinimumSize(400,400);
 			setCentralWidget(mViewport);
 

@@ -17,6 +17,10 @@ namespace UPO
 	//////////////////////////////////////////////////////////////////////////
 	String PropertyInfo::GetLegibleName() const
 	{
+		Attrib attrName;
+		if (GetAttrib(EAttribID::EAT_Name, attrName))
+			return attrName.GetString();
+		
 		String str = String(mPropertyName.CStr(), mPropertyName.Length());
 		if (str.Length() > 1 && str[0u] == 'm' && isupper(str[1u]))
 		{
@@ -169,9 +173,12 @@ namespace UPO
 		return p;
 	}
 	//////////////////////////////////////////////////////////////////////////
-	void ClassInfo::GetInheritedClasses(TArray<ClassInfo*>& outClasses) const
+	void ClassInfo::GetInheritedClasses(TArray<ClassInfo*>& outClasses, bool includingThis) const
 	{
 		outClasses.RemoveAll();
+
+		if (includingThis) outClasses.Add((ClassInfo*)this);
+
 		ClassInfo* parent = GetParent();
 		while (parent)
 		{
@@ -179,9 +186,13 @@ namespace UPO
 			parent = parent->GetParent();
 		}
 		outClasses.Reverse();
+
+		unsigned numClass = 0;
+		ClassInfo* classesTowardRoot[MAX_INHERITANCE];
+
 	}
 	//////////////////////////////////////////////////////////////////////////
-	void ClassInfo::GetClassChain(SClassChain& out, bool reverse, bool includingThis) const
+	void ClassInfo::GetClassChain(SClassChain& out, bool towardRoot, bool includingThis) const
 	{
 		unsigned numClass = 0;
 		ClassInfo* classesTowardRoot[MAX_INHERITANCE];
@@ -196,7 +207,7 @@ namespace UPO
 			parent = parent->GetParent();
 		}
 
-		if(reverse)
+		if(towardRoot)
 		{
 			for (unsigned i = 0; i < numClass; i++)
 				out.mClasses[i] = classesTowardRoot[i];
@@ -209,6 +220,8 @@ namespace UPO
 
 		out.mNumClass = numClass;
 	}
+
+
 
 	//////////////////////////////////////////////////////////////////////////
 	void ClassInfo::GetInvolvedClasses(TArray<ClassInfo*>& outClasses, bool subProperties, bool inheritedProperties, bool removeArrayFirst) const

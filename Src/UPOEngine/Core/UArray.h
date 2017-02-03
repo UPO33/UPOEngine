@@ -185,10 +185,28 @@ namespace UPO
 			CallCCTor(mElements + mLength, elements, numElement);
 			mLength += numElement;
 		}
+		void Append(const TArray<T>& array)
+		{
+			Append(array.Elements(), array.Length());
+		}
 		void Append(const std::initializer_list<T>& list)
 		{
 			Append(list.begin(), list.size());
 		}
+		void AppendUnique(const T* elements, size_t numElement)
+		{
+			if (elements == nullptr) return;
+
+			for (size_t i = 0; i < numElement; i++)
+			{
+				AddUnique(elements[i]);
+			}
+		}
+		void AppendUnique(const TArray<T>& array)
+		{
+			AppendUnique(array.Elements(), array.Length());
+		}
+
 		/*
 			Increasing capacity may perform Alloc or Realloc, it uses MemCopy not calling DTor CTor
 		*/
@@ -305,7 +323,7 @@ namespace UPO
 		size_t AddUnique(const T& element)
 		{
 			size_t i = Find(element);
-			if (i == ~0) return Add(element);
+			if (i == InvalidIndex) return Add(element);
 			else return i;
 		}
 		//remove an element from the end of array and calls dtor

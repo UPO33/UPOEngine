@@ -56,9 +56,23 @@ namespace UPO
 				}
 
 				if (item.mIsTObjectPtr)
+				{
+					if (*item.mPObjectPtr)
+					{
+						ULOG_WARN("objectPtr property currently has value, do not allocate object in constrctor");
+					}
+
 					*(item.mPObjectPtr) = objToAssign;
+				}
 				else
+				{
+					if (*item.mPPObject)
+					{
+						ULOG_WARN("objectPtr property currently has value, do not allocate object in constrctor");
+					}
+
 					*(item.mPPObject) = objToAssign;
+				}
 			}
 		}
 
@@ -91,16 +105,47 @@ namespace UPO
 
 			/////////////extracting all used classes in parents, properties, ...
 			TArray<ClassInfo*> classes;
-			for (size_t iObject = 0; iObject < mObjectsList.Length(); iObject++)
+			for (Object* obj : mObjectsList)
 			{
-				mObjectsList[iObject]->GetClassInfo()->GetInvolvedClasses(classes, true, true, true);
-				for (size_t iClass = 0; iClass < classes.Length(); iClass++)
+				obj->GetClassInfo()->GetInvolvedClasses(classes, true, true, true);
+				for (ClassInfo* theClass : classes)
 				{
-					mInvolvedClasses.AddUnique(classes[iClass]);
+					mInvolvedClasses.AddUnique(theClass);
 				}
 			}
 
 		}
+		void CollectObjectsInProperties()
+		{
+			TArray<ClassInfo*> classes;
+			for (Object* obj : mObjectsList)
+			{
+				classes.RemoveAll();
+				obj->GetClassInfo()->GetInheritedClasses(classes, true);
+				for (ClassInfo* theClass : classes)
+				{
+					for (unsigned iPrp = 0; iPrp < theClass->NumProperty(); iPrp++)
+					{
+						const PropertyInfo* prp = theClass->GetProperty(iPrp);
+						Object* prpValueAsObj = nullptr;
+						if (prp->GetType() == EPropertyType::EPT_ObjectPoniter)
+						{
+							prpValueAsObj = *((Object**)prp->Map(obj));
+						}
+						else if (prp->GetType() == EPropertyType::EPT_TObjectPtr)
+						{
+							prpValueAsObj = ((ObjectPtr*)prp->Map(obj))->Get();
+						}
+						if (prpValueAsObj)
+						{
+							if(!prpValueAsObj->Cast<Asset>())
+								mObjectsList.AddUnique(prpValueAsObj);
+						}
+					}
+				}
+			}
+		}
+			
 		//////////////////////////////////////////////////////////////////////////
 		/*
 			uint16 numInvolvedClass
@@ -156,6 +201,7 @@ namespace UPO
 				ULOG_MESSAGE("WriteObj %", obj->GetClassInfo()->GetName());
 				WriteClass(obj->GetClassInfo(), obj, *mStream);
 			}
+			ULOG_MESSAGE("% object was written", mObjectsList.Length());
 		}
 		void ReadObjects()
 		{
@@ -306,6 +352,8 @@ namespace UPO
 
 			Buffer data = Buffer(readSize);
 			stream.Bytes(data.Data(), data.Size());
+			UASSERT(!stream.HasError());
+
 			StreamWriterMemory streamProperties = StreamWriterMemory(data.Data(), data.Size());
 
 			auto ci = IndexToClass(classIndex);
@@ -318,6 +366,7 @@ namespace UPO
 			{
 				for (uint16 i = 0; i < numProperty; i++)
 				{
+					UASSERT(!streamProperties.HasError());
 					ReadClassProperty(classInfo, obj, streamProperties);
 				}
 			}
@@ -428,15 +477,16 @@ namespace UPO
 		//////////////////////////////////////////////////////////////////////////
 		void ReadClassProperty(const ClassInfo* classInfo, void* obj, Stream& stream)
 		{
-			
 			Name prpName = ReadPropertyName(stream);
 			EPropertyType prpType = ReadPropertyType(stream);
-
-			ULOG_MESSAGE("reading property %", prpName);
-
+			
 			const PropertyInfo* prpFound = classInfo->FindPropertyByName(prpName, true);
 
-			if (prpFound == nullptr) return IgnoreReadingPrp(prpType, stream);
+			if (prpFound == nullptr)
+			{
+				ULOG_ERROR("property not found [%]", prpName);
+				return IgnoreReadingPrp(prpType, stream);
+			}
 
 			switch (prpType)
 			{
@@ -676,7 +726,7 @@ namespace UPO
 		}
 		
 		/*
-		uint8 identifier	0 null, 1 asset, 2 entity
+		uint8 identifier	0 null, 1 asset, 2 rest
 		*/
 		void WritePrpObjectPointer(Object* pObject, Stream& stream)
 		{
@@ -691,25 +741,21 @@ namespace UPO
 					stream.RW(identifier);
 					pAsset->GetID().MetaSerialize(stream);
 				}
-				else if (Entity* pEntity = pObject->Cast<Entity>()) // is entity?
+				else
 				{
-					auto index = mObjectsList.Find(pEntity);
+					auto index = mObjectsList.Find(pObject);
 					if (index != InvalidIndex)	//exist in mObjectsList ?
 					{
 						uint32 index32 = index;
 						identifier = 2;
-						mStream->RW(identifier);
-						mStream->RW(index32);
+						stream.RW(identifier);
+						stream.RW(index32);
 					}
 					else
 					{
 						//Write Null ID
 						stream.RW(identifier);
 					}
-				}
-				else
-				{
-					ULOG_FATAL("object is not asset || entity")
 				}
 			}
 			else
@@ -718,7 +764,7 @@ namespace UPO
 				stream.RW(identifier);
 			}
 		}
-		void ReadPrpObjectPointer(void* ptrToVar /* Object** or TObjectPtr<>* */, bool isTObjectPtr, Stream& stream)
+		void ReadPrpObjectPointer(void* ptrToVar /* cast to Object** or TObjectPtr<>* */, bool isTObjectPtr, Stream& stream)
 		{
 			uint8 identifier = 0;
 			stream.RW(identifier);
@@ -729,19 +775,23 @@ namespace UPO
 				PointerPhaseItem& item = mPointerPhaseItems.LastElement();
 				item.mOwner = mCurLoadingObject;
 				item.mIsTObjectPtr = isTObjectPtr;
+
 				if (isTObjectPtr)
+				{
 					item.mPObjectPtr = (ObjectPtr*)ptrToVar;
+				}
 				else
+				{
 					item.mPPObject = (Object**)ptrToVar;
+				}
 
 				if (identifier == 1)	//asset
 				{
 					item.mAssigningIsAsset = true;
 					item.mAssigningAssetID.MetaSerialize(stream);
 				}
-				else if (identifier == 2) //entity
+				else if (identifier == 2) //rest types
 				{
-
 					item.mAssigningIsAsset = false;
 					stream.RW(item.mAssigningObjectIndex);
 				}
@@ -758,6 +808,7 @@ namespace UPO
 			mObjectsList = inObjects;
 			mStream = stream;
 
+			CollectObjectsInProperties();
 			FindInvolvedClasses();
 			WriteHeader();
 			WriteObjects();

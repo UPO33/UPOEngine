@@ -125,22 +125,60 @@ namespace UPOEd
 		QString msg = QString::asprintf("compiling %s shader %s %s", EnumToStr(param.mType), param.mFileName, param.mEntryPoint);
 		SplashSetMessage(msg);
 	}
+	struct DbgObj : public Object
+	{
+		UCLASS(DbgObj, Object)
+		Object*	mObj = nullptr;
+
+		DbgObj()
+		{
+			static bool B = false;
+			if (!B)
+			{
+				B = true;
+				//mObj = NewObject<DbgObj>();
+			}
+			
+		}
+		~DbgObj()
+		{
+			//SafeDeleteObject(mObj);
+		}
+	};
+	
+	UCLASS_BEGIN_IMPL(DbgObj)
+		UPROPERTY(mObj, UATTR_ShowProperties())
+	UCLASS_END_IMPL(DbgObj)
 
 	//////////////////////////////////////////////////////////////////////////
 	int Main(int argc, char** argv)
 	{
-		{
-			//Right ^ Up == Forward
-			Vec3 res = Vec3(0, 1, 0) ^ Vec3(0, 0, 1);
-			ULOG_ERROR("res %", res);
-			Matrix4 mat;
-			mat.MakeRotationDir(Vec3(1,0,1));
-
-			ULOG_ERROR("% % % %", mat.GetRow(0), mat.GetRow(1), mat.GetRow(2), mat.GetRow(3));
-			ULOG_ERROR("%", mat.GetRotationEuler());
-			mat.MakeRotationY(40);
-			ULOG_ERROR("%", mat.GetRotationEuler());
-		}
+// 		{
+// 			{
+// 				auto* mat = NewObject<DbgObj>();
+// 				auto* mat2 = NewObject<DbgObj>();
+// 				mat->mObj = mat2;
+// 
+// 				StreamReaderFile sr("asd.asd");
+// 				TArray<Object*> objs;
+// 				objs.Add(mat);
+// 				objs.Add(mat2);
+// 				ObjectArchive::Save(objs, &sr);
+// 				objs.RemoveAll();
+// 			}
+// 
+// 			TArray<Object*> objs;
+// 			StreamWriterFile sw("asd.asd");
+// 			ObjectArchive::Load(objs, &sw);
+// 
+// 			ULOG_WARN("%", objs.Length());
+// 			
+// 			for (Object* obj : objs)
+// 			{
+// 				ULOG_WARN("%", obj->GetClassInfo()->GetName());
+// 			}
+// 
+// 		}
 		
 
 		gQApp = new QApplication(argc, argv);

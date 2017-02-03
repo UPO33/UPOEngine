@@ -3,12 +3,18 @@
 #include "UCommonEd.h"
 #include "UD3DRenderWidget.h"
 
+class Ui_MainViewport;
+
 namespace UPOEd
 {
-	class MainViewport : public D3DRenderWidget
+	class RenderViewportWidget : public D3DRenderWidget
 	{
 	public:
-		MainViewport(QWidget* parent = nullptr);
+		TDelegateMulti<void, QMouseEvent*>	mOnMousePress;
+		TDelegateMulti<void, QMouseEvent*>	mOnMouseRelease;
+		TDelegateMulti<void, QMouseEvent*>	mOnMouseMove;
+
+		RenderViewportWidget(QWidget* parent = nullptr);
 
 		virtual void mousePressEvent(QMouseEvent *event) override;
 
@@ -33,4 +39,22 @@ namespace UPOEd
 
 		void Tick();
 	};
+
+
+	class MainViewport : public QWidget
+	{
+		Ui_MainViewport*	ui;
+		Object*				mOptionsWidgetObject;
+
+	public:
+		MainViewport(QWidget* parent = nullptr);
+		~MainViewport();
+		RenderViewportWidget* GetViewport() const;
+		void SetWorld(World*);
+		void Tick();
+
+		void ToggleOptionsWidgetVisibility();
+
+	};
+
 };

@@ -1,17 +1,20 @@
 #include "UEntityBrowser.h"
 #include "UMainWindow.h"
 
+#include "../UPOEngine/Engine/UEntityCamera.h"
+
 
 namespace UPOEd
 {
-	void GetSpawnableEntitiesClass(TArray<ClassInfo*>& out)
+	//////////////////////////////////////////////////////////////////////////
+	void UGetSpawnableEntitiesClass(TArray<ClassInfo*>& out)
 	{
 		GMetaSys()->GetAllTypes().ForEach([&out](TypeInfo* type)
 		{
 			if (type && type->IsClass())
 			{
 				ClassInfo* ci = (ClassInfo*)type;
-				if (ci->IsBaseOf(Entity::GetClassInfoStatic()) && !ci->IsAbstract())
+				if (ci->IsBaseOf<Entity>() && !ci->IsAbstract() && ci->HasAttrib(EAttribID::EAT_Instanceable))
 				{
 					out.Add(ci);
 				}
@@ -51,12 +54,14 @@ namespace UPOEd
 		mTree = new QTreeWidget(this);
 		layout()->addWidget(mTree);
 		mTree->setHeaderHidden(true);
+		mTree->setIndentation(10);
 		mTree->setAlternatingRowColors(true);
 		mTree->setSelectionMode(QAbstractItemView::SelectionMode::SingleSelection);
 		mTree->setContextMenuPolicy(Qt::ContextMenuPolicy::CustomContextMenu);
 		mTree->setDragEnabled(true);
 		mTree->setDragEnabled(true);
 		mTree->setDragDropMode(QAbstractItemView::DragDropMode::DragDrop);
+		
 
 		setMinimumSize(QSize(300, 300));
 
@@ -120,8 +125,6 @@ namespace UPOEd
 		else 
 			entity = mAttachedWorld->GetRootEntity();
 		
-
-		ULOG_MESSAGE("nchild %", entity->NumChild());
 		for (unsigned iChild = 0; iChild < entity->NumChild(); iChild++)
 		{
 			Entity* child = entity->GetChild(iChild);
@@ -137,13 +140,20 @@ namespace UPOEd
 	void EntityBrowserWidget::EVContextMenuRequested(const QPoint& pos)
 	{
 		QMenu* menu = new QMenu(this);
+		QMenu* menu_Create = nullptr;
+		if(mIsEntityCreationPermitted)
+		{
+			menu_Create = new QMenu(menu);
+			menu_Create->setTitle("&Create");
+		}
+
 		QPoint globalPoint = mTree->mapToGlobal(pos);
 		auto selectedItem = (EntityBrowserItem*)mTree->itemAt(pos);
 		if (selectedItem) // r we on item?
 		{
 			TObjectPtr<Entity> selectedEntity = selectedItem->mEntity;
 			
-			menu->addAction("Destroy", this, [selectedEntity, this]() {
+			menu->addAction("&Destroy", this, [selectedEntity, this]() {
 				if (selectedEntity) selectedEntity->Destroy();
 				ReFillTree();
 			});
@@ -152,6 +162,21 @@ namespace UPOEd
 		else
 		{
 
+		}
+		
+		if(mIsEntityCreationPermitted)	
+		{
+			menu->addMenu(menu_Create);
+			TArray<ClassInfo*> entityClasses;
+			UGetSpawnableEntitiesClass(entityClasses);
+			for (ClassInfo* entityClass : entityClasses)
+			{
+				QIcon* classIcon = GetIcon(entityClass);
+				QAction* actionCreateEntity = menu_Create->addAction(classIcon ? *classIcon : QIcon(), ToQString(entityClass->GetName()));
+				connect(actionCreateEntity, &QAction::triggered, this, [this, entityClass, selectedItem](bool) {
+					CreateEntity(entityClass, selectedItem);
+				});
+			}
 		}
 
 		menu->popup(globalPoint);
@@ -181,6 +206,28 @@ namespace UPOEd
 // 		}
 	}
 
+	
+	void EntityBrowserWidget::CreateEntity(ClassInfo* entityClass, EntityBrowserItem* parentMaybeNull)
+	{
+		EntityCreationParam ecp;
+		ecp.mClass = entityClass;
+		ecp.mParent = nullptr;
+		//if any entity is selected create at its transformation
+		if (parentMaybeNull)
+		{
+			ecp.mParent = parentMaybeNull->mEntity;
+			ecp.mWorldTransform = parentMaybeNull->mEntity->GetWorldTransform();
+		}
+		else if (EntityCamera* edCamera = mAttachedWorld->GetFreeCamera())
+		{
+			Vec3 swapnPosition = edCamera->GetWorldPosition() + edCamera->GetForward() * 50;
+			ecp.mWorldTransform.MakeTranslation(swapnPosition);
+		}
+
+		mAttachedWorld->CreateEntity(ecp);
+		ReFillTree();
+	}
+
 	// 	void EntityBrowserWidget::mousePressEvent(QMouseEvent *event)
 // 	{
 // 		QWidget::mousePressEvent(event);
@@ -188,5 +235,33 @@ namespace UPOEd
 // // 		mTree->setItemSelected(nullptr, 0);
 // // 		mTree->clearFocus();
 // 	}
+
+	EntityBrowserTreeWidget::EntityBrowserTreeWidget(QWidget* parent /*= nullptr*/) : QTreeWidget(parent)
+	{
+		this->setIndentation(10);
+		this->setDragEnabled(true);
+		this->setDragDropMode(QAbstractItemView::NoDragDrop);
+	}
+
+	EntityBrowserTreeWidget::~EntityBrowserTreeWidget()
+	{
+
+	}
+
+	void EntityBrowserTreeWidget::dropEvent(QDropEvent *event)
+	{
+	}
+
+	void EntityBrowserTreeWidget::dragEnterEvent(QDragEnterEvent *event)
+	{
+	}
+
+	void EntityBrowserTreeWidget::dragMoveEvent(QDragMoveEvent *event)
+	{
+	}
+
+	void EntityBrowserTreeWidget::dragLeaveEvent(QDragLeaveEvent *event)
+	{
+	}
 
 };

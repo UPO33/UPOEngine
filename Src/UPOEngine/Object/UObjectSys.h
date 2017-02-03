@@ -61,7 +61,11 @@ namespace UPO
 	inline Object* NewObject(const ClassInfo* classInfo) { return GObjectSys()->NewObject(classInfo); }
 	//call dtor and delete the object
 	inline void DeleteObject(Object* object) { GObjectSys()->DeleteObject(object); }
-
+	template<typename T> void SafeDeleteObject(T*& object) 
+	{
+		if (object) GObjectSys()->DeleteObject(object);
+		object = nullptr;
+	}
 	template<typename T> T* NewObject() 
 	{
 		static_assert(TT_IsObject<T>::value, "T must be a meta class derived from Object");

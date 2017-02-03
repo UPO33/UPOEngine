@@ -14,7 +14,7 @@ namespace UPO
 			Entity* child = mChildren[i];
 			if(child->IsAlive())
 			{
-				child->mWorldTransform = mWorldTransform * child->mLocalTransform;
+				child->mWorldTransform = child->mLocalTransform * mWorldTransform;
 				child->mIsWorldTransformInvDirty = true;
 				child->TagRenderTransformDirty();
 				child->OnCalcBound();
@@ -51,6 +51,7 @@ namespace UPO
 		mTickRegistered = false;
 		mTickPendingAdd = false;
 		mIsWorldTransformInvDirty = false;
+		mIsSelected = false;
 
 		mWorldTransform = mLocalTransform = mWorldTransformInv = Transform::IDENTITY;
 		mBound = AABB(InitZero());
@@ -63,7 +64,7 @@ namespace UPO
 	{
 		if (mRS == nullptr) return;
 		
-		if (FlagTest(EEF_Visible | EEF_Alive))
+		if (FlagTest(EEF_Alive))
 		{
 			if (!FlagTest(EEF_RenderDataDirty))
 				mWorld->mEntitiesRenderDataDirty.Add(this);
@@ -180,6 +181,31 @@ namespace UPO
 		return mWorldTransformInv;
 	}
 
+	Vec3 Entity::GetWorldPosition() const
+	{
+		return GetWorldTransform().GetTranslation();
+	}
+
+	Vec3 Entity::GetLocalPosition() const
+	{
+		return GetLocalTransform().GetTranslation();
+	}
+
+	Vec3 Entity::GetForward() const
+	{
+		return GetWorldTransform().GetForward();
+	}
+
+	Vec3 Entity::GetRight() const
+	{
+		return GetWorldTransform().GetRight();
+	}
+
+	Vec3 Entity::GetUp() const
+	{
+		return GetWorldTransform().GetUp();
+	}
+
 	const AABB& Entity::GetBound() const
 	{
 		return mBound;
@@ -195,7 +221,7 @@ namespace UPO
 		}
 		else
 		{
-			mWorldTransform = mParent->mWorldTransform * localTrs;
+			mWorldTransform = localTrs * mParent->mWorldTransform;
 		}
 		mIsWorldTransformInvDirty = true;
 		TagRenderTransformDirty();
@@ -323,6 +349,12 @@ namespace UPO
 	{
 		mWorld->GetTicking()->AdjustEntityTick(this);
 	}
+
+	void Entity::SetSelected(bool selectet)
+	{
+		mIsSelected = selectet;
+	}
+
 	void Entity::RegisterToWorld(World* world)
 	{
 		UASSERT(mWorld == nullptr);
@@ -365,9 +397,7 @@ namespace UPO
 				mParent = nullptr;
 			}
 
-			mWorld->mEntitiesPendingKill.Add(this);
-
-			mWorld->PushToPendingDestroyFromRS(this);
+			mWorld->PushToPendingKill(this);
 
 
 			//GetWorld()->PushToLimbo(this);
@@ -414,8 +444,7 @@ namespace UPO
 		DoOnChilChild([](Entity* child) {
 			if (child->FlagTestAnClear(EEF_Alive))
 			{
-				child->mWorld->mEntitiesPendingKill.Add(child);
-				child->mWorld->PushToPendingDestroyFromRS(child);
+				child->mWorld->PushToPendingKill(child);
 				//child->GetWorld()->PushToLimbo(child);
 // 				child->Destroy_Pass0();
 			}

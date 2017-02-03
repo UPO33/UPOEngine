@@ -11,19 +11,32 @@ namespace UPO
 	class Canvas;
 	class GFXSwapChain;
 	class Renderer;
-	class SelectionBuffer;
 	class InputState;
+	class HitSelectionCanvas;
 
-	struct GameWindowRenderOptions
+	//////////////////////////////////////////////////////////////////////////
+	static const float EditorCameraMinFOV = 30;
+	static const float EditorCameraMaxFOV = 150;
+	static const float EditorCameraMaxSpeed = 100;
+
+	//////////////////////////////////////////////////////////////////////////
+	struct GameWindowOptions
 	{
+		UCLASS(GameWindowOptions, void)
+
 		bool	mRealTime = true;
 		bool	mRenderStaticMeshes = true;
 		bool	mRenderPrimitiveBatch = true;
 		bool	mRenderCanvas = true;
 		bool	mShowFPS = true;
 		bool	mRenderGrid = true;
+		bool	mShowBounds = true;
+		bool	mVisualizeGBuffer = false;
+		float	mEditorCameraSpeed = 100;
+		float	mEditorCameraFOV = 60;
 	};
 
+	//////////////////////////////////////////////////////////////////////////
 	struct UAPI GameWindowCreationParam
 	{
 		Vec2I		mSize = Vec2I(400, 400);
@@ -35,6 +48,7 @@ namespace UPO
 		GameWindowCreationParam(){}
 		GameWindowCreationParam(InitConfig);
 	};
+
 	//////////////////////////////////////////////////////////////////////////
 	class UAPI GameWindow abstract
 	{
@@ -44,9 +58,9 @@ namespace UPO
 
 		Canvas*					mCanvas = nullptr;	//main canvas that cover whole window
 		GFXSwapChain*			mSwapchain = nullptr;
-		SelectionBuffer*		mSelectionBuffer = nullptr;
 		InputState*				mInputState = nullptr;
-		GameWindowRenderOptions	mOptions;
+		HitSelectionCanvas*		mHitSelection = nullptr;
+		GameWindowOptions		mOptions;
 		GameWindowCreationParam mCreationParam;
 		Color					mClearColor = Color(0.9f, 0.9f, 0.9f, 0);
 		bool					mHasFocus;
@@ -84,6 +98,7 @@ namespace UPO
 		Canvas* GetCanvas() const { return mCanvas; }
 		InputState* GetInputState() const { return mInputState; }
 		GFXSwapChain* GetSwapchain() const { return mSwapchain; }
+		HitSelectionCanvas* GetHitSelection() const { return mHitSelection; }
 
 		virtual bool CreateCanvas();;
 		virtual bool DestroyCanvas();;

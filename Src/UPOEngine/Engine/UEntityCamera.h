@@ -67,6 +67,8 @@ namespace UPO
 		void GetFrustum(Frustum& out);
 		//make matrices and ... from existing data 
 		void Bake();
+
+		void OnFetch(unsigned flag) override;
 	};
 
 

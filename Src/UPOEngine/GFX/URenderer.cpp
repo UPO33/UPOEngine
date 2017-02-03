@@ -11,6 +11,7 @@
 #include "../Engine/UEntityCamera.h"
 #include "../Engine/UStaticMesh.h"
 #include "../Engine/UEntityStaticMesh.h"
+#include "../Engine/UHitSelection.h"
 
 #include "../GFXCore/UGFXDeviceDX.h"
 
@@ -19,28 +20,33 @@ namespace UPO
 	UGLOBAL_SHADER_DECLIMPL(gVSGrid, GFXVertexShader, "Grid.hlsl", "VSMain");
 	UGLOBAL_SHADER_DECLIMPL(gPSGrid, GFXPixelShader, "Grid.hlsl", "PSMain");
 
-// 	UGLOBAL_SHADER_DECLIMPL(gVSBasePassForward, GFXVertexShader, "BasePassForward.hlsl", "VSMain");
-// 	UGLOBAL_SHADER_DECLIMPL(gPSBasePassForward, GFXPixelShader, "BasePassForward.hlsl", "PSMain");
 
-	UGLOBAL_SHADER_DECLIMPL(gVSBasePassDefferd, GFXVertexShader, "BasePassDeferred.hlsl", "VSMain");
-	UGLOBAL_SHADER_DECLIMPL(gPSBasePassDefferd, GFXPixelShader, "BasePassDeferred.hlsl", "PSMain");
+	UGLOBAL_SHADER_DECLIMPL2(gVSEndPass, GFXVertexShader, "EndPassDeferred.hlsl", "VSMain");
+	UGLOBAL_SHADER_DECLIMPL2(gPSEndPass, GFXPixelShader, "EndPassDeferred.hlsl", "PSMain");
 
-	UGLOBAL_SHADER_DECLIMPL(gVSEndPassDeferred, GFXVertexShader, "EndPassDeferred.hlsl", "VSMain");
-	UGLOBAL_SHADER_DECLIMPL(gPSEndPassDeferred, GFXPixelShader, "EndPassDeferred.hlsl", "PSMain");
+	UGLOBAL_SHADER_DECLIMPL2(gVSBasePassNull, GFXVertexShader, "BasePassDeferredNull.hlsl", "VSMain");
+	UGLOBAL_SHADER_DECLIMPL2(gPSBasePassNull, GFXPixelShader, "BasePassDeferredNull.hlsl", "PSMain");
+
 
 	//////////////////////////////////////////////////////////////////////////typedef for hlsl support
+	typedef Vec2 float2;
 	typedef Vec4 float4;
 	typedef Matrix4 matrix, float4x4;
-
+	typedef Vec2I uint2;
 
 	//////////////////////////////////////////////////////////////////////////
 	struct CBPerFrame
 	{
 		static const unsigned Index = 0;
 
-		float4 mSunDir;
-		float4 mSunColor;
-		float4 mRandomColor;
+		float4	mSunDir;
+		float4	mSunColor;
+		float4	mRandomColor;
+		uint2	mGBufferTextureSize;
+		float	mDeltaTime;
+		float	mDeltaTimeReal;
+		float	mSecondsSincePlay;
+		float	mSecondsSincePlayReal;
 	};
 	
 	//////////////////////////////////////////////////////////////////////////
@@ -54,9 +60,11 @@ namespace UPO
 		matrix mInvView;
 		matrix mWorldToCilp;
 		matrix mClipToWorld;
-		float4 mWorldPosition;
+		float2 mViewportSize;
+		float2 mInvViewportSize;
+		float2 mNearFarClip;
 	};
-
+	
 	//////////////////////////////////////////////////////////////////////////
 	struct CBPerStaticMesh
 	{
@@ -65,7 +73,13 @@ namespace UPO
 		matrix		mLocalToWorld;
 	};
 
+	//////////////////////////////////////////////////////////////////////////
+	struct CBHitSelection
+	{
+		static const unsigned Index = 3;
 
+		unsigned	mHitID;
+	};
 
 
 	struct GridDraw
@@ -78,7 +92,7 @@ namespace UPO
 
 		TArray<Vertex>		mLinesVertex;
 
-		float		mGridCellSize = 100;
+		float		mGridCellSize = 10;
 		int			mNumCellPerAxis = 32;
 
 		GFXVertexBuffer*	mVBuffer = nullptr;
@@ -173,7 +187,6 @@ namespace UPO
 
 
 
-
 	void Renderer::RenderGameWin(GameWindow* gw)
 	{
 		if (gw && gw->mSwapchain && gw->mWorld && gw->mWorld->GetRS())
@@ -182,7 +195,8 @@ namespace UPO
 			mSwapChain = gw->mSwapchain;
 			mWorldRS = gw->mWorld->GetRS();
 			mCanvas = gw->mCanvas;
-			mPrimitiveBatch = gw->GetWorld()->GetPrimitiveBatch();
+			mHitSelection = gw->mHitSelection;
+			mPrimitiveBatch = gw->mWorld->GetPrimitiveBatch();
 			Vec2I wndSize = mGameWnd->GetWinSize();
 			mViewportSize = Vec2(wndSize.mX, wndSize.mY);
 			Render();
@@ -208,15 +222,22 @@ namespace UPO
 
 		CheckRenderTargetResizing();
 
-		//update per frame cbuffer
-		{
-			auto mapped = gGFX->Map<CBPerFrame>(mCBPerFrame, EMapFlag::EWriteDiscard);
+		UpdatePerFrameCBuffer();
+		gGFX->SetConstentBuffer(mCBPerFrame, CBPerFrame::Index, EShaderType::EVertex);
+		gGFX->SetConstentBuffer(mCBPerFrame, CBPerFrame::Index, EShaderType::EPixel);
 
-			gGFX->Unmap(mCBPerFrame);
+		if (mHitSelection) 
+		{
+			mHitSelection->ClearProxeis();
+			mHitSelection->RegisterProxy(nullptr);
 		}
 
-		
 		RenderWorld();
+
+		if (mHitSelection)
+		{
+			mHitSelection->CatchAt(mGameWnd->mInputState->GetMousePosition(), mRenderTargets->mIDBufferCPURead);
+		}
 
 		if (mCanvas && mGameWnd->mOptions.mRenderCanvas) //draw canvas?
 		{
@@ -245,7 +266,6 @@ namespace UPO
 		mCamerasToRender.RemoveAll();
 		mWorldRS->GetDesiredCameras(mCamerasToRender);
 		
-		
 		for (mCurRenderingCameraIndex = 0; mCurRenderingCameraIndex < mCamerasToRender.Length(); mCurRenderingCameraIndex++)
 		{
 			EntityCameraRS* camera = mCamerasToRender[mCurRenderingCameraIndex];
@@ -262,28 +282,55 @@ namespace UPO
 			{
 				mRenderTargets->BinGBuffers(true);
 
-				RenderStaticMeshes();
+				if(mGameWnd->mOptions.mRenderStaticMeshes)
+					RenderStaticMeshes();
 
+				//hit selection copy resources
+				if (mRenderTargets->mIDBuffer)
+				{
+					gGFX->CopyResource(mRenderTargets->mIDBufferCPURead, mRenderTargets->mIDBuffer);
+				}
 
-				gGFX->SetShaders(gVSEndPassDeferred, gPSEndPassDeferred);
+				ShaderConstantsCombined scEndPass;
+				if (mGameWnd->mOptions.mVisualizeGBuffer)
+					scEndPass |= ShaderConstants::VISALIZE_GBUFFER;
+				gGFX->SetShaders(gVSEndPass->Get(scEndPass), gPSEndPass->Get(scEndPass));
+
 				GFXRenderTargetView* renderTargets[] = { mSwapChain->GetBackBufferView() };
 				gGFX->SetRenderTarget(renderTargets, nullptr);
 				gGFX->SetViewport(viewport);
-				gGFX->SetResourceView(mRenderTargets->mGBufferA, 0, EShaderType::EPixel);
-				gGFX->SetResourceView(mRenderTargets->mGBufferB, 1, EShaderType::EPixel);
+
+
 				gGFX->SetBlendState(nullptr);
 				gGFX->SetDepthStencilState(nullptr);
 				gGFX->SetRasterizerState(nullptr);
 				gGFX->SetIndexBuffer(nullptr);
+
+				//gGFX->ClearDepthStencil(mRenderTargets->mDepthStencilView, true, true, 0.5, 0);
+
+				//bind end passs
+				GFXShaderResourceView* views[] =
+				{
+					mRenderTargets->mGBufferA->GetShaderResourceView(),
+					mRenderTargets->mGBufferB->GetShaderResourceView(),
+					mRenderTargets->mGBufferC->GetShaderResourceView(),
+					mRenderTargets->mDepthReadView,
+					mRenderTargets->mIDBuffer->GetShaderResourceView(),
+					
+				};
+				gGFX->SetResourceView(views, 0, EShaderType::EPixel);
+
+
 				gGFX->SetPrimitiveTopology(EPrimitiveTopology::ETriangleList);
 				gGFX->Draw(3);
 				
 			}
 			//bind swap chain and depth buffer
 // 			gGFX->ClearRenderTarget(mSwapChain->GetBackBufferView(), Color::WHITE);
-// 			GFXRenderTargetView* renderTargets[] = { mSwapChain->GetBackBufferView() };
-// 			gGFX->SetRenderTarget(renderTargets, mRenderTargets->mDepthStencil->GetDepthStencilView());
-
+			GFXRenderTargetView* renderTargets[] = { mSwapChain->GetBackBufferView() };
+			gGFX->SetRenderTarget(renderTargets, mRenderTargets->mDepthStencil->GetDepthStencilView());
+			gGFX->SetDepthStencilState(TDepthStencilState<>::Get());
+// 
 			//draw primitives
 			if (mPrimitiveBatch && mGameWnd->mOptions.mRenderPrimitiveBatch) mPrimitiveBatch->Render();
 
@@ -304,8 +351,8 @@ namespace UPO
 
 		mViewportSize.mX = wndSize.mX;
 		mViewportSize.mY = wndSize.mY;
-
-		if (!mRenderTargets) mRenderTargets = new DefferdRenderTargets(UGetBiggestGameWindowSize());
+		
+		if (!mRenderTargets) mRenderTargets = new DefferdRenderTargets(UGetBiggestGameWindowSize(), true);
 
 
 		if (wndSize != bufferSize)	//window size has changed
@@ -313,60 +360,100 @@ namespace UPO
 			ULOG_MESSAGE("resizing render target, new size : %", mViewportSize);
 
 			if (mRenderTargets) delete mRenderTargets;
-			mRenderTargets = new DefferdRenderTargets(UGetBiggestGameWindowSize());
+			mRenderTargets = new DefferdRenderTargets(UGetBiggestGameWindowSize(), true);
 
 			mSwapChain->Resize(wndSize);
 			if (mCanvas) mCanvas->Resize(wndSize);
+			if (mHitSelection) mHitSelection->Resize(wndSize);
+			
 		}
 	}
 
 	//////////////////////////////////////////////////////////////////////////
 	void Renderer::RenderStaticMeshes()
 	{
+		mSCStaticMeshMainPass = ShaderConstants::STATIC_MESH;
+		if (mHitSelection)
 		{
-			GFXRasterizerStateDesc desc;
-			desc.mCullMode = ECullMode::ENone;
-			desc.mWireframe = false;
-			auto rs = GlobalResources::GetRasterizerState(desc);
-			UASSERT(rs);
-			gGFX->SetRasterizerState(rs);
+			mSCStaticMeshMainPass |= ShaderConstants::USE_HITSELECTION;
+		}
 
-		}
-		{
-			GFXDepthStencilStateDesc desc;
-			desc.mDepthEnable = true;
-			desc.mStencilEnable = false;
-			gGFX->SetDepthStencilState(GlobalResources::GetDepthStencilState(desc));
-		}
+		gGFX->SetDepthStencilState(TDepthStencilState<true, true, EComparisonFunc::ELess>::Get());
+		gGFX->SetRasterizerState(TRasterizerState<false, ECullMode::EBack>::Get());
 		gGFX->SetBlendState(nullptr);
 
+		gGFX->SetConstentBuffer(mCBPerStaticMesh, CBPerStaticMesh::Index, EShaderType::EVertex);	//bind static mesh buffer
+		gGFX->SetConstentBuffer(mCBHitSelection, CBHitSelection::Index, EShaderType::EPixel);		//bind hist selection
 
-		unsigned numSMesh = mWorldRS->mStaticMeshes.Length();
-		for (unsigned iMesh = 0; iMesh < numSMesh; iMesh++)
+		gGFX->SetPrimitiveTopology(EPrimitiveTopology::ETriangleList);
+
+		size_t numSMesh = mWorldRS->mStaticMeshes.Length();
+		for (size_t iMesh = 0; iMesh < numSMesh; iMesh++)
 		{
-			EntityStaticMeshRS* entityMeh = mWorldRS->mStaticMeshes[iMesh];
-			AStaticMeshRS* meshAsset = entityMeh->mMesh;
-			if (meshAsset)
+			EntityStaticMeshRS* entityMesh = mWorldRS->mStaticMeshes[iMesh];
+			RenderStaticMesh(entityMesh);
+		}
+	}
+	//////////////////////////////////////////////////////////////////////////
+	void Renderer::RenderStaticMesh(EntityStaticMeshRS* entityStaticMesh)
+	{
+		if (entityStaticMesh->mRSFlag.Test(ERS_RenderDataValid | ERS_Visible | ERS_MainPassEnable))
+		{
+			AStaticMeshRS*	meshAsset = entityStaticMesh->mMesh;
+			AMaterialRS* meshMaterial = entityStaticMesh->mMaterial;
+
+			//PerObject data
 			{
 				auto mapped = gGFX->Map<CBPerStaticMesh>(mCBPerStaticMesh, EMapFlag::EWriteDiscard);
-				mapped->mLocalToWorld = entityMeh->mWorldTransform;
+				mapped->mLocalToWorld = entityStaticMesh->mWorldTransform;
 				gGFX->Unmap(mCBPerStaticMesh);
-
-				gGFX->SetIndexBuffer(meshAsset->mIndexBuffer);
-				gGFX->SetVertexBuffer(meshAsset->mVertexBuffer, 0, sizeof(AStaticMesh::VertexTypeFull), 0);
-				gGFX->SetInputLayout(mILStaticMeshVertexTypeFull);
-				gGFX->SetShaders(gVSBasePassDefferd, gPSBasePassDefferd);
-				gGFX->SetConstentBuffer(mCBPerStaticMesh, CBPerStaticMesh::Index, EShaderType::EVertex);
-				gGFX->SetPrimitiveTopology(EPrimitiveTopology::ETriangleList);
-				gGFX->DrawIndexed(meshAsset->mIndexCount);
 			}
 
+			//hit selection
+			if (mHitSelection)
+			{
+				auto mapped = gGFX->Map<CBHitSelection>(mCBHitSelection, EMapFlag::EWriteDiscard);
+				mapped->mHitID = mHitSelection->RegisterProxy(new HPObject(entityStaticMesh->mGS));
+				gGFX->Unmap(mCBHitSelection);
+			}
+
+			meshMaterial->Bind();
+
+			GFXRasterizerState* rsState = mLUTMaterialMainPassRSState[meshMaterial->GetFlag()];
+			gGFX->SetRasterizerState(rsState);
+
+			gGFX->SetShader(meshMaterial->GetShaderBound(mSCStaticMeshMainPass));
+
+
+			gGFX->SetIndexBuffer(meshAsset->mIndexBuffer);
+			gGFX->SetVertexBuffer(meshAsset->mVertexBuffer, 0, sizeof(AStaticMesh::VertexTypeFull), 0);
+			gGFX->SetInputLayout(mILStaticMeshVertexTypeFull);
+
+
+			gGFX->DrawIndexed(meshAsset->mIndexCount);
 		}
 	}
 
 	GFXDepthStencilState* Renderer::GetRasterizerForStaticMeshSolid()
 	{
 		return nullptr;
+	}
+
+	void Renderer::UpdatePerFrameCBuffer()
+	{
+		auto mapped = gGFX->Map<CBPerFrame>(mCBPerFrame, EMapFlag::EWriteDiscard);
+
+		UASSERT(mRenderTargets && mWorldRS);
+
+		mapped->mGBufferTextureSize = mRenderTargets->mSize;
+		mapped->mRandomColor = Vec4(RandFloat01(), RandFloat01(), RandFloat01(), RandFloat01());
+		
+		mapped->mDeltaTime = mWorldRS->mDeltaTime;
+		mapped->mDeltaTimeReal = mWorldRS->mDeltaTimeReal;
+		mapped->mSecondsSincePlay = mWorldRS->mSecondsSincePlay;
+		mapped->mSecondsSincePlayReal = mWorldRS->mSecondsSincePlayReal;
+
+		gGFX->Unmap(mCBPerFrame);
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -386,8 +473,10 @@ namespace UPO
 		mapped->mInvView = camera->mMatrixViewInv;
 		mapped->mWorldToCilp = camera->mMatrixWorldToClip;
 		mapped->mClipToWorld = camera->mMatrixClipToWorld;
-		mapped->mWorldPosition = Vec4(camera->mMatrixViewInv.GetTranslation(), 1);
-		
+		mapped->mViewportSize = mViewportSize;
+		mapped->mInvViewportSize =  Vec2(1) / mViewportSize;
+		mapped->mNearFarClip.mX = camera->mNearClip;
+		mapped->mNearFarClip.mY = camera->mFarClip;
 		gGFX->Unmap(mCBPerCamera);
 	}
 
@@ -400,13 +489,15 @@ namespace UPO
 		UASSERT(mCBPerCamera);
 		mCBPerStaticMesh = gGFX->CreateConstantBuffer(sizeof(CBPerStaticMesh));
 		UASSERT(mCBPerStaticMesh);
+		mCBHitSelection = gGFX->CreateConstantBuffer(sizeof(CBHitSelection));
+		UASSERT(mCBHitSelection);
 
 		mGridDraw = new GridDraw();
 
 		{
 			GFXInputLayoutDesc  desc = 
 			{
-				gVSBasePassDefferd, 
+				gVSBasePassNull->Get(ShaderConstantsCombined()),
 				{
 					{ "POSITION", EVertexFormat::EFloat3, -1, 0, false},
 					{ "NORMAL", EVertexFormat::EFloat3, -1, 0, false },
@@ -416,7 +507,53 @@ namespace UPO
 			mILStaticMeshVertexTypeFull = GlobalResources::GetInputLayout(desc);
 			UASSERT(mILStaticMeshVertexTypeFull);
 		}
+
+
+		{
+			GFXDepthStencilStateDesc desc;
+			mMainPassDepthEnableState = GlobalResources::GetDepthStencilState(desc);
+			UASSERT(mMainPassDepthEnableState);
+		}
+		{
+			GFXRasterizerStateDesc desc;
+
+			desc.mCullMode = ECullMode::EBack;
+			desc.mWireframe = false;
+			mMainPassRasterState = GlobalResources::GetRasterizerState(desc);
+			UASSERT(mMainPassRasterState);
+			
+			desc.mCullMode = ECullMode::EBack;
+			desc.mWireframe = true;
+			mMainPassRasterStateWire = GlobalResources::GetRasterizerState(desc);
+			UASSERT(mMainPassRasterStateWire);
+
+			desc.mWireframe = false;
+			desc.mCullMode = ECullMode::ENone;
+			mMainPassRasterStateTwoSide = GlobalResources::GetRasterizerState(desc);
+			UASSERT(mMainPassRasterStateTwoSide);
+
+			desc.mWireframe = true;
+			desc.mCullMode = ECullMode::ENone;
+			mMainPassRasterStateWireTwoSide = GlobalResources::GetRasterizerState(desc);
+			UASSERT(mMainPassRasterStateWireTwoSide);
+
+		}
+
+		{
+			MemZero(mLUTMaterialMainPassRSState, sizeof(mLUTMaterialMainPassRSState));
+
+			mLUTMaterialMainPassRSState[EMF_Default] = TRasterizerState<>::Get();
+			mLUTMaterialMainPassRSState[EMF_Wireframe] = TRasterizerState<true>::Get();
+			mLUTMaterialMainPassRSState[EMF_TwoSided] = TRasterizerState<false, ECullMode::ENone>::Get();
+			mLUTMaterialMainPassRSState[EMF_Wireframe | EMF_TwoSided] = TRasterizerState<true, ECullMode::ENone>::Get();
+		}
+
+		{
+		}
 	}
+
+
+
 	//////////////////////////////////////////////////////////////////////////
 	Renderer::~Renderer()
 	{
@@ -425,5 +562,24 @@ namespace UPO
 		SafeDelete(mCBPerFrame);
 
 	}
+
+
+	//////////////////////////////////////////////////////////////////////////
+	namespace ShaderConstants
+	{
+#define IMPLSHADERCONSTANT(Varible) UAPI ShaderConstant Varible(#Varible, "1")
+
+		IMPLSHADERCONSTANT(PIXEL_SHADER);
+		IMPLSHADERCONSTANT(VERTEX_SHADER);
+		IMPLSHADERCONSTANT(HULL_SHADER);
+		IMPLSHADERCONSTANT(DOMAIN_SHADER);
+		IMPLSHADERCONSTANT(GEOMERTY_SHADER);
+		IMPLSHADERCONSTANT(COMPUTE_SHADER);
+		IMPLSHADERCONSTANT(STATIC_MESH);
+		IMPLSHADERCONSTANT(USE_HITSELECTION);
+		IMPLSHADERCONSTANT(VISALIZE_GBUFFER);
+
+#undef IMPLSHADERCONSTANT
+	};
 
 };

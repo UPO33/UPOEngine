@@ -7,20 +7,20 @@ cbuffer CBGlobal : register(b0)
 };
 */
 
-struct VSIn
+struct VSInPB
 {
     float3 pos : POSITION;
     float4 color : COLOR;
 };
 
-struct PSIn
+struct PSInPB
 {
     float4 position : SV_Position;
     float4 color : COLOR;
 };
 
 
-void VSMain(in VSIn input, out PSIn output)
+void VSMain(in VSInPB input, out PSInPB output)
 {
     
 #if 0
@@ -32,7 +32,7 @@ void VSMain(in VSIn input, out PSIn output)
     //return mul(float4(pos, 1), gWorldToCLip);
 }
 
-float4 PSMain(PSIn input) : SV_Target
+float4 PSMain(PSInPB input) : SV_Target
 {
     return input.color;
 }

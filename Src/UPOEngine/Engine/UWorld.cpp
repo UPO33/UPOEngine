@@ -3,6 +3,7 @@
 #include "UEntity.h"
 #include "UEntityCamera.h"
 #include "UEntityStaticMesh.h"
+#include "UEntityFreeCamera.h"
 #include "UWorldRS.h"
 #include "UGameWindow.h"
 #include "UInput.h"
@@ -12,110 +13,6 @@
 
 namespace UPO
 {
-	//////////////////////////////////////////////////////////////////////////
-	class UAPI EntityFreeCamera : public EntityCamera
-	{
-		UCLASS(EntityFreeCamera, EntityCamera)
-
-		Vec3	mPosition = Vec3::ZERO;
-		Vec3	mRotationEuler = Vec3::ZERO;
-		float	mMoveSpeed = 100;
-		Vec3	mFocusPoint;
-		Vec3	mFocusPointRotation;
-		float	mFocusDist = 30;
-		
-		EntityFreeCamera()
-		{
-			mPosition = Vec3(30, 30, -30);
-			mRotationEuler = Matrix4::SRotationDir(Vec3::ZERO - mPosition).GetRotationEuler();
-		}
-		void OnTick() override
-		{
-			float moveSpeed = mMoveSpeed * GetWorld()->GetDeltaTime();
-			auto input = GetWorld()->GetInputState();
-			Vec2 mouseVelocity = input->GetMouseVelocity();
-
-			if (input->IsKeyPressed(EKC_LeftCtrl))	
-			{
-				Vec3 vDir = Quat::MakeEuler(mRotationEuler).Rotate(Vec3(0,0, mFocusDist));
-				mFocusPoint = mPosition + vDir;
-				
-				mFocusPointRotation = Matrix4::SRotationDir(mPosition - mFocusPoint).GetRotationEuler();
-			}
-			if (input->IsKeyDown(EKC_LeftCtrl))
-			{
-				mFocusDist -= Clamp(input->GetMouseWheelDelta(), -5, 5);
-				mFocusDist = Clamp(mFocusDist, 10, 10000);
-
-				if(input->IsKeyDown(EKC_MouseRight))
-				{
-					mFocusPointRotation.mY += mouseVelocity.mX;
-					mFocusPointRotation.mX -= mouseVelocity.mY;
-
-					Vec3 v = Quat::MakeEuler(mFocusPointRotation) * Vec3(0, 0, mFocusDist);
-					Matrix4 matR, matT;
-					matT.MakeTranslation(v);
-					mPosition = mFocusPoint + v;
-					matR.MakeRotationDir(mFocusPoint - mPosition);
-					mRotationEuler = matR.GetRotationEuler();
-					SetWorldTransform(matR * matT);
-				}
-// 				Vec3 v = Quat::MakeEuler(mFocusPointRotation) * Vec3(0, 0, mFocusDist);
-// 				Matrix4 matR, matT;
-// 				matT.MakeTranslation(v);
-// 				mPosition = mFocusPoint + v;
-// 				matR.MakeRotationDir(mFocusPoint - mPosition);
-// 				mRotationEuler = matR.GetRotationEuler();
-				
-			}
-			else
-			{
-				float upWorld = input->IsKeyDown(EKC_E) ? 1 : (input->IsKeyDown(EKC_Q) ? -1 : 0);
-				float rightLocal = input->IsKeyDown(EKC_D) ? 1 : (input->IsKeyDown(EKC_A) ? -1 : 0);
-				float forwardLocal = input->IsKeyDown(EKC_W) ? 1 : (input->IsKeyDown(EKC_S) ? -1 : 0);
-
-				if (input->IsKeyDown(EKC_MouseMiddle))
-				{
-					upWorld -= Clamp(mouseVelocity.mY, -1, 1);
-					rightLocal = Clamp(mouseVelocity.mX, -1, 1);
-				}
-
-
-				if (input->IsKeyDown(EKC_LeftShift)) moveSpeed *= 2;
-
-				if (input->IsKeyDown(EKC_MouseRight))
-				{
-					mRotationEuler.mY += mouseVelocity.mX;
-					mRotationEuler.mX += mouseVelocity.mY;
-					int fovDelta = Clamp(input->GetMouseWheelDelta(), -1, 1) * 5;
-					mFieldOfView -= fovDelta;
-					mFieldOfView = Clamp(mFieldOfView, 40, 120);
-
-					String strFov;
-					strFov.SetFormatted("FOV %f", mFieldOfView);
-					if (fovDelta) GetWorld()->GetCanvas()->AddDebugString(strFov);
-
-				}
-
-
-
-
-				mPosition.mY += upWorld * moveSpeed;
-
-				mPosition += Quat::MakeEuler(mRotationEuler).Rotate(Vec3(rightLocal, 0, forwardLocal)) * moveSpeed;
-
-				SetWorldTransform(mPosition, mRotationEuler);
-			}
-
-			
-		}
-	};
-
-	UCLASS_BEGIN_IMPL(EntityFreeCamera)
-	UCLASS_END_IMPL(EntityFreeCamera)
-
-
-
 	//////////////////////////////////////////////////////////////////////////
 	//returns the size of render state corresponding to the entity, zero if entity has not render state
 	size_t UGetEntityClassRSSize(const ClassInfo* entityClass)
@@ -193,7 +90,7 @@ namespace UPO
 	//////////////////////////////////////////////////////////////////////////
 	void World::Tick(float delta)
 	{
-		mDeltaTimeUnscaled = delta;
+		mDeltaTimeReal = delta;
 		mDeltaTime = delta * mDeltaScale;
 
 		CheckPendingKills();
@@ -211,7 +108,7 @@ namespace UPO
 			mPrimitiveBatch->Tick(mDeltaTime);
 
 			mSecondsSincePlay += mDeltaTime;
-			mSecondsSincePlayUnscaled += mDeltaTimeUnscaled;
+			mSecondsSincePlayReal += mDeltaTimeReal;
 		}
 		else
 		{
@@ -363,9 +260,12 @@ namespace UPO
 		mEntitiesPendingAddToRS->Add(ent);
 	}
 
-	void World::PushToPendingDestroyFromRS(Entity* ent)
+	void World::PushToPendingKill(Entity* ent)
 	{
-		mEntitiesPendingDestroyFromRS->Add(ent);
+		UASSERT(ent);
+
+		mEntitiesPendingKill.Add(ent);
+		if(ent->mRS) mEntitiesPendingDestroyFromRS->Add(ent);
 	}
 
 
@@ -407,8 +307,8 @@ namespace UPO
 		mFetchCompleted(false, false)
 	{
 		mDeltaScale = 1;
-		mDeltaTimeUnscaled = mDeltaTime = 1.0f / 60.0f;
-		mSecondsSincePlay = mSecondsSincePlayUnscaled = 0;
+		mDeltaTimeReal = mDeltaTime = 1.0f / 60.0f;
+		mSecondsSincePlay = mSecondsSincePlayReal = 0;
 
 		mWorldType = param.mWorldType;
 

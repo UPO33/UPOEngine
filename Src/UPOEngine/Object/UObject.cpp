@@ -18,7 +18,7 @@ namespace UPO
 		if (mRefData)
 		{
 			mRefData->mObject = nullptr;
-			ObjectRefData::Free(mRefData);
+			mRefData->Dec();
 			mRefData = nullptr;
 		}
 	}
@@ -30,7 +30,7 @@ namespace UPO
 		{
 			mRefData = ObjectRefData::GetNew();
 			mRefData->mObject = this;
-			mRefData->mRefCount = 0;
+			mRefData->mRefCount = 1;
 		}
 		return mRefData;
 	}

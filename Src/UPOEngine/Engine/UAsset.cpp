@@ -6,7 +6,6 @@
 namespace UPO
 {
 	UCLASS_BEGIN_IMPL(Asset)
-		UPROPERTY(mAssetFlag, UATTR_Hidden())
 		UPROPERTY(mTag)
 	UCLASS_END_IMPL(Asset)
 
@@ -44,7 +43,10 @@ namespace UPO
 
 		if (Stream* stream = mEntry->OpenStreamForSaving())
 		{
-			ObjectArchive::Save(this, stream);
+			TArray<Object*>	objectsToSave;
+			objectsToSave.Add(this);
+			ObjectArchive::Save(objectsToSave, stream);
+
 			mEntry->CloseStream();
 			ULOG_SUCCESS("asset [%] saved", GetName());
 			return true;
@@ -57,7 +59,9 @@ namespace UPO
 	bool Asset::SaveTo(Stream& stream)
 	{
 		AssetSys::WriteAssetHeader(stream, mEntry->mID, mEntry->mClassName);
-		ObjectArchive::Save(this, &stream);
+		TArray<Object*> objectsToSave;
+		objectsToSave.Add(this);
+		ObjectArchive::Save(objectsToSave, &stream);
 		return true;
 	}
 

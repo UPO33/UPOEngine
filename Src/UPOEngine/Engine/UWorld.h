@@ -118,10 +118,10 @@ namespace UPO
 		WorldTimer			mTimer;
 
 		float	mDeltaTime;
-		float	mDeltaTimeUnscaled;
+		float	mDeltaTimeReal;
 		float	mDeltaScale;
 		float	mSecondsSincePlay;
-		float	mSecondsSincePlayUnscaled;
+		float	mSecondsSincePlayReal;
 
 		bool	mIsGamePaused = false;
 
@@ -147,9 +147,9 @@ namespace UPO
 		GameWindow*						mMainWindow = nullptr;
 		PrimitiveBatch*					mPrimitiveBatch = nullptr;
 
-	public:
+	private:
 		void PushToPendingAddToRS(Entity* ent);
-		void PushToPendingDestroyFromRS(Entity* ent);
+		void PushToPendingKill(Entity* ent);
 
 
 		void KillEntity(Entity*);
@@ -176,9 +176,11 @@ namespace UPO
 		void SetDeltaScale(float scale) { mDeltaScale = scale; }
 		float GetDeltaScale() const { return mDeltaScale; }
 		float GetDeltaTime() const { return mDeltaTime; }
-		float GetDeltaTimeUnscaled() const { return mDeltaTimeUnscaled; }
+		float GetDeltaTimeUnscaled() const { return mDeltaTimeReal; }
 		float GetSecondsSincePlay() const { return mSecondsSincePlay; }
-		float GetSecondsSincePlayUnscaled() const { return mSecondsSincePlayUnscaled; }
+		float GetSecondsSincePlayUnscaled() const { return mSecondsSincePlayReal; }
+
+		EntityCamera* GetFreeCamera() const { return mFreeCamera; }
 
 		//////////////////////////////////////////////////////////////////////////
 		Entity* CreateEntity(EntityCreationParam& param);
@@ -213,6 +215,7 @@ namespace UPO
 		bool ProjectWorldToScreen(const Vec3& worldPos, Vec2& outScreenPos, EntityCamera* camera);
 		bool ProjectScreenToWorld(const Vec2& screenPos, Vec3& outWorldPos, EntityCamera* camera);
 
+		GameWindow* GetGameWindow() const { return mMainWindow; }
 		Canvas* GetCanvas() const;
 		PrimitiveBatch* GetPrimitiveBatch() const;
 		InputState* GetInputState() const;
