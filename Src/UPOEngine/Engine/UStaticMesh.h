@@ -11,19 +11,40 @@ namespace UPO
 	class AStaticMesh;
 	class AMaterial;
 
+	class UAPI StaticMeshRenderData
+	{
+	public:
+		static const unsigned MaxSelection = 32;
+
+		class GFXVertexBuffer*	mVertexBuffer;
+		class GFXIndexBuffer*	mIndexBuffer;
+		class GFXInputLayout*	mLayout;
+
+		struct SelectionInfo
+		{
+			unsigned	mVertexOffset = 0;
+			unsigned	mIndexOffset = 0;
+			unsigned	mVertexCount = 0;
+			unsigned	mIndexCount = 0;
+			unsigned	mMaterialIndex = 0;
+		};
+
+		unsigned		mNumSelection = 0;
+		SelectionInfo	mSelections[MaxSelection];
+
+		~StaticMeshRenderData();
+	};
+
 	//////////////////////////////////////////////////////////////////////////
 	class UAPI AStaticMeshRS
 	{
 	public:
-		class GFXVertexBuffer*	mVertexBuffer;
-		class GFXIndexBuffer*	mIndexBuffer;
-		class GFXInputLayout*	mLayout;
-		unsigned				mVertexCount;
-		unsigned				mIndexCount;
 		AABB					mBound;
 		AStaticMesh*			mOwner;
 
-		AStaticMeshRS(AStaticMesh*);
+		StaticMeshRenderData	mRenderData;
+
+		AStaticMeshRS(AStaticMesh*, StaticMeshRenderData*);
 		~AStaticMeshRS();
 	};
 
@@ -58,11 +79,8 @@ namespace UPO
 		bool						mGenerateSmoothNormal = false;
 		TArray<VertexTypeFull>		mVertices;
 		TArray<IndexType>			mIndices;
-		AMaterial*					mDefaultMaterial = nullptr;
-
-		/*
-		Material*	mMaterial;
-		*/
+		TArray<AMaterial*>			mMaterials;
+		Transform					mImportTransform;
 
 		void UpdateBound();
 		virtual void OnCreate() override;
@@ -70,8 +88,13 @@ namespace UPO
 
 	public:
 		AStaticMeshRS* GetRS() const { return mRS; }
-		AMaterial* GetDefaultMaterial() const { return mDefaultMaterial; }
+		AMaterial* GetMaterial(unsigned index) const;
+		const TArray<AMaterial*>& GetMaterials() const { return mMaterials; }
+		unsigned GetNumMaterial() const { return mMaterials.Length(); }
 		const AABB& GetBound() { return mBound; }
+
+		unsigned GetNumVertices() const { return mVertices.Length(); }
+		unsigned GetNumIndices() const { return mIndices.Length(); }
 
 		void MetaBeforePropertyChange(const PropertyInfo* prp);
 		void MetaAfterPropertyChange(const PropertyInfo* prp);

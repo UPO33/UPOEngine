@@ -38,11 +38,20 @@ namespace UPO
 		unsigned	mObjectID;
 #endif
 	private:
-		ClassInfo*			mClassInfo;
+		ClassInfo*					mClassInfo;
 		mutable ObjectRefData*		mRefData;
 		
 	public:
-		Object() {}
+
+#ifndef UENDUSER
+		size_t	mNeedsPropertyBrowserRefresh : 1;
+		Object() :
+			mNeedsPropertyBrowserRefresh(false)
+		{}
+#else
+		Object(){}
+#endif
+		
 		virtual ~Object();
 
 		ClassInfo* GetClassInfo() const { return mClassInfo; }

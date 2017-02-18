@@ -14,43 +14,51 @@ namespace UPOEd
 	PBTArrayProp::PBTArrayProp(const PBBaseProp::Param& param, QWidget* parent) : PBBaseProp(param, parent)
 	{
 		UASSERT(mParam.mPropertyInfo->GetType() == EPropertyType::EPT_TArray);
-
-		mBtnAdd = new QPushButton();
-		mBtnAdd->setText("+");
-		layout()->addWidget(mBtnAdd);
-		mBtnRemoveAll = new QPushButton;
-		mBtnRemoveAll->setText("C");
-		layout()->addWidget(mBtnRemoveAll);
+		
+		bool isConstantLength = GetPropertyInfo()->HasAttrib(EAttribID::EAT_ArrayConstantLength);
+		
+		if(!isConstantLength)
+		{
+			mBtnAdd = new QPushButton();
+			mBtnAdd->setText("+");
+			layout()->addWidget(mBtnAdd);
+			mBtnRemoveAll = new QPushButton;
+			mBtnRemoveAll->setText("C");
+			layout()->addWidget(mBtnRemoveAll);
+		}
 
 		
 		ReMakeElements();
 		
-		connect(mBtnAdd, &QPushButton::clicked, this, [&](bool) {
-// 			WidgetValueChanged();
-// 			mNumNewElement++;
-// 
-			ValueAs<SerArray>().AddDefault(1, GetPropertyInfo()->TemplateArgType(), GetPropertyInfo()->TemplateArgTypeInfo());
+		if(!isConstantLength)
+		{
+			connect(mBtnAdd, &QPushButton::clicked, this, [&](bool) {
+				// 			WidgetValueChanged();
+				// 			mNumNewElement++;
+				// 
+				ValueAs<SerArray>().AddDefault(1, GetPropertyInfo()->TemplateArgType(), GetPropertyInfo()->TemplateArgTypeInfo());
 
-// 			size_t index = mChildren.Add();
-// 			mChildren[index] = GetOwner()->AddTreeItem(mParam.mPropertyInfo, mParam.mInstance, mParam.mTreeItem, index);
-			//PropertyChanged();
-			ReMakeElements();
-		});
+				// 			size_t index = mChildren.Add();
+				// 			mChildren[index] = GetOwner()->AddTreeItem(mParam.mPropertyInfo, mParam.mInstance, mParam.mTreeItem, index);
+							//PropertyChanged();
+				ReMakeElements();
+			});
 
-		connect(mBtnRemoveAll, &QPushButton::clicked, this, [&](bool) {
-// 			WidgetValueChanged();
-// 			mDoClear = true;
+			connect(mBtnRemoveAll, &QPushButton::clicked, this, [&](bool) {
+				// 			WidgetValueChanged();
+				// 			mDoClear = true;
 
-			ValueAs<SerArray>().RemoveAll(GetPropertyInfo()->TemplateArgType(), GetPropertyInfo()->TemplateArgTypeInfo());
+				ValueAs<SerArray>().RemoveAll(GetPropertyInfo()->TemplateArgType(), GetPropertyInfo()->TemplateArgTypeInfo());
 
-			for (size_t i = 0; i < mChildren.Length(); i++)
-			{
-				delete mChildren[i]->mParam.mTreeItem;
-			}
-			mChildren.RemoveAll();
+				for (size_t i = 0; i < mChildren.Length(); i++)
+				{
+					delete mChildren[i]->mParam.mTreeItem;
+				}
+				mChildren.RemoveAll();
 
-			//PropertyChanged();
-		});
+				//PropertyChanged();
+			});
+		}
 
 	}
 

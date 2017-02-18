@@ -4,7 +4,7 @@
 #include "UWorld.h"
 #include "UCanvas.h"
 #include "UGameWindow.h"
-#include "../GFX/UPrimitiveBatch.h"
+#include "UPrimitiveBatch.h"
 
 namespace UPO
 {

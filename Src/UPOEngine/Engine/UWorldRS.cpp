@@ -5,7 +5,6 @@
 #include "UEntityCamera.h"
 
 #include "../GFX/URenderer.h"
-#include "../GFX/UPrimitiveBatch.h"
 
 namespace UPO
 {

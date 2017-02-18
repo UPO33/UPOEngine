@@ -12,7 +12,9 @@ namespace UPO
 	class World;
 	class WorldRS;
 	class WorldTicking;
+	class Entity;
 	class EntityRS;
+	class EntityVisualizer;
 
 	//////////////////////////////////////////////////////////////////////////
 	enum EEntityFlag
@@ -66,29 +68,34 @@ namespace UPO
 		
 		
 
-		Name		mName;
-		
-		size_t		mIndexInWorld;
-		size_t		mTickRegistered : 1;
-		size_t		mTickPendingAdd : 1;
-		size_t		mIsWorldTransformInvDirty : 1;
-		size_t		mIsSelected : 1;
+		Name				mName;
 
+		size_t				mIndexInWorld;
+		size_t				mTickRegistered : 1;
+		size_t				mTickPendingAdd : 1;
+		size_t				mIsWorldTransformInvDirty : 1;
+		size_t				mIsSelected : 1;
 
-		Matrix4		mLocalTransform;
-		Matrix4		mWorldTransform;
-		Matrix4		mWorldTransformInv;
-		AABB		mBound;
+		Matrix4				mLocalTransform;
+		Matrix4				mWorldTransform;
+		Matrix4				mWorldTransformInv;
+		AABB				mBound;
+
+		EntityVisualizer*	mVisualizer;
+
+		void* mRS;
+
 
 		void UpdateChildrenTransform();
 		void CalcLocalTrsFromWorldAndParent();
 		void TagRenderDirty(unsigned flags);
-		void* mRS;
+
 
 	public:
 
 
 		Entity();
+		~Entity();
 
 		void TagRenderDirty();	//all render state data is dirty
 		void TagRenderTransformDirty();
@@ -105,11 +112,13 @@ namespace UPO
 		World* GetWorld() const { return mWorld; }
 		Name GetName() const { return mName; }
 
+		template<typename TVisualizerClass = EntityVisualizer> TVisualizerClass* GetVisualizer() const { return (TVisualizerClass*)mVisualizer; }
+
 		//return pointer to render state if any
 		template< typename TRSClass = EntityRS> TRSClass* GetRS() const { return (TRSClass*)mRS; }
 		
 		//return pointer to render state data
-		void* GetRSMemory() const { return mRS; }
+		void* GetRSMemory() const;
 
 		const Matrix4& GetWorldTransform() const { return mWorldTransform; }
 		const Matrix4& GetLocalTransform() const { return mLocalTransform; }
@@ -236,6 +245,8 @@ namespace UPO
 		ERS_RenderDataValid = 1 << 6,
 		ERS_Selected = 1 << 7,
 	};
+
+
 	//////////////////////////////////////////////////////////////////////////
 	class UAPI EntityRS
 	{
@@ -256,5 +267,25 @@ namespace UPO
 			mGS->mRS = nullptr;
 		}
 		virtual void OnFetch(unsigned flag){}
+		virtual unsigned GetHitID();
+	};
+
+
+	//////////////////////////////////////////////////////////////////////////
+	class UAPI EntityVisualizer
+	{
+	public:
+		Entity*		mOwner;
+
+		EntityVisualizer(Entity* owner) : mOwner(owner) {}
+		virtual ~EntityVisualizer() {}
+
+		World* GetWorld() const { return mOwner->GetWorld(); }
+		GameWindow* GetGameWindow() const { return mOwner->GetWorld()->GetGameWindow(); }
+
+		template<typename TEntityClass = Entity> TEntityClass* GetOwner() const { return (TEntityClass*)mOwner; }
+
+		virtual void OnVisualize(PrimitiveBatch*) {}
+
 	};
 };

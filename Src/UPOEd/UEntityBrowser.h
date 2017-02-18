@@ -23,6 +23,9 @@ namespace UPOEd
 
 		virtual void dragLeaveEvent(QDragLeaveEvent *event) override;
 
+		virtual void keyPressEvent(QKeyEvent*) override;
+		virtual void keyReleaseEvent(QKeyEvent*) override;
+
 	};
 
 	//////////////////////////////////////////////////////////////////////////
@@ -51,7 +54,8 @@ namespace UPOEd
 		void AttachWorld(World* world);
 		void AddToTree(EntityBrowserItem* parentItem);
 		void EVContextMenuRequested(const QPoint& pos);
-		void SelectEntity(EntityBrowserItem* item);
+		void SelectEntity(EntityBrowserItem* item, bool applyOnPropertyBrowser = true);
+		void SelectEntity(Entity* entity, bool applyOnPropertyBrowser = true);
 		void Tick();
 		void CreateEntity(ClassInfo* entityClass, EntityBrowserItem* parentMaybeNull);
 	};
@@ -60,7 +64,7 @@ namespace UPOEd
 	{
 	public:
 		EntityBrowserDW(QWidget* parent = nullptr);
-
+		EntityBrowserWidget* GetWidget() const { return (EntityBrowserWidget*)this->widget(); }
 		void AttachWorld(World* world);
 		void Tick();
 	};

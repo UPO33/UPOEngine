@@ -15,6 +15,7 @@ namespace UPO
 	class Canvas;
 	class PrimitiveBatch;
 	class InputState;
+	class AudioDevice;
 
 	//////////////////////////////////////////////////////////////////////////
 	struct WorldTickResult
@@ -138,6 +139,7 @@ namespace UPO
 		Event				mTickEndEvent;
 		EWorldType			mWorldType;
 		EntityCamera*		mFreeCamera = nullptr;
+		
 
 	public:
 		TDelegateMulti<void, Entity*>	mOnEntityCreated;
@@ -146,6 +148,8 @@ namespace UPO
 		int								mPriority = 1;
 		GameWindow*						mMainWindow = nullptr;
 		PrimitiveBatch*					mPrimitiveBatch = nullptr;
+		bool							mHasAduio = true;
+		AudioDevice*					mAudioDevice = nullptr;
 
 	private:
 		void PushToPendingAddToRS(Entity* ent);

@@ -2,36 +2,31 @@
 #include "../Meta/UMeta.h"
 
 #include "UWorldRS.h"
-
+#include "UEntityStaticMeshVisualizer.h"
 
 namespace UPO
 {
 	void EntityStaticMesh::SetMesh(AStaticMesh* mesh)
 	{
-		if (mMesh == mesh || !IsAlive()) return;
+		if (!IsAlive()) return;
 
 		mMesh = mesh;
-		SetMaterial(mesh ? mesh->GetDefaultMaterial() : nullptr);
+
+		if(mMesh)
+			mMaterials = mesh->GetMaterials();
 
 		OnCalcBound();
 
-		TagRenderMiscDirty();
+		TagRenderDirty();
 	}
 
-	void EntityStaticMesh::SetMaterial(AMaterial* material)
-	{
-		if (mMaterial == material || !IsAlive()) return;
 
-		mMaterial = material;
-
-		TagRenderMiscDirty();
-	}
 
 	void EntityStaticMesh::OnCalcBound()
 	{
 		if (mMesh)
 		{
-			
+			mBound =  AABB::TransformBound(mMesh->GetBound(), mWorldTransform);
 		}
 		else
 		{
@@ -42,7 +37,7 @@ namespace UPO
 	EntityStaticMesh::EntityStaticMesh()
 	{
 		mMesh = nullptr;
-		mMaterial = nullptr;
+		mVisualizer = new EntityStaticMeshVisualizer(this);
 	}
 
 	EntityStaticMesh::~EntityStaticMesh()
@@ -59,7 +54,16 @@ namespace UPO
 	void EntityStaticMesh::MetaAfterPropertyChange(const PropertyInfo* prp)
 	{
 		ULOG_MESSAGE("");
-		this->TagRenderDirty();
+		if (prp && UPROPERTY_NAME_EQUAL(prp, mMesh))
+		{
+			SetMesh(mMesh);
+			mNeedsPropertyBrowserRefresh = true;
+		}
+		else
+		{
+			this->TagRenderDirty();
+			this->OnCalcBound();
+		}
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -73,6 +77,8 @@ namespace UPO
 		mPrivateIndex = mOwner->mStaticMeshes.Add(this);
 
 		OnFetch(EEF_RenderDataTransformDirty | EEF_RenderDataMiscDirty);
+
+		mGS->mRS = this;
 	}
 
 	EntityStaticMeshRS::~EntityStaticMeshRS()
@@ -86,6 +92,8 @@ namespace UPO
 
 	void EntityStaticMeshRS::OnFetch(unsigned flag)
 	{
+		EntityPrimitiveRS::OnFetch(flag);
+
 		if (flag & EEF_RenderDataTransformDirty)
 		{
 			mWorldTransform = mGS->GetWorldTransform();
@@ -94,12 +102,9 @@ namespace UPO
 		if (flag & EEF_RenderDataMiscDirty)
 		{
 			mMesh = GS()->GetMesh() ? GS()->GetMesh()->GetRS() : nullptr;
-			mMaterial = GS()->GetMaterial() ? GS()->GetMaterial()->GetRS() : nullptr;
 
 			mRSFlag.Clear(ERS_RenderDataValid);
-			if (mMesh && mMaterial) mRSFlag.Set(ERS_RenderDataValid);
-
-			this->EntityPrimitiveRS::Fetch();
+			if (mMesh) mRSFlag.Set(ERS_RenderDataValid);
 		}
 	}
 
@@ -112,7 +117,6 @@ namespace UPO
 
 	UCLASS_BEGIN_IMPL(EntityStaticMesh, UATTR_Icon("EntityStaticMesh.png"), UATTR_Instanceable())
 		UPROPERTY(mMesh)
-		UPROPERTY(mMaterial)
 	UCLASS_END_IMPL(EntityStaticMesh)
 
 

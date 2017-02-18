@@ -2,6 +2,7 @@
 #include "../Meta/UMeta.h"
 #include "UWorldRS.h"
 #include "UGameWindow.h"
+#include "UEntityCameraVisualizer.h"
 
 namespace UPO
 {
@@ -32,6 +33,8 @@ namespace UPO
 		mViewportOffset = Vec2(0, 0);
 		mViewPortSize = Vec2(1, 1);
 		mSuperiority = 0;
+
+		mVisualizer = new EntityCameraVisualizer(this);
 	}
 
 
@@ -58,6 +61,8 @@ namespace UPO
 		mPrivateIndex = mOwner->mCameras.Add(this);
 
 		Fetch();
+
+		mGS->mRS = this;
 	}
 	//remove from WorldRS
 	EntityCameraRS::~EntityCameraRS()

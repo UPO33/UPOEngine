@@ -106,6 +106,10 @@ namespace UPO
 		void MiscChanged();
 
 		void GetConstants(TArray<ShaderMacroDefinition>& out);
+
+
+		static AMaterial* GetDefault();
+		static AMaterial* GetDefaultWire();
 	};
 
 

@@ -153,33 +153,15 @@ namespace UPOEd
 	//////////////////////////////////////////////////////////////////////////
 	int Main(int argc, char** argv)
 	{
-// 		{
-// 			{
-// 				auto* mat = NewObject<DbgObj>();
-// 				auto* mat2 = NewObject<DbgObj>();
-// 				mat->mObj = mat2;
-// 
-// 				StreamReaderFile sr("asd.asd");
-// 				TArray<Object*> objs;
-// 				objs.Add(mat);
-// 				objs.Add(mat2);
-// 				ObjectArchive::Save(objs, &sr);
-// 				objs.RemoveAll();
-// 			}
-// 
-// 			TArray<Object*> objs;
-// 			StreamWriterFile sw("asd.asd");
-// 			ObjectArchive::Load(objs, &sw);
-// 
-// 			ULOG_WARN("%", objs.Length());
-// 			
-// 			for (Object* obj : objs)
-// 			{
-// 				ULOG_WARN("%", obj->GetClassInfo()->GetName());
-// 			}
-// 
-// 		}
-		
+		{
+			Matrix4 mat, matInv;
+			mat.MakePerspective(45, 1, 0.01, 100);
+			matInv = mat.GetInverse();
+			Vec4 v0 = matInv.TransformVec4(Vec4(-1, 1, 1, 1));
+			Vec4 v1 = mat.TransformVec4(v0);
+			ULOG_ERROR("% % %", v0, v0 / v0.mW, v1);
+
+		}
 
 		gQApp = new QApplication(argc, argv);
 

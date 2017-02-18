@@ -6,7 +6,7 @@
 #include "../UPOEngine/Engine/UEntityCamera.h"
 #include "../UPOEngine/Engine/UEntityFreeCamera.h"
 
-#include "../UPOEngine/GFX//UPrimitiveBatch.h"
+#include "../UPOEngine/Engine//UPrimitiveBatch.h"
 
 namespace UPOEd
 {
@@ -14,7 +14,7 @@ namespace UPOEd
 	{
 		World*					mWorld = nullptr;
 		EntityStaticMesh*		mEntityInWorld = nullptr;
-		RenderViewportWidget*			mViewport = nullptr;
+		RenderViewportWidget*	mViewport = nullptr;
 		PropertyBrowserDW*		mPropertyBrowser = nullptr;
 
 	public:
@@ -38,13 +38,16 @@ namespace UPOEd
 			mViewport->InitAndReg(gwcp);
 			mViewport->SetWorld(mWorld);
 
+			QToolBar* tools = this->addToolBar("");
+			tools->addAction("Show Normal");
+			tools->addAction("Show Bound");
 
 			mPropertyBrowser = new PropertyBrowserDW(this);
 
 			mPropertyBrowser->GetWidget()->mOnMetaAfterPropertyChange.BindLambda([this](const PropertyInfo* prp)
 			{
-				mEntityInWorld->SetMaterial(mAttachedAsset->Cast<AStaticMesh>()->GetDefaultMaterial());
-				mEntityInWorld->MetaAfterPropertyChange(prp);
+				mEntityInWorld->SetMaterials(mAttachedAsset->Cast<AStaticMesh>()->GetMaterials());
+				mEntityInWorld->MetaAfterPropertyChange(nullptr);
 			});
 
 			this->addDockWidget(Qt::DockWidgetArea::LeftDockWidgetArea, mPropertyBrowser);
@@ -75,9 +78,18 @@ namespace UPOEd
 			if (mPropertyBrowser) mPropertyBrowser->Tick();
 			if (mViewport) mViewport->Tick();
 
+			AStaticMesh* asset = UCast<AStaticMesh>(mAttachedAsset);
+			if (asset == nullptr) return;
+
 			if (auto pb = mWorld->GetPrimitiveBatch())
 			{
-				pb->DrawWireMesh(mAttachedAsset ? mAttachedAsset->Cast<AStaticMesh>() : nullptr, Transform::IDENTITY, Color32::RED, 0);
+				
+			}
+			if (auto canvas = mWorld->GetCanvas())
+			{
+				String str;
+				str.SetFormatted("Vertex Count %i  Index Count %i", asset->GetNumVertices(), asset->GetNumIndices());
+				canvas->DrawString(str, Vec2(8, 8), Color::WHITE, 0.5f);
 			}
 		}
 		

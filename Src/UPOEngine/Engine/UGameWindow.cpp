@@ -5,8 +5,8 @@
 #include "UEngineBase.h"
 #include "UInput.h"
 
-#include "../GFX/UPrimitiveBatch.h"
-#include "../Engine/UHitSelection.h"
+#include "UPrimitiveBatch.h"
+#include "UHitSelection.h"
 
 #include "../GFXCore/UGFXCore.h"
 

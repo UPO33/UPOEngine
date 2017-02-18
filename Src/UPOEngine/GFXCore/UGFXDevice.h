@@ -297,7 +297,7 @@ namespace UPO
 	};
 	enum class EVertexFormat
 	{
-		EUnknown, EFloat1, EFloat2, EFloat3, EFloat4, EColor32
+		EUnknown, EFloat1, EFloat2, EFloat3, EFloat4, EColor32, EUInt32
 	};
 	//////////////////////////////////////////////////////////////////////////
 	struct GFXResourceDesc
@@ -1051,7 +1051,7 @@ namespace UPO
 
 		virtual void SetShader(const GFXShaderBound& shaders) = 0;
 
-		virtual void SetShaders(GFXVertexShader* vertexShader, GFXPixelShader* pixelShader) = 0;
+		virtual void SetShaders(GFXVertexShader* vs, GFXHullShader* hs, GFXDomainShader* ds, GFXGeometryShader* gs, GFXPixelShader* ps) = 0;
 
 
 		virtual void SetResourceView(GFXTexture2D** textures, unsigned startSlot, unsigned numTextures, EShaderType whichShader) = 0;

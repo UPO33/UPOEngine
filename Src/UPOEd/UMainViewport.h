@@ -43,8 +43,9 @@ namespace UPOEd
 
 	class MainViewport : public QWidget
 	{
-		Ui_MainViewport*	ui;
-		Object*				mOptionsWidgetObject;
+		Ui_MainViewport*				ui;
+		Object*							mOptionsWidgetObject;
+		TArray<TObjectPtr<Entity>>		mSelectedEntities;
 
 	public:
 		MainViewport(QWidget* parent = nullptr);
@@ -55,6 +56,7 @@ namespace UPOEd
 
 		void ToggleOptionsWidgetVisibility();
 
+		void ViewportMouseRelease(RenderViewportWidget* viewport, QMouseEvent* mouseEvent);
 	};
 
 };

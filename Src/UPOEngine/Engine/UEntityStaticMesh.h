@@ -24,16 +24,13 @@ namespace UPO
 		UCLASS(EntityStaticMesh, EntityPrimitive)
 
 		AStaticMesh*	mMesh;
-		AMaterial*		mMaterial;
+
 	public:
 
 		void SetMesh(AStaticMesh*);
 		AStaticMesh* GetMesh() const { return mMesh; }
 
-		void SetMaterial(AMaterial*);
-		AMaterial* GetMaterial() const { return mMaterial; }
-		
-		
+
 		void OnCalcBound() override;
 
 		EntityStaticMesh();
@@ -48,7 +45,6 @@ namespace UPO
 	{
 	public:
 		AStaticMeshRS*	mMesh;
-		AMaterialRS*	mMaterial;
 		Matrix4			mWorldTransform;
 
 

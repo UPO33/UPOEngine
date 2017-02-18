@@ -17,13 +17,16 @@ SamplerState gDiffuseSampler : register(MaterialSamplerSlot);
 
 
 
+//matrix combination in hlsl  mul(mul(Proj * mView), mWorld);
 
 void VSMain(in VSIn input, out PSIn output, out float4 outClipSpace : TC0)
 {
     float4 worldPos = mul(gObject.mWorldMatrix, float4(input.position, 1));
     output.positionWS = worldPos;
     output.normal = mul((float3x3) gObject.mWorldMatrix, input.normal);
-    output.position = mul(gCamera.mWorldToCilp, worldPos);
+    float4x4 mat = mul(mul(gCamera.mProjection, gCamera.mView), gObject.mWorldMatrix);
+    output.position = mul(mat, float4(input.position, 1));
+    //output.position = mul(gCamera.mWorldToCilp, worldPos);
     outClipSpace = output.position;
 #ifdef APPLY_UV_TRANSFORMATION
     output.uv = input.uv * gMaterial.mUVScale + gMaterial.mUVOffset;
@@ -43,7 +46,7 @@ void PSMain(in PSIn input, in float4 clipSpace : TC0,
 {
     GBufferData gbuffer;
 
-    gbuffer.depth = clipSpace.w;
+    gbuffer.depth = clipSpace.z;
     gbuffer.WorldPos = input.positionWS;
     gbuffer.Normal = normalize(input.normal);
     gbuffer.DiffuseColor = (gDiffuseTexture.Sample(gDiffuseSampler, input.uv)).rgb;

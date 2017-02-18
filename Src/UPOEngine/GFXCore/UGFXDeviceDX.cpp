@@ -1189,11 +1189,17 @@ namespace UPO
 		}
 	}
 
-	void GFXDeviceDX::SetShaders(GFXVertexShader* vertexShader, GFXPixelShader* pixelShader)
+	void GFXDeviceDX::SetShaders(GFXVertexShader* vs, GFXHullShader* hs, GFXDomainShader* ds, GFXGeometryShader* gs, GFXPixelShader* ps)
 	{
 		GFXShaderBound bound;
-		bound.mVertexShader = vertexShader;
-		bound.mPixelShader = pixelShader;
+		bound.mVertexShader = vs;
+		bound.mHullShader = hs;
+		bound.mDomainShader = ds;
+		bound.mGeometryShader = gs;
+		bound.mPixelShader = ps;
+		
+
+
 		SetShader(bound);
 	}
 

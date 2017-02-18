@@ -9,7 +9,9 @@
 #include "UInput.h"
 #include "UCanvas.h"
 #include "../Meta/UMeta.h"
-#include "../GFX/UPrimitiveBatch.h"
+#include "UPrimitiveBatch.h"
+#include "UAudioDevice.h"
+
 
 namespace UPO
 {
@@ -49,7 +51,7 @@ namespace UPO
 		{
 			size_t rsOffset = entityClass->GetSize() + UCACHE_ALIGN;
 			newEntity = (Entity*)GObjectSys()->NewObject(entityClass, rsOffset + rsSize);
-			newEntity->mRS = (void*)(((size_t)newEntity) + rsOffset);
+			//newEntity->mRS = (void*)(((size_t)newEntity) + rsOffset);
 		}
 		else
 		{
@@ -90,6 +92,8 @@ namespace UPO
 	//////////////////////////////////////////////////////////////////////////
 	void World::Tick(float delta)
 	{
+		if (!mIsAlive)return;
+
 		mDeltaTimeReal = delta;
 		mDeltaTime = delta * mDeltaScale;
 
@@ -105,7 +109,7 @@ namespace UPO
 			
 			mTimer.Tick(mDeltaTime);
 			mTicking.Tick(mDeltaTime);
-			mPrimitiveBatch->Tick(mDeltaTime);
+			
 
 			mSecondsSincePlay += mDeltaTime;
 			mSecondsSincePlayReal += mDeltaTimeReal;
@@ -117,12 +121,35 @@ namespace UPO
 
 		mIsInTick = false;
 
+		mPrimitiveBatch->Tick(mDeltaTime);
+
 		mNumTickSinceLastDestroy++;
 
 		if(mFreeCamera)
 		{
 			mFreeCamera->OnTick();
+			
+			if (mHasAduio && mAudioDevice)
+				mAudioDevice->SetListenerPositionOrientation(mFreeCamera->GetWorldPosition(), mFreeCamera->GetForward(), mFreeCamera->GetUp());
 		}
+
+
+		//visualizers
+		if(GetPrimitiveBatch() && GetGameWindow())
+		{
+			PrimitiveBatch* pb = GetPrimitiveBatch();
+
+			for(Entity* ent : mEntities)
+			{
+				if (ent && ent->IsAlive() && ent->GetVisualizer())
+				{
+					ent->GetVisualizer()->OnVisualize(pb);
+					pb->SetHitProxy(nullptr);
+				}
+			}
+		}
+
+
 	}
 
 	void World::CheckPerformBeginPlay()

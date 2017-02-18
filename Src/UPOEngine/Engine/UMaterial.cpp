@@ -3,6 +3,7 @@
 #include "../Meta/UMeta.h"
 #include "../GFXCore/UGFXCore.h"
 #include "UTexture2D.h"
+#include "UAssetSys.h"
 
 namespace UPO
 {
@@ -143,6 +144,8 @@ namespace UPO
 
 	void AMaterial::OnCreate()
 	{
+		ULOG_MESSAGE("");
+
 		Parent::OnCreate();
 
 		EnqueueRenderCommandAndWait([this]() {
@@ -268,8 +271,24 @@ namespace UPO
 		}
 	}
 
+	AMaterial* AMaterial::GetDefault()
+	{
+		static Name DefaultMaterialName = "Materials//Default";
+
+		return nullptr;
+	}
+
+	AMaterial* AMaterial::GetDefaultWire()
+	{
+		static Name DefaultMaterialName = "Materials//DefaultWire";
+
+		return nullptr;
+	}
+
 	AMaterialRS::AMaterialRS(AMaterial* gs)
 	{
+		ULOG_MESSAGE("");
+
 		//zeroing
 		{
 			MemZero(mTextures, sizeof(mTextures));

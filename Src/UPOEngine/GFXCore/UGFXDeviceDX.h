@@ -49,8 +49,16 @@ namespace UPO
 		{
 		case EShaderType::EVertex:
 			return "vs_5_0";
+		case EShaderType::EHull:
+			return "hs_5_0";
+		case EShaderType::EDomain:
+			return "ds_5_0";
+		case EShaderType::EGeometry:
+			return "gs_5_0";
 		case EShaderType::EPixel:
 			return "ps_5_0";
+		case EShaderType::ECompute:
+			return "cs_5_0";
 		}
 
 		ULOG_FATAL("invalid type");
@@ -135,6 +143,7 @@ namespace UPO
 		case EVertexFormat::EFloat3: return DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT;
 		case EVertexFormat::EFloat4: return DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT;
 		case EVertexFormat::EColor32: return DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM;
+		case EVertexFormat::EUInt32: return DXGI_FORMAT::DXGI_FORMAT_R32_UINT;
 		}
 		return DXGI_FORMAT::DXGI_FORMAT_UNKNOWN;
 	}
@@ -634,7 +643,9 @@ namespace UPO
 		GFXShader* CreateShader(const Buffer& bytesCode, EShaderType type, Name debugName) override;
 
 		//////////////////////////////////////////////////////////////////////////
-		void SetShaders(GFXVertexShader* vertexShader, GFXPixelShader* pixelShader) override;
+		void SetShaders(GFXVertexShader* vs, GFXHullShader* hs, GFXDomainShader* ds, GFXGeometryShader* gs, GFXPixelShader* ps) override;
+		//////////////////////////////////////////////////////////////////////////
+
 		//////////////////////////////////////////////////////////////////////////
 		void SetShader(const GFXShaderBound& shaders) override;
 		//////////////////////////////////////////////////////////////////////////

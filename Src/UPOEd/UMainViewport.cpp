@@ -4,6 +4,7 @@
 
 #include "ui_MainViewport.h"
 #include "../UPOEngine/Engine/UInput.h"
+#include "../UPOEngine/Engine/UHitSelection.h"
 
 #include "UPropertyBrowser.h"
 
@@ -192,6 +193,11 @@ namespace UPOEd
 		ui->mOptionsWidget->mOnMetaAfterPropertyChange.BindLambda([this](const PropertyInfo* prp){
 			this->GetViewport()->mOptions = mOptionsWidgetObject->Cast<ObjOptionsWidget>()->mOptions;
 		});
+
+		
+		ui->mViewport->mOnMouseRelease.BindLambda([this](QMouseEvent* ev) {
+			ViewportMouseRelease(ui->mViewport, ev);
+		});
 	}
 
 	MainViewport::~MainViewport()
@@ -218,6 +224,48 @@ namespace UPOEd
 
 	void MainViewport::ToggleOptionsWidgetVisibility()
 	{
+		
+	}
+
+	void MainViewport::ViewportMouseRelease(RenderViewportWidget* viewport, QMouseEvent* mouseEvent)
+	{
+		if (mouseEvent->modifiers() == Qt::KeyboardModifier::ControlModifier)
+		{
+		}
+
+		if(mouseEvent->button() == Qt::MouseButton::LeftButton)
+		{
+			
+
+			//deselecting 
+			for (auto& ent : mSelectedEntities)
+			{
+				if (ent.Get()) ent.Get()->SetSelected(false);
+			}
+
+
+			if (auto hitSelection = viewport->GetHitSelection())
+			{
+				if (auto takenHit = hitSelection->GetTakenHit())
+				{
+
+					if (auto hpEntity = takenHit->Cast<HPEntity>())	//is entity hit?
+					{
+						if (Entity* entity = hpEntity->mEntity)
+						{
+							ULOG_MESSAGE("Entity Selected [%]", hpEntity->mEntity->GetName());
+							entity->SetSelected(true);
+							mSelectedEntities.Add(entity);
+							gMainWindow->mEntityBrowser->GetWidget()->SelectEntity(entity);
+						}
+					}
+					else
+					{
+
+					}
+				}
+			}
+		}
 		
 	}
 

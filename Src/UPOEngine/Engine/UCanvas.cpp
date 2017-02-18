@@ -244,7 +244,7 @@ namespace UPO
 		///////////////////////////draw Texture Quads
 		if (unsigned numQuad = textureQuads->Length())
 		{
-			gGFX->SetShaders(gVSCanvasNoUVSpace, gPSCanvasNoUVSpace);
+			gGFX->SetShaders(gVSCanvasNoUVSpace, nullptr, nullptr, nullptr, gPSCanvasNoUVSpace);
 			gGFX->SetInputLayout(mInputLayoutQuadTexture);
 			gGFX->SetPrimitiveTopology(EPrimitiveTopology::ETriangleList);
 			gGFX->SetIndexBuffer(mIndexBuffer);

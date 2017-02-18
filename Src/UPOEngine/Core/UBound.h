@@ -1,7 +1,7 @@
 #pragma once
 
 #include "UPlane.h"
-
+#include "UMatrix.h"
 
 namespace UPO
 {
@@ -37,6 +37,8 @@ namespace UPO
 			ret.mZ = positiveZ ? mMax.mZ : mMin.mZ;
 			return ret;
 		}
+
+		static AABB TransformBound(const AABB&, const Transform&);
 	};
 
 	struct SphereBound

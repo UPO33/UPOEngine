@@ -1,6 +1,7 @@
 #include "UEntity.h"
 #include "../Meta/UMeta.h"
 #include "UWorld.h"
+#include "UWorldRS.h"
 #include "UEntityStaticMesh.h"
 
 namespace UPO
@@ -57,8 +58,14 @@ namespace UPO
 		mBound = AABB(InitZero());
 		mRS = nullptr;
 
+		mVisualizer = nullptr;
 	}
 
+
+	Entity::~Entity()
+	{
+		SafeDelete(mVisualizer);
+	}
 
 	void Entity::TagRenderDirty(unsigned flags)
 	{
@@ -122,7 +129,7 @@ namespace UPO
 		if (this == mWorld->mRootEntity) return;
 		if (mParent == newParent) return;
 
-		if (FlagTest(EEF_Alive | EEF_Registered))
+		if (FlagTest(EEF_Alive ))
 		{
 			UASSERT(mParent);
 
@@ -134,7 +141,7 @@ namespace UPO
 			}
 
 
-			if (newParent->FlagTest(EEF_Alive | EEF_Registered) && GetWorld() == newParent->GetWorld())
+			if (newParent->FlagTest(EEF_Alive ) && GetWorld() == newParent->GetWorld())
 			{
 				if (newParent->IsSubsetOf(this))
 				{
@@ -169,6 +176,11 @@ namespace UPO
 
 
 
+
+	void* Entity::GetRSMemory() const
+	{
+		return ((byte*)this) + (this->GetClassInfo()->GetSize() + UCACHE_ALIGN);
+	}
 
 	//////////////////////////////////////////////////////////////////////////
 	const Matrix4& Entity::GetInvWorldTransform()
@@ -353,6 +365,7 @@ namespace UPO
 	void Entity::SetSelected(bool selectet)
 	{
 		mIsSelected = selectet;
+		TagRenderMiscDirty();
 	}
 
 	void Entity::RegisterToWorld(World* world)
@@ -495,5 +508,11 @@ namespace UPO
 	UCLASS_END_IMPL(Entity)
 
 
+
+	unsigned EntityRS::GetHitID()
+	{
+		if (mOwner) return mOwner->mEntitiesHits.Add(this);
+		return 0;
+	}
 
 };

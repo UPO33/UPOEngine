@@ -15,9 +15,18 @@ struct PSInEndPass
     float2 uv : UV;
 };
 
-void VSMain(in uint vid : SV_VertexID, out PSInEndPass output)
+void VSMain(in uint vid : SV_VertexID, out PSInEndPass output, out float3 fPos : FPOS)
 {
-    DrawRect(vid, output.position, output.uv); 
+    float4 clipPos = 0;
+    float2 uv = 0;
+    DrawRect(vid, clipPos, uv); 
+    output.uv = uv;
+    output.position = clipPos;
+
+    float4 vv = clipPos;
+    vv.z = 1;
+    float4 v0 = mul(gCamera.mClipToWorld, vv);
+    fPos = v0.xyz / v0.w;
 }
 
 float2 asd(uint2 v, uint size)
@@ -43,9 +52,16 @@ bool DrawVisRect(Texture2D tx, float2 uv, float2 VisUVPos, float2 visUVSize, in 
     return false;
 }
 
-float4 PSMain(PSInEndPass input) : SV_Target
+float4 PSMain(PSInEndPass input, float3 fpos : FPOS) : SV_Target
 {
+    float3 cameraPos = GetCameraWorldPos(gCamera);
+    float3 toFrustum = normalize(fpos - cameraPos);
+    
+
 #ifdef VISALIZE_GBUFFER
+
+
+
     float4 outColor = 0;
     {
         const float2 VisSize = float(0.2);
@@ -53,17 +69,49 @@ float4 PSMain(PSInEndPass input) : SV_Target
 
         float2 visOffset = float2(0, 0);
         
+        
         //depth
         {
             float4 depthSampled = 0;
-            DrawVisRect(gDepth, input.uv, visOffset, VisSize, depthSampled);
-            outColor = GetLinearDepth(depthSampled.x, gCamera.mProjection) / 10.0f;
+            DrawVisRect(gGBufferA, input.uv, visOffset, VisSize, depthSampled);
+            //outColor = GetLinearDepth(depthSampled.x, gCamera.mProjection) / 100.0f;
+            outColor = depthSampled.w / 100.0f;
         }
         //position
         {
+            
+
             visOffset.x += VisSpace + VisSize.x;
-            DrawVisRect(gGBufferA, input.uv, visOffset, VisSize, outColor);
-            outColor /= 100;
+            float2 uv = input.uv;
+
+            if (all(uv >= visOffset) && all(uv <= visOffset + VisSize))
+            {
+                float2 sampleUV = (uv - visOffset) / VisSize;
+                float3 worldPos = gGBufferA.Load(uint3(sampleUV * gCamera.mViewportSize, 0)).xyz;
+                outColor.xyz = worldPos / 400.0;
+                outColor.w = 1;
+            }
+
+            /*
+            visOffset.x += VisSpace + VisSize.x;
+            float2 uv = input.uv;
+
+            if (all(uv >= visOffset) && all(uv <= visOffset + VisSize))
+            {
+                float2 sampleUV = (uv - visOffset) / VisSize;
+                float zz = gDepth.Load(uint3(sampleUV * gCamera.mViewportSize, 0)).x;
+                float xx = input.uv.x * 2 - 1;
+                float yy = (1 - input.uv.y) * 2 - 1;
+                float4 ndc = float4(xx, yy, zz, 1);
+
+                float4 pp = mul(gCamera.mClipToWorld, ndc);
+                float3 worldPos = pp.xyz / pp.w;
+                outColor.xyz = worldPos / 100.0;
+                outColor.w = 1;
+            }
+            */
+            
+
         }
         {
             visOffset.x += VisSpace + VisSize.x;

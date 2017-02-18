@@ -113,7 +113,7 @@ namespace UPO
 			else
 			{
 				for (unsigned i = 0; i < Length(); i++)
-					if (tolower(CStr()[i]) != tolower(CStr()[i])) return false;
+					if (tolower(CStr()[i]) != tolower(other.CStr()[i])) return false;
 			}
 
 			return true;

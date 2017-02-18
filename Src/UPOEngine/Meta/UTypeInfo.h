@@ -31,7 +31,8 @@
 //show properties of an Object* or TObjectPtr<> instead of being selectable
 #define UATTR_ShowProperties() Attrib(EAttribID::EAT_ShowProperties)
 #define UATTR_MaterialConstant(constantName) Attrib(EAttribID::EAT_MaterialConstant, (const char*)constantName)
-
+//editor cant add or remove element to the array
+#define UATTR_ArrayConstantLength() Attrib(EAttribID::EAT_ArrayConstantLength)
 
 
 //new attributes here ^^^^^^^^^^^^^
@@ -58,6 +59,7 @@ namespace UPO
 		EAT_Icon,
 		EAT_ShowProperties,
 		EAT_MaterialConstant,
+		EAT_ArrayConstantLength,
 		////new attributes here ^^
 	};
 	//////////////////////////////////////////////////////////////////////////

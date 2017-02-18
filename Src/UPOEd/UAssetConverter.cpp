@@ -1,27 +1,36 @@
 #include "UAssetConverter.h"
 
+#include "../UPOEngine/Engine/USound.h"
+#include "../UPOEngine/Engine/UStaticMesh.h"
+#include "../UPOEngine/Engine/UTexture2D.h"
+
 namespace UPOEd
 {
 	String gStaticMeshExts[] = { "obj", "fbx", "3ds", };
 	String gTexture2DExts[] = { "png", "bmp", "jpg", "jpeg", "dds", "tiff", "tga" };
-
+	String gSoundExts[] = { "wav", "ogg" };
 
 	bool UExtIsTexture2D(const String& ext) 
 	{
 		for (auto item : gTexture2DExts)
-			if (ext == item) return true;
+			if (item.Equal(ext, false)) return true;
 		return false;
 	}
 	bool UExtIsStaticMesh(const String& ext)
 	{
 		for (auto item : gStaticMeshExts)
-			if (ext == item) return true;
+			if (item.Equal(ext, false)) return true;
 		return false;
 	}
-
+	bool UExtIsSound(const String& ext)
+	{
+		for (auto item : gSoundExts)
+			if (item.Equal(ext, false)) return true;
+		return false;
+	}
 	bool AssetConverter::ExtIsSupported(const String& ext)
 	{
-		return UExtIsTexture2D(ext) || UExtIsStaticMesh(ext);
+		return UExtIsTexture2D(ext) || UExtIsStaticMesh(ext) || UExtIsSound(ext);
 	}
 
 
@@ -61,28 +70,29 @@ namespace UPOEd
 			} while (!validName);
 		}
 
-		if (UExtIsTexture2D(ext)) return Convert_Texture(fileContent, name, folderToStoreAssetIn);
-		if (UExtIsStaticMesh(ext)) return Convert_SMesh(fileContent, name, folderToStoreAssetIn);
+		if (UExtIsTexture2D(ext)) return Convert<ATexture2D>(fileContent, name, folderToStoreAssetIn);
+		if (UExtIsStaticMesh(ext)) return Convert<AStaticMesh>(fileContent, name, folderToStoreAssetIn);
+		if (UExtIsSound(ext)) return Convert<ASound>(fileContent, name, folderToStoreAssetIn);
 	}
-
+	/*
 	bool AssetConverter::Convert_Texture(Buffer& fileContent, String name, AssetEntry* folderToStoreAssetIn)
 	{
 		AssetEntry* entry = folderToStoreAssetIn->CreateChild(name, false, AssetID::GetNewID(), ATexture2D::GetClassInfoStatic()->GetName());
-		ATexture2D* assetTexture2D = NewObject<ATexture2D>();
-		entry->mInstance = assetTexture2D;
-		assetTexture2D->mEntry = entry;
+		ATexture2D* asset = NewObject<ATexture2D>();
+		entry->mInstance = asset;
+		asset->mEntry = entry;
 
 		{
-			assetTexture2D->mContent = fileContent;
+			asset->mContent = fileContent;
 
-			if (assetTexture2D->Save())
+			if (asset->Save())
 			{
-				DeleteObject(assetTexture2D);
+				DeleteObject(asset);
 				return true;
 			}
 			else
 			{
-				DeleteObject(assetTexture2D);
+				DeleteObject(asset);
 				return false;
 			}
 		}
@@ -91,24 +101,26 @@ namespace UPOEd
 	bool AssetConverter::Convert_SMesh(Buffer& fileContent, String name, AssetEntry* folderToStoreAssetIn)
 	{
 		AssetEntry* entry = folderToStoreAssetIn->CreateChild(name, false, AssetID::GetNewID(), AStaticMesh::GetClassInfoStatic()->GetName());
-		AStaticMesh* assetStaticMesh = NewObject<AStaticMesh>();
-		entry->mInstance = assetStaticMesh;
-		assetStaticMesh->mEntry = entry;
+		AStaticMesh* asset = NewObject<AStaticMesh>();
+		entry->mInstance = asset;
+		asset->mEntry = entry;
 
 		{
-			assetStaticMesh->mContent = fileContent;
+			asset->mContent = fileContent;
 
-			if (assetStaticMesh->Save())
+			if (asset->Save())
 			{
-				DeleteObject(assetStaticMesh);
+				DeleteObject(asset);
 				return true;
 			}
 			else
 			{
-				DeleteObject(assetStaticMesh);
+				DeleteObject(asset);
 				return false;
 			}
 		}
 	}
+*/
+
 
 };

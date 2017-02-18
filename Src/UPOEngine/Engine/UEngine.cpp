@@ -10,7 +10,10 @@
 #include "UEngineBase.h"
 #include "../Misc/UMisc.h"
 #include "../GFXCore/UGFXDeviceDX.h"
-#include "../GFX/UPrimitiveBatch.h"
+#include "UPrimitiveBatch.h"
+#include "UHitSelection.h"
+#include "UAudioDevice.h"
+
 
 namespace UPO
 {
@@ -42,6 +45,8 @@ namespace UPO
 		TArray<World*>		mWorlds;
 		bool mAnyWorldRemoved = false;
 		
+		AudioDevice*	mAudioDevice = nullptr;
+
 		EngineImpl() :
 			mFetchCompleteEvent(false, false),
 			mFetchReadyEvent(false, false)
@@ -80,6 +85,8 @@ namespace UPO
 				gRenderThreadID = Thread::ID();
 				gGame2RenderQueue.SetConsumerThread(Thread::ID());
 			}
+
+			mAudioDevice = new AudioDevice;
 
 			EnqueueRenderCommandAndWait([this](){
 				
@@ -171,6 +178,8 @@ namespace UPO
 				delete world;
 			}
 			mWorlds.RemoveAll();
+			SafeDelete(mAudioDevice);
+
 			ULOG_MESSAGE("");
 			EnqueueRenderCommandAndWait([this]() {
 				ReleaseRT();
@@ -260,17 +269,6 @@ namespace UPO
 						return false;
 					});
 				}
-				
-				for (GameWindow* gw : GameWindow::Instances)
-				{
-					if (auto canvas = gw->mCanvas) canvas->Swap();
-				}
-
-				//world do it
-// 				for (World* world : mWorlds)
-// 				{
-// 					if (auto pb = world->GetPrimitiveBatch()) pb->Swap();
-// 				}
 
 				//after this we can change the WorldRS and update it, maybe renderer is doing postProcess or swamping buffer
 				WaitForFetch();
@@ -311,7 +309,17 @@ namespace UPO
 		//non-gfx dependent codes only
 		void DuringFetch()
 		{
+			for (GameWindow* gw : GameWindow::Instances)
+			{
+				if (auto canvas = gw->mCanvas) canvas->Swap();
+				if (auto hit = gw->mHitSelection) hit->ClearProxeis();
+			}
 
+			unsigned nWorld = mWorlds.Length();
+			for (unsigned i = 0; i < nWorld; i++)
+			{
+				mWorlds[i]->GetPrimitiveBatch()->Swap();
+			}
 		}
 
 
@@ -340,6 +348,8 @@ namespace UPO
 	World* IEngineInterface::CreateWorld(const WorldInitParam& param)
 	{
 		World* world = new World(param);
+		world->mAudioDevice = gEngine.mAudioDevice;
+
 		EnqueueRenderCommandAndWait([world]() {
 			gEngine.mWorlds.Add(world);
 		});

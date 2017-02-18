@@ -6,18 +6,22 @@
 namespace UPO
 {
 	
-	FreeListAllocator gHitProxyAllocator { (int)HitProxyBase::MaxSize, 128 };
+	FreeListAllocator gHitProxyAllocator { (int)HPBase::MaxSize, 128 };
 
 	static const unsigned ReadTextureSize = 4;
 
-	void* HitProxyBase::operator new(size_t size)
+	TinyLock	gLockHitProxyAllocator;
+
+	void* HPBase::operator new(size_t size)
 	{
-		UASSERT(size < HitProxyBase::MaxSize);
+		UASSERT(size < HPBase::MaxSize);
+		USCOPE_LOCK(gLockHitProxyAllocator);
 		return gHitProxyAllocator.Alloc();
 	}
 
-	void HitProxyBase::operator delete(void* memory)
+	void HPBase::operator delete(void* memory)
 	{
+		USCOPE_LOCK(gLockHitProxyAllocator);
 		gHitProxyAllocator.Free(memory);
 	}
 
@@ -25,6 +29,7 @@ namespace UPO
 	{
 		mSize = size;
 		mTakenHit = nullptr;
+		mProxiesIndexGTWrite = 0;
 
 		{
 			GFXTexture2DDesc desc;
@@ -42,9 +47,9 @@ namespace UPO
 
 	}
 
-	HitProxyBase* HitSelectionCanvas::GetTakenHit()
+	HPBaseRef HitSelectionCanvas::GetTakenHit()
 	{
-		return nullptr;
+		return mTakenHit;
 	}
 
 	void HitSelectionCanvas::SetMousePosition(Vec2I mousePosition)
@@ -57,17 +62,43 @@ namespace UPO
 		mSize = newSize;
 	}
 
-	unsigned HitSelectionCanvas::RegisterProxy(HitProxyBase* hp)
+	unsigned HitSelectionCanvas::RegisterRTProxy(HPBaseRef hp)
 	{
-		return mProxies.Add(hp);
+		if (hp)
+			return mRTProxies.Add(hp);
+		else
+			return 0;
 	}
 
+	unsigned HitSelectionCanvas::RegisterProxy(HPBaseRef hp)
+	{
+		USCOPE_LOCK(mSwapLock);
+		if (hp)
+			return mProxies[mProxiesIndexGTWrite].Add(hp) + MaxRTProxy;
+		else
+			return MaxRTProxy;
+	}
+
+
+	void HitSelectionCanvas::ClearRTProxeis()
+	{
+// 		for (HPBase* item : mRTProxies)
+// 			SafeDelete(item);
+		
+
+		//begin proxies
+		USCOPE_LOCK(mSwapLock);
+		mProxies[mProxiesIndexGTWrite ^ 1].RemoveAll();
+		mProxies[mProxiesIndexGTWrite ^ 1].Add(nullptr);
+
+		mProxiesIndexGTWrite ^= 1;
+
+		mRTProxies.RemoveAll();
+		mRTProxies.Add(nullptr);
+	}
 	void HitSelectionCanvas::ClearProxeis()
 	{
-		for (HitProxyBase* item : mProxies)
-			SafeDelete(item);
-		
-		mProxies.RemoveAll();
+		ClearRTProxeis();
 	}
 
 	struct IDCatchResult
@@ -93,8 +124,6 @@ namespace UPO
 
 		unsigned bytesPerRow = 0;
 		byte* mapped = (byte*)gGFX->Map(idBuffer, EMapFlag::ERead, 0, bytesPerRow);
-		unsigned id = *((unsigned*)mapped);
-		
 
 		IDCatchResult result;
 
@@ -110,33 +139,32 @@ namespace UPO
 		gGFX->Unmap(idBuffer, 0);
 
 
-		HitProxyBase* takenHit = nullptr;
+		HPBaseRef takenHit = nullptr;
 		for (unsigned i = 0; i < result.mNumIDs; i++)
 		{
 			int priority = INT_MIN;
 			unsigned hid = result.mIDs[i];
-			if (mProxies.IsIndexValid(hid))
+
+			if(hid == 0) continue;
+
+			TArray<HPBaseRef>& hitProxies = mRTProxies;
+			if (hid >= MaxRTProxy)
 			{
-				if (mProxies[hid] && mProxies[hid]->mPriority > priority)
+				hitProxies = mProxies[mProxiesIndexGTWrite ^ 1];
+				hid -= MaxRTProxy;
+			}
+
+			if (hitProxies.IsIndexValid(hid))
+			{
+				if (hitProxies[hid] && hitProxies[hid]->mPriority > priority)
 				{
-					takenHit = mProxies[hid];
-					priority = mProxies[hid]->mPriority;
+					takenHit = hitProxies[hid];
+					priority = hitProxies[hid]->mPriority;
 				}
 			}
 		}
 
 		mTakenHit = takenHit;
-		if (mTakenHit)
-		{
-			if (HPObject* hpObj = mTakenHit->Cast<HPObject>())
-			{
-				ULOG_MESSAGE("hpo");
-				if (auto ent = UCast<Entity>(hpObj->mObject))
-				{
-					ULOG_MESSAGE("%", ent->GetName());
-				}
-			}
-		}
 	}
 
 };

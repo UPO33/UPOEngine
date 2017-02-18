@@ -50,6 +50,15 @@ cbuffer CBHitSelection : register(b3)
 };
 #endif
 
+struct GBufferTargets
+{
+    float4 gbufferA : SV_Target0;
+    float4 gbufferB : SV_Target1;
+    float4 gbufferC : SV_Target2;
+#ifdef USE_HITSELECTION
+    uint4 hitID : SV_Target3;
+#endif
+};
 
 
 #define MaterialTextureSlot t3
@@ -63,7 +72,12 @@ void EncodeGBuffer(in GBufferData input, out float4 gbufferA, out float4 gbuffer
     gbufferB = float4(input.DiffuseColor, 0);
     gbufferC = float4(input.Normal * 0.5 + 0.5, 0);
 }
-
+void EncodeGBuffer(in GBufferData input, out GBufferTargets output)
+{
+    output.gbufferA = float4(input.WorldPos, input.depth);
+    output.gbufferB = float4(input.DiffuseColor, 0);
+    output.gbufferC = float4(input.Normal * 0.5 + 0.5, 0);
+}
 void DecodeGBuffer(in float4 gbufferA, in float4 gbufferB, in float4 gbufferC, out GBufferData output)
 {
     output.WorldPos = gbufferA.xyz;

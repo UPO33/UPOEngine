@@ -8,6 +8,7 @@ namespace UPO
 	//////////////////////////////////////////////////////////////////////////
 	class World;
 	class Entity;
+	class EntityRS;
 	class EntityStaticMesh;
 	class EntityStaticMeshRS;
 	class EntityCamera;
@@ -25,7 +26,7 @@ namespace UPO
 		friend World;
 		friend class EngineImpl;
 		friend Renderer;
-
+		friend EntityRS;
 		friend EntityStaticMeshRS;
 		friend EntityCameraRS;
 
@@ -53,6 +54,8 @@ namespace UPO
 		TArray<EntityStaticMeshRS*>		mStaticMeshes;
 		TArray<EntityCameraRS*>			mCameras;
 		
+		TArray<EntityRS*>	mEntitiesHits;
+
 	public:
 		Renderer*		mRenderer = nullptr;
 		GameWindow*		mMainWindow = nullptr;

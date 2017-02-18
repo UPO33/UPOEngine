@@ -82,4 +82,20 @@ namespace UPO
 // 		//if you get this far, box is currently intersecting the plane.
 	}
 
+	AABB AABB::TransformBound(const AABB& box, const Transform& transform)
+	{
+		Vec3 xa = transform.GetRight() * box.mMin.mX;
+		Vec3 xb = transform.GetRight() * box.mMax.mX;
+
+		Vec3 ya = transform.GetUp() * box.mMin.mY;
+		Vec3 yb = transform.GetUp() * box.mMax.mY;
+
+		Vec3 za = transform.GetForward() * box.mMin.mZ;
+		Vec3 zb = transform.GetForward() * box.mMax.mZ;
+
+		Vec3 vMin = Min(xa, xb) + Min(ya, yb) + Min(za, zb) + transform.GetTranslation();
+		Vec3 vMax = Max(xa, xb) + Max(ya, yb) + Max(za, zb) + transform.GetTranslation();
+		return AABB(vMin, vMax);
+	}
+
 };

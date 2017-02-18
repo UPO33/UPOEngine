@@ -1,17 +1,16 @@
 #include "URenderer.h"
 
-#include "UScreenDrawer.h"
-#include "UTestQuad.h"
-#include "UPrimitiveBatch.h"
+
 #include "UDefferdRenderTargets.h"
 #include "USelectionBuffer.h"
-#include "UTestQuad.h"
+#include "UShaderConstants.h"
 
 #include "../Engine/UInput.h"
 #include "../Engine/UEntityCamera.h"
 #include "../Engine/UStaticMesh.h"
 #include "../Engine/UEntityStaticMesh.h"
 #include "../Engine/UHitSelection.h"
+#include "../Engine/UPrimitiveBatch.h"
 
 #include "../GFXCore/UGFXDeviceDX.h"
 
@@ -159,7 +158,7 @@ namespace UPO
 		void Draw()
 		{
 			gGFX->SetBlendState(mBlendState);
-			gGFX->SetShaders(gVSGrid, gPSGrid);
+			gGFX->SetShaders(gVSGrid, nullptr, nullptr, nullptr, gPSGrid);
 			gGFX->SetIndexBuffer(nullptr);
 			gGFX->SetVertexBuffer(mVBuffer, 0, sizeof(GridDraw::Vertex), 0);
 			gGFX->SetPrimitiveTopology(EPrimitiveTopology::ELineList);
@@ -223,14 +222,14 @@ namespace UPO
 		CheckRenderTargetResizing();
 
 		UpdatePerFrameCBuffer();
-		gGFX->SetConstentBuffer(mCBPerFrame, CBPerFrame::Index, EShaderType::EVertex);
-		gGFX->SetConstentBuffer(mCBPerFrame, CBPerFrame::Index, EShaderType::EPixel);
-
-		if (mHitSelection) 
 		{
-			mHitSelection->ClearProxeis();
-			mHitSelection->RegisterProxy(nullptr);
+			gGFX->SetConstentBuffer(mCBPerFrame, CBPerFrame::Index, EShaderType::EVertex);
+			gGFX->SetConstentBuffer(mCBPerFrame, CBPerFrame::Index, EShaderType::EHull);
+			gGFX->SetConstentBuffer(mCBPerFrame, CBPerFrame::Index, EShaderType::EDomain);
+			gGFX->SetConstentBuffer(mCBPerFrame, CBPerFrame::Index, EShaderType::EGeometry);
+			gGFX->SetConstentBuffer(mCBPerFrame, CBPerFrame::Index, EShaderType::EPixel);
 		}
+
 
 		RenderWorld();
 
@@ -272,8 +271,13 @@ namespace UPO
 
 			UpdatePerCameraCBuffer(camera);
 
-			gGFX->SetConstentBuffer(mCBPerCamera, 1, EShaderType::EVertex);
-			gGFX->SetConstentBuffer(mCBPerCamera, 1, EShaderType::EPixel);
+			{
+				gGFX->SetConstentBuffer(mCBPerCamera, CBPerCamera::Index, EShaderType::EVertex);
+				gGFX->SetConstentBuffer(mCBPerCamera, CBPerCamera::Index, EShaderType::EDomain);
+				gGFX->SetConstentBuffer(mCBPerCamera, CBPerCamera::Index, EShaderType::EHull);
+				gGFX->SetConstentBuffer(mCBPerCamera, CBPerCamera::Index, EShaderType::EGeometry);
+				gGFX->SetConstentBuffer(mCBPerCamera, CBPerCamera::Index, EShaderType::EPixel);
+			}
 
 			GFXViewport viewport = UViewportFromCamera(camera, mViewportSize);
 // 			ULOG_MESSAGE("% %", viewport.mWidth, viewport.mHeight);
@@ -282,8 +286,9 @@ namespace UPO
 			{
 				mRenderTargets->BinGBuffers(true);
 
-				if(mGameWnd->mOptions.mRenderStaticMeshes)
-					RenderStaticMeshes();
+				if(mGameWnd->mOptions.mRenderStaticMeshes) RenderStaticMeshes();
+
+				if (mPrimitiveBatch) mPrimitiveBatch->Render();
 
 				//hit selection copy resources
 				if (mRenderTargets->mIDBuffer)
@@ -294,7 +299,7 @@ namespace UPO
 				ShaderConstantsCombined scEndPass;
 				if (mGameWnd->mOptions.mVisualizeGBuffer)
 					scEndPass |= ShaderConstants::VISALIZE_GBUFFER;
-				gGFX->SetShaders(gVSEndPass->Get(scEndPass), gPSEndPass->Get(scEndPass));
+				gGFX->SetShaders(gVSEndPass->Get(scEndPass), nullptr, nullptr, nullptr, gPSEndPass->Get(scEndPass));
 
 				GFXRenderTargetView* renderTargets[] = { mSwapChain->GetBackBufferView() };
 				gGFX->SetRenderTarget(renderTargets, nullptr);
@@ -386,6 +391,7 @@ namespace UPO
 		gGFX->SetConstentBuffer(mCBHitSelection, CBHitSelection::Index, EShaderType::EPixel);		//bind hist selection
 
 		gGFX->SetPrimitiveTopology(EPrimitiveTopology::ETriangleList);
+		gGFX->SetInputLayout(mILStaticMeshVertexTypeFull);
 
 		size_t numSMesh = mWorldRS->mStaticMeshes.Length();
 		for (size_t iMesh = 0; iMesh < numSMesh; iMesh++)
@@ -400,7 +406,6 @@ namespace UPO
 		if (entityStaticMesh->mRSFlag.Test(ERS_RenderDataValid | ERS_Visible | ERS_MainPassEnable))
 		{
 			AStaticMeshRS*	meshAsset = entityStaticMesh->mMesh;
-			AMaterialRS* meshMaterial = entityStaticMesh->mMaterial;
 
 			//PerObject data
 			{
@@ -413,24 +418,31 @@ namespace UPO
 			if (mHitSelection)
 			{
 				auto mapped = gGFX->Map<CBHitSelection>(mCBHitSelection, EMapFlag::EWriteDiscard);
-				mapped->mHitID = mHitSelection->RegisterProxy(new HPObject(entityStaticMesh->mGS));
+				mapped->mHitID = mHitSelection->RegisterRTProxy(new HPEntity(entityStaticMesh->mGS));
 				gGFX->Unmap(mCBHitSelection);
 			}
 
-			meshMaterial->Bind();
 
-			GFXRasterizerState* rsState = mLUTMaterialMainPassRSState[meshMaterial->GetFlag()];
-			gGFX->SetRasterizerState(rsState);
+			gGFX->SetIndexBuffer(meshAsset->mRenderData.mIndexBuffer);
+			gGFX->SetVertexBuffer(meshAsset->mRenderData.mVertexBuffer, 0, sizeof(AStaticMesh::VertexTypeFull), 0);
 
-			gGFX->SetShader(meshMaterial->GetShaderBound(mSCStaticMeshMainPass));
+			for (unsigned iSection = 0; iSection < meshAsset->mRenderData.mNumSelection; iSection++)
+			{
+				auto& section = meshAsset->mRenderData.mSelections[iSection];
+				AMaterialRS* materialToUse = entityStaticMesh->mMaterials[section.mMaterialIndex];
+				
+				if (!materialToUse) continue;
 
+				materialToUse->Bind();
 
-			gGFX->SetIndexBuffer(meshAsset->mIndexBuffer);
-			gGFX->SetVertexBuffer(meshAsset->mVertexBuffer, 0, sizeof(AStaticMesh::VertexTypeFull), 0);
-			gGFX->SetInputLayout(mILStaticMeshVertexTypeFull);
+				GFXRasterizerState* rsState = mLUTMaterialMainPassRSState[materialToUse->GetFlag()];
+				gGFX->SetRasterizerState(rsState);
 
+				gGFX->SetShader(materialToUse->GetShaderBound(mSCStaticMeshMainPass));
 
-			gGFX->DrawIndexed(meshAsset->mIndexCount);
+				gGFX->DrawIndexed(section.mIndexCount, section.mIndexOffset, section.mVertexOffset);
+
+			}
 		}
 	}
 
@@ -564,22 +576,5 @@ namespace UPO
 	}
 
 
-	//////////////////////////////////////////////////////////////////////////
-	namespace ShaderConstants
-	{
-#define IMPLSHADERCONSTANT(Varible) UAPI ShaderConstant Varible(#Varible, "1")
-
-		IMPLSHADERCONSTANT(PIXEL_SHADER);
-		IMPLSHADERCONSTANT(VERTEX_SHADER);
-		IMPLSHADERCONSTANT(HULL_SHADER);
-		IMPLSHADERCONSTANT(DOMAIN_SHADER);
-		IMPLSHADERCONSTANT(GEOMERTY_SHADER);
-		IMPLSHADERCONSTANT(COMPUTE_SHADER);
-		IMPLSHADERCONSTANT(STATIC_MESH);
-		IMPLSHADERCONSTANT(USE_HITSELECTION);
-		IMPLSHADERCONSTANT(VISALIZE_GBUFFER);
-
-#undef IMPLSHADERCONSTANT
-	};
 
 };

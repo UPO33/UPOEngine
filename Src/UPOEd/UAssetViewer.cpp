@@ -103,7 +103,7 @@ namespace UPOEd
 		event->accept();
 	}
 
-	AssetWindowBase::AssetWindowBase(QWidget* parent /*= nullptr*/) : QMainWindow(parent, Qt::WindowStaysOnTopHint)
+	AssetWindowBase::AssetWindowBase(QWidget* parent /*= nullptr*/) : QMainWindow(parent/*, commented for dbg Qt::WindowStaysOnTopHint*/)
 	{
 		setAttribute(Qt::WA_DeleteOnClose);
 		mRefHelper = NewObject<Object>();
@@ -116,6 +116,13 @@ namespace UPOEd
 			if (mAttachedAsset)
 				mAttachedAsset->Save();
 		});
+
+		{
+			QSettings settingIns;
+			QVariant variantRect = settingIns.value(QString(this->metaObject()->className()) + QString("_Geom"));
+			if(variantRect.isValid())
+				this->restoreGeometry(variantRect.toByteArray());
+		}
 	}
 
 	AssetWindowBase::~AssetWindowBase()
@@ -134,6 +141,11 @@ namespace UPOEd
 
 	void AssetWindowBase::closeEvent(QCloseEvent *event)
 	{
+		{
+			QSettings settingIns;
+			settingIns.setValue(QString(this->metaObject()->className()) + QString("_Geom"), QVariant(this->saveGeometry()));
+		}
+
 		AssetViewer::SOpenAssets.removeOne(this);
 		if (mRefHelper) DeleteObject(mRefHelper);
 		mRefHelper = nullptr;

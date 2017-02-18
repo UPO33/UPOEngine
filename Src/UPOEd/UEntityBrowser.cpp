@@ -51,7 +51,7 @@ namespace UPOEd
 		mFilter->setClearButtonEnabled(true);
 		layout()->addWidget(mFilter);
 
-		mTree = new QTreeWidget(this);
+		mTree = new EntityBrowserTreeWidget(this);
 		layout()->addWidget(mTree);
 		mTree->setHeaderHidden(true);
 		mTree->setIndentation(10);
@@ -86,7 +86,7 @@ namespace UPOEd
 
 	void EntityBrowserWidget::ReFillTree()
 	{
-		ULOG_MESSAGE("");
+		mSelectedEntity = nullptr;
 		mTree->clear();
 		AddToTree(nullptr);
 		mTree->expandAll();
@@ -184,15 +184,59 @@ namespace UPOEd
 
 	}
 
-	void EntityBrowserWidget::SelectEntity(EntityBrowserItem* item)
+	void EntityBrowserWidget::SelectEntity(EntityBrowserItem* item, bool applyOnPropertyBrowser)
 	{
-		if (mSelectedEntity == item) return;
+		if (mSelectedEntity && mSelectedEntity->mEntity)
+			mSelectedEntity->mEntity->SetSelected(false);
 
 		mSelectedEntity = item;
-		if (Entity* ent = item->mEntity)
+		if (mSelectedEntity && mSelectedEntity->mEntity)
+			mSelectedEntity->mEntity->SetSelected(true);
+
+		if(applyOnPropertyBrowser)
 		{
-			gMainWindow->mPropertyBrowser->AttachObject(ent);
+			gMainWindow->mPropertyBrowser->AttachObject(item->mEntity);
 		}
+	}
+
+	//calls a lambda on items recursively. [](QTreeWidgetItem*){}
+	template<typename Lambda> void UDoOnChildren(QTreeWidgetItem* root, const Lambda& proc)
+	{
+		for (size_t i = 0; i < root->childCount(); i++)
+		{
+			proc(root->child(i));
+			UDoOnChildren(root->child(i), proc);
+		}
+	}
+
+	void EntityBrowserWidget::SelectEntity(Entity* entity, bool applyOnPropertyBrowser)
+	{
+		if (mSelectedEntity && mSelectedEntity->mEntity)
+			mSelectedEntity->mEntity->SetSelected(false);
+			
+		if (!entity)
+		{
+			mSelectedEntity = nullptr;
+			mTree->setCurrentItem(nullptr);
+			return;
+		}
+
+		UDoOnChildren(mTree->invisibleRootItem(), [&](QTreeWidgetItem* item) {
+			if (EntityBrowserItem* entItem = (EntityBrowserItem*)item)
+			{
+				if (entItem->mEntity.Get() == entity)
+				{
+					mTree->setCurrentItem(entItem);
+					
+					mSelectedEntity = entItem;
+					mSelectedEntity->mEntity->SetSelected(true);
+
+					if(applyOnPropertyBrowser)
+						gMainWindow->mPropertyBrowser->AttachObject(entity);
+				}
+			}
+		});
+
 	}
 
 	void EntityBrowserWidget::Tick()
@@ -250,18 +294,101 @@ namespace UPOEd
 
 	void EntityBrowserTreeWidget::dropEvent(QDropEvent *event)
 	{
+		EntityBrowserItem* curItem = (EntityBrowserItem*)this->currentItem();
+		Entity* curEntity = curItem ? curItem->mEntity.Get() : nullptr;
+
+		if (auto tb = qobject_cast<EntityBrowserTreeWidget*>(event->source()))
+		{
+			if (!curEntity)return;
+
+			if (EntityBrowserItem* item = (EntityBrowserItem*)this->itemAt(event->pos()))
+			{
+				if (item != curItem && item->mEntity)
+				{
+					if (!item->mEntity->IsSubsetOf(curEntity))
+					{
+						curEntity->AttachTo(item->mEntity);
+						((EntityBrowserWidget*)this->parent())->ReFillTree();
+
+						event->accept();
+						return;
+					}
+				}
+
+			}
+			else
+			{
+				curEntity->AttachTo(nullptr);
+				((EntityBrowserWidget*)this->parent())->ReFillTree();
+				event->accept();
+				return;
+			}
+		}
+		event->ignore();
 	}
 
 	void EntityBrowserTreeWidget::dragEnterEvent(QDragEnterEvent *event)
 	{
+		ULOG_MESSAGE("%", event->source()->metaObject()->className());
+		ULOG_MESSAGE("%", ToString(this->currentItem()->text(0)));
+
+		if (auto tb = qobject_cast<EntityBrowserTreeWidget*>(event->source()))
+		{
+			if (this->itemAt(event->pos()))
+			{
+				event->accept();
+				return;
+			}
+		}
+
+		event->accept();
+
+
 	}
 
 	void EntityBrowserTreeWidget::dragMoveEvent(QDragMoveEvent *event)
 	{
+		EntityBrowserItem* curItem = (EntityBrowserItem*)this->currentItem();
+		Entity* curEntity = curItem ? curItem->mEntity.Get() : nullptr;
+
+		if (auto tb = qobject_cast<EntityBrowserTreeWidget*>(event->source()))
+		{
+			if (EntityBrowserItem* item = (EntityBrowserItem*)this->itemAt(event->pos()))
+			{
+				if (item != curItem && item->mEntity)
+				{
+					if (!item->mEntity->IsSubsetOf(curEntity))
+					{
+						event->accept();
+						return;
+					}
+				}
+			}
+			else
+			{
+				event->accept();
+				return;
+			}
+		}
+		event->ignore();
+		
 	}
 
 	void EntityBrowserTreeWidget::dragLeaveEvent(QDragLeaveEvent *event)
 	{
+		ULOG_MESSAGE("");
+	}
+
+	void EntityBrowserTreeWidget::keyPressEvent(QKeyEvent* event)
+	{
+		QTreeWidget::keyPressEvent(event);
+		event->accept();
+	}
+
+	void EntityBrowserTreeWidget::keyReleaseEvent(QKeyEvent* event)
+	{
+		QTreeWidget::keyReleaseEvent(event);
+		event->accept();
 	}
 
 };

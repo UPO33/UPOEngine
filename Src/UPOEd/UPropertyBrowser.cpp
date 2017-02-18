@@ -272,7 +272,15 @@ namespace UPOEd
 	void PropertyBrowserWidget::Tick()
 	{
 		//if object remove 
-		if (!mObject) ReFillTree();
+		if (!mObject) 
+		{
+			ReFillTree();
+		}
+		else if(mObject && mObject->mNeedsPropertyBrowserRefresh)
+		{
+			mObject->mNeedsPropertyBrowserRefresh = false;
+			ReFillTree();
+		}
 
 		QTreeWidgetItem* root = mTree->invisibleRootItem();
 		TickTreeItem(root);
