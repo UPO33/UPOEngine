@@ -33,8 +33,9 @@ namespace UPO
 		mViewportOffset = Vec2(0, 0);
 		mViewPortSize = Vec2(1, 1);
 		mSuperiority = 0;
-
+#ifndef UENDUSER
 		mVisualizer = new EntityCameraVisualizer(this);
+#endif
 	}
 
 

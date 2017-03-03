@@ -195,7 +195,7 @@ namespace UPOEd
 
 		if(applyOnPropertyBrowser)
 		{
-			gMainWindow->mPropertyBrowser->AttachObject(item->mEntity);
+			gMainWindow->mPropertyBrowser->AttachObject(item ? item->mEntity : nullptr);
 		}
 	}
 
@@ -218,6 +218,8 @@ namespace UPOEd
 		{
 			mSelectedEntity = nullptr;
 			mTree->setCurrentItem(nullptr);
+			if (applyOnPropertyBrowser)
+				gMainWindow->mPropertyBrowser->AttachObject(nullptr);
 			return;
 		}
 

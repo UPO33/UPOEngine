@@ -21,7 +21,7 @@ namespace UPO
 			if (mOwner->mIsSelected || GetGameWindow()->mOptions.mShowBounds)
 			{
 				Color32 color = mOwner->mIsSelected ? SelectedColor : DefaultColor;
-				batch->SetHitProxy(new HPEntity(mOwner));
+				batch->SetHitProxy(new HPEntity(mOwner, ECursorShape::Cross));
 				batch->DrawWireBox(mOwner->GetBound().mMin, mOwner->GetBound().mMax, color);
 				float radius = (mOwner->GetBound().mMin - mOwner->GetBound().mMax).Length() / 2;
 				batch->DrawWireSphere(mOwner->GetBound().GetCenter(), radius, color);

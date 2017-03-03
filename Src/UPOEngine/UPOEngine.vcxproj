@@ -71,6 +71,8 @@
     <ClInclude Include="Engine\UEntityCameraVisualizer.h" />
     <ClInclude Include="Engine\UEntityFreeCamera.h" />
     <ClInclude Include="Engine\UEntityGFX.h" />
+    <ClInclude Include="Engine\UEntityLight.h" />
+    <ClInclude Include="Engine\UEntityLightVisualizer.h" />
     <ClInclude Include="Engine\UEntityPrimitive.h" />
     <ClInclude Include="Engine\UEntityStaticMesh.h" />
     <ClInclude Include="Engine\UEntityStaticMeshVisualizer.h" />
@@ -173,6 +175,7 @@
     <ClCompile Include="Engine\UEntityCamera.cpp" />
     <ClCompile Include="Engine\UEntityFreeCamera.cpp" />
     <ClCompile Include="Engine\UEntityGFX.cpp" />
+    <ClCompile Include="Engine\UEntityLight.cpp" />
     <ClCompile Include="Engine\UEntityPrimitive.cpp" />
     <ClCompile Include="Engine\UEntityStaticMesh.cpp" />
     <ClCompile Include="Engine\UEntityTest.cpp" />
@@ -288,8 +291,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(SolutionDir)Bin\</OutDir>
-    <IncludePath>C:\Program Files %28x86%29\OpenAL 1.1 SDK\include;E:\Lib\FreeImage3170Win32Win64\FreeImage\Dist\x32;$(SolutionDir)\Libs\DirectXTex\DirectXTex;E:\Lib\freetype-2.4.0\include;C:\UE4\Engine\Source\ThirdParty\PhysX\PhysX-3.3\include;$(SolutionDir)Libs\zlib\;C:\VulkanSDK\1.0.30.0\Include;$(SolutionDir)Libs\DirectXTK\Inc;$(SolutionDir)Libs\SDL2\include;$(DXSDK_DIR)\Include\;$(SolutionDir)Libs\glew-2.0.0\include;$(SolutionDir)Libs\assimp\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Program Files %28x86%29\OpenAL 1.1 SDK\libs\Win32;E:\Lib\FreeImage3170Win32Win64\FreeImage\Dist\x32;E:\Lib\freetype-2.4.0\objs\win32\vc2008;C:\UE4\Engine\Source\ThirdParty\PhysX\PhysX-3.3\lib\Win32\VS2015;$(SolutionDir)Libs\zlib\Debug;C:\VulkanSDK\1.0.30.0\Bin32;$(SolutionDir)Libs\glew-2.0.0\lib\Release\Win32;$(SolutionDir)Libs\DirectXTK\Bin\Desktop_2015\Win32\Debug;$(SolutionDir)Libs\DirectXTex\DirectXTex\Bin\Desktop_2015\Win32\Debug;$(DXSDK_DIR)\Lib\x86;$(SolutionDir)Libs\SDL2\lib\x86;$(SolutionDir)Libs\assimp\lib\Debug;$(LibraryPath)</LibraryPath>
+    <IncludePath>D:\Lib\al\include\;E:\Lib\FreeImage3170Win32Win64\FreeImage\Dist\x32;$(SolutionDir)\Libs\DirectXTex\DirectXTex;E:\Lib\freetype-2.4.0\include;C:\UE4\Engine\Source\ThirdParty\PhysX\PhysX-3.3\include;$(SolutionDir)Libs\zlib\;C:\VulkanSDK\1.0.30.0\Include;$(SolutionDir)Libs\DirectXTK\Inc;$(SolutionDir)Libs\SDL2\include;$(DXSDK_DIR)\Include\;$(SolutionDir)Libs\glew-2.0.0\include;$(SolutionDir)Libs\assimp\include;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\Lib\al\libs\Win32;E:\Lib\FreeImage3170Win32Win64\FreeImage\Dist\x32;E:\Lib\freetype-2.4.0\objs\win32\vc2008;C:\UE4\Engine\Source\ThirdParty\PhysX\PhysX-3.3\lib\Win32\VS2015;$(SolutionDir)Libs\zlib\Debug;C:\VulkanSDK\1.0.30.0\Bin32;$(SolutionDir)Libs\glew-2.0.0\lib\Release\Win32;$(SolutionDir)Libs\DirectXTK\Bin\Desktop_2015\Win32\Debug;$(SolutionDir)Libs\DirectXTex\DirectXTex\Bin\Desktop_2015\Win32\Debug;$(DXSDK_DIR)\Lib\x86;$(SolutionDir)Libs\SDL2\lib\x86;$(SolutionDir)Libs\assimp\lib\Debug;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -302,7 +305,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>OpenAL32.lib;FreeImage.lib;freetype240MT_D.lib;PhysX3DEBUG_x86.lib;PhysX3CommonDEBUG_x86.lib;PhysX3ExtensionsDEBUG.lib;assimp-vc140-mt.lib;d3dx11d.lib;d3d11.lib;DxERR.lib;d3dcompiler.lib;dxgi.lib;d3dx10d.lib;DirectXTK.lib;DirectXTex.lib;SDL2.lib;glew32s.lib;vulkan-1.lib;zlibstaticd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>OpenAL32.lib;assimp-vc140-mt.lib;d3dx11d.lib;d3d11.lib;DxERR.lib;d3dcompiler.lib;dxgi.lib;d3dx10d.lib;DirectXTK.lib;DirectXTex.lib;SDL2.lib;glew32s.lib;zlibstaticd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

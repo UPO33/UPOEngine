@@ -2,8 +2,10 @@
 
 #include "UCommonEd.h"
 #include "UD3DRenderWidget.h"
+#include "../UPOEngine/Engine/UHitSelection.h"
 
 class Ui_MainViewport;
+
 
 namespace UPOEd
 {
@@ -45,7 +47,6 @@ namespace UPOEd
 	{
 		Ui_MainViewport*				ui;
 		Object*							mOptionsWidgetObject;
-		TArray<TObjectPtr<Entity>>		mSelectedEntities;
 
 	public:
 		MainViewport(QWidget* parent = nullptr);
@@ -56,7 +57,11 @@ namespace UPOEd
 
 		void ToggleOptionsWidgetVisibility();
 
+		void ViewportMousePress(RenderViewportWidget* viewport, QMouseEvent* mouseEvent);
 		void ViewportMouseRelease(RenderViewportWidget* viewport, QMouseEvent* mouseEvent);
+		void ViewportMouseMove(RenderViewportWidget* viewport, QMouseEvent* mouseEvent);
+		
 	};
-
+	
+	extern Qt::CursorShape ToQT(ECursorShape);
 };

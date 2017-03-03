@@ -37,7 +37,9 @@ namespace UPO
 	EntityStaticMesh::EntityStaticMesh()
 	{
 		mMesh = nullptr;
+#ifndef UENDUSER
 		mVisualizer = new EntityStaticMeshVisualizer(this);
+#endif
 	}
 
 	EntityStaticMesh::~EntityStaticMesh()
@@ -67,11 +69,8 @@ namespace UPO
 	}
 
 	//////////////////////////////////////////////////////////////////////////
-	EntityStaticMeshRS::EntityStaticMeshRS(EntityStaticMesh* gs, WorldRS* wrs)
+	EntityStaticMeshRS::EntityStaticMeshRS(EntityStaticMesh* gs, WorldRS* wrs) : EntityPrimitiveRS(gs, wrs)
 	{
-		mGS = gs;
-		mOwner = wrs;
-
 		mOwner->mStaticMeshesBounds.AddUnInit();
 		mOwner->mStaticMeshesCullingState.AddUnInit();
 		mPrivateIndex = mOwner->mStaticMeshes.Add(this);

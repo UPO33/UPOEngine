@@ -21,7 +21,7 @@ namespace UPO
 
 			if(owner && owner->IsAlive())
 			{
-				pb->SetHitProxy(new HPEntity(owner));
+				pb->SetHitProxy(new HPEntity(owner, ECursorShape::Cross));
 				Color32 color = owner->mIsSelected ? Color32::RED : Color32::BLUE;
 				if (owner->mAttenuationShape == EAudioAttenuationShape::ESphere)
 				{

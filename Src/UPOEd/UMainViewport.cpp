@@ -194,10 +194,17 @@ namespace UPOEd
 			this->GetViewport()->mOptions = mOptionsWidgetObject->Cast<ObjOptionsWidget>()->mOptions;
 		});
 
-		
+		ui->mViewport->mOnMousePress.BindLambda([this](QMouseEvent* ev) {
+			ViewportMousePress(ui->mViewport, ev);
+		});
+		ui->mViewport->mOnMouseMove.BindLambda([this](QMouseEvent* ev) {
+			ViewportMouseMove(ui->mViewport, ev);
+		});
 		ui->mViewport->mOnMouseRelease.BindLambda([this](QMouseEvent* ev) {
 			ViewportMouseRelease(ui->mViewport, ev);
 		});
+		
+
 	}
 
 	MainViewport::~MainViewport()
@@ -227,6 +234,26 @@ namespace UPOEd
 		
 	}
 
+	void MainViewport::ViewportMousePress(RenderViewportWidget* viewport, QMouseEvent* mouseEvent)
+	{
+
+	}
+
+	void MainViewport::ViewportMouseMove(RenderViewportWidget* viewport, QMouseEvent* mouseEvent)
+	{
+		if (auto hitSelection = viewport->GetHitSelection())
+		{
+			if (auto takenHit = hitSelection->GetTakenHit())
+			{
+				QApplication::setOverrideCursor(ToQT(takenHit->GetHoverCursor()));
+			}
+			else
+			{
+				QApplication::restoreOverrideCursor();
+			}
+		}
+	}
+
 	void MainViewport::ViewportMouseRelease(RenderViewportWidget* viewport, QMouseEvent* mouseEvent)
 	{
 		if (mouseEvent->modifiers() == Qt::KeyboardModifier::ControlModifier)
@@ -238,24 +265,18 @@ namespace UPOEd
 			
 
 			//deselecting 
-			for (auto& ent : mSelectedEntities)
-			{
-				if (ent.Get()) ent.Get()->SetSelected(false);
-			}
+			gMainWindow->mEntityBrowser->GetWidget()->SelectEntity((EntityBrowserItem*)nullptr, true);
 
 
 			if (auto hitSelection = viewport->GetHitSelection())
 			{
 				if (auto takenHit = hitSelection->GetTakenHit())
 				{
-
-					if (auto hpEntity = takenHit->Cast<HPEntity>())	//is entity hit?
+					if (auto hpEntity = UCast<HPEntity>(takenHit))	//is entity hit?
 					{
 						if (Entity* entity = hpEntity->mEntity)
 						{
 							ULOG_MESSAGE("Entity Selected [%]", hpEntity->mEntity->GetName());
-							entity->SetSelected(true);
-							mSelectedEntities.Add(entity);
 							gMainWindow->mEntityBrowser->GetWidget()->SelectEntity(entity);
 						}
 					}
@@ -268,5 +289,11 @@ namespace UPOEd
 		}
 		
 	}
+
+	Qt::CursorShape ToQT(ECursorShape in)
+	{
+		return (Qt::CursorShape)in;
+	}
+
 
 }

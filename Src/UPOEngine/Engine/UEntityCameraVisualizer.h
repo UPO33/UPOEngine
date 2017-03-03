@@ -26,7 +26,7 @@ namespace UPO
 				if (rs)
 				{
 
-					batch->SetHitProxy(new HPEntity(mOwner));
+					batch->SetHitProxy(new HPEntity(mOwner, ECursorShape::Cross));
 					batch->DrawWireFrustum(rs->mMatrixClipToWorld, color);
 					batch->SetHitProxy(nullptr);
 				}

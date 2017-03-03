@@ -1,7 +1,6 @@
 #pragma once
 
 #include "UWorld.h"
-#include "UEngineBase.h"
 
 
 #define UUSE_ARRAYCHILD
@@ -260,7 +259,7 @@ namespace UPO
 		{}
 		EntityRS(InitZero) : mGS(nullptr), mOwner(nullptr), mRSFlag(0), mPrivateIndex(0)
 		{}
-		EntityRS(Entity* gs, WorldRS* wrs, EEntityRSFlag flag = ERS_Default) : mGS(gs), mOwner(wrs), mRSFlag(ERS_Default), mPrivateIndex(0)
+		EntityRS(Entity* gs, WorldRS* wrs, EEntityRSFlag flag = ERS_Default) : mGS(gs), mOwner(wrs), mRSFlag(flag), mPrivateIndex(0)
 		{}
 		virtual ~EntityRS()
 		{

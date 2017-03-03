@@ -16,7 +16,7 @@ namespace UPO
 		GFXTexture2D*			mGBufferA;
 		GFXTexture2D*			mGBufferB;
 		GFXTexture2D*			mGBufferC;
-
+		GFXTexture2D*			mLightAccumulation;
 		void BinGBuffers(bool clear);
 		
 

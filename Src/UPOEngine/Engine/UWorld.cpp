@@ -1,9 +1,12 @@
 #include "UWorld.h"
-#include "UComponent.h"
+
 #include "UEntity.h"
 #include "UEntityCamera.h"
 #include "UEntityStaticMesh.h"
 #include "UEntityFreeCamera.h"
+#include "UEntityLight.h"
+#include "UEntityAudioSource.h"
+
 #include "UWorldRS.h"
 #include "UGameWindow.h"
 #include "UInput.h"
@@ -19,10 +22,10 @@ namespace UPO
 	//returns the size of render state corresponding to the entity, zero if entity has not render state
 	size_t UGetEntityClassRSSize(const ClassInfo* entityClass)
 	{
-		if (entityClass->IsBaseOf(EntityStaticMesh::GetClassInfoStatic())) return sizeof(EntityStaticMeshRS);
+		if (entityClass->IsBaseOf<EntityStaticMesh>())			return sizeof(EntityStaticMeshRS);
+		if (entityClass->IsBaseOf<EntityCamera>())				return sizeof(EntityCameraRS);
+		if (entityClass->IsBaseOf<EntityLight>())				return sizeof(EntityLightRS);
 
-		if (entityClass->IsBaseOf(EntityCamera::GetClassInfoStatic())) return sizeof(EntityCameraRS);
-		
 		return 0;
 	}
 

@@ -42,6 +42,8 @@ namespace UPO
 		unsigned					mHitID = 0;
 		TArray<AMaterialRS*>		mMaterials;
 
+		EntityPrimitiveRS(){}
+		EntityPrimitiveRS(Entity* gs, WorldRS* wrs, EEntityRSFlag flag = ERS_Default) : EntityRS(gs, wrs, flag) {}
 
 		void OnFetch(unsigned) override;
 

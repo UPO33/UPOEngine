@@ -3,6 +3,7 @@
 #include "UWorld.h"
 #include "UEntityStaticMesh.h"
 #include "UEntityCamera.h"
+#include "UEntityLight.h"
 
 #include "../GFX/URenderer.h"
 
@@ -270,6 +271,11 @@ namespace UPO
 			if (auto camera = from->Cast<EntityCamera>())
 			{
 				new (camera->GetRSMemory()) EntityCameraRS(camera, this);
+				return;
+			}
+			if (auto light = from->Cast<EntityLight>())
+			{
+				new (light->GetRSMemory()) EntityLightRS(light, this);
 				return;
 			}
 		}

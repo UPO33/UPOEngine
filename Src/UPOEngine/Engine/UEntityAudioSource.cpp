@@ -27,7 +27,9 @@ namespace UPO
 	EntityAudioSource::EntityAudioSource()
 	{
 		mHandle = new AudioSourceAL;
+#ifndef UENDUSER
 		mVisualizer = new EntityAudioSourceVisualizer(this);
+#endif
 	}
 
 	EntityAudioSource::~EntityAudioSource()
@@ -116,9 +118,6 @@ namespace UPO
 	void EntityAudioSource::OnTick()
 	{
 		Parent::OnTick();
-
-		if (mAttenuate)
-			mAttenuation = CalcAttenation();
 	}
 
 	float EntityAudioSource::CalcAttenation(const Vec3& listenerPosition)
